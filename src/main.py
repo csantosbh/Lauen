@@ -1,6 +1,5 @@
 #!/usr/bin/python
-import Config
-import HTTPRequestHandler
+from server import Config, HTTPRequestHandler
 import os
 
 print Config.get('server', 'port')
