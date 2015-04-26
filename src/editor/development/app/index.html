@@ -8,24 +8,22 @@
 <!-- Place favicon.ico and apple-touch-icon.png in the root directory -->
 <!-- build:css(.) styles/vendor.css -->
 <!-- bower:css -->
-<link rel="stylesheet" href="bower_components/gridster/dist/jquery.gridster.css" />
 <!-- endbower -->
 <!-- endbuild -->
-<!-- build:css(.tmp) styles/main.css -->
+<!-- build:css(.tmp) styles/*.css -->
 <link rel="stylesheet" href="styles/main.css">
-<link rel="stylesheet" href="styles/gridster.css">
+<link rel="stylesheet" href="styles/layout.css">
 <!-- endbuild -->
 </head>
 <body ng-app="lauEditor">
 
 <!-- Add your site or application content here -->
-<div class="container">
-  <div ng-view=""></div>
-</div>
+<div class="container" ng-view=""></div>
 
 <!-- build:js(.) scripts/vendor.js -->
 <!-- bower:js -->
 <script src="bower_components/jquery/dist/jquery.js"></script>
+<script src="bower_components/jquery-ui/jquery-ui.js"></script>
 <script src="bower_components/angular/angular.js"></script>
 <script src="bower_components/bootstrap-sass-official/assets/javascripts/bootstrap.js"></script>
 <script src="bower_components/angular-animate/angular-animate.js"></script>
@@ -36,8 +34,6 @@
 <script src="bower_components/angular-route/angular-route.js"></script>
 <script src="bower_components/angular-sanitize/angular-sanitize.js"></script>
 <script src="bower_components/angular-touch/angular-touch.js"></script>
-<script src="bower_components/gridster/dist/jquery.gridster.js"></script>
-<script src="bower_components/gridster/dist/jquery.gridster.with-extras.js"></script>
 <!-- endbower -->
 <!-- endbuild -->
 
@@ -45,6 +41,7 @@
 <script src="scripts/app.js"></script>
 <script src="scripts/controllers/main.js"></script>
 <script src="scripts/directives/numberinput.js"></script>
+<script src="scripts/third_party/jquery.layout.js"></script>
 <!-- endbuild -->
 </body>
 </html>

@@ -32,8 +32,7 @@ angular.module('lauEditor').directive('numberInput', function () {
              attrs.inpId + '" class="'+
              attrs.inpClass+'">';
     },
-    require: 'ngModel',
-    link: function(scope, element, userAttrs, controller) {
+    link: function(scope, element, userAttrs) {
       var attrs = {};
       $.extend(attrs, defaultAttrs, userAttrs);
       var inputElement = element.find('input');
@@ -41,7 +40,7 @@ angular.module('lauEditor').directive('numberInput', function () {
 
       // Handle <enter>
       inputElement.bind('keydown', function(downE) {
-        if(downE.keyCode == 13) {
+        if(downE.keyCode === 13) {
           inputElement.blur();
         }
       });
@@ -53,8 +52,8 @@ angular.module('lauEditor').directive('numberInput', function () {
         // Catch mouse move event
         function mouseMoveDocument(moveE) {
           var xDiff = moveE.pageX - prevMouse.x;
-          if(xDiff==0 && moveE.pageY==downE.pageY){
-            xDiff = moveE.pageX==0?-1:1;
+          if(xDiff===0 && moveE.pageY===downE.pageY){
+            xDiff = moveE.pageX===0?-1:1;
           }
           xDiff *= attrs.sensitivity;
 

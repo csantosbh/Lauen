@@ -15,4 +15,16 @@ angular.module('lauEditor')
   'Karma'
   ];
   $scope.lau = [2.0, {lauzito: 1.5}];
+
+  // Setup main layout
+  $(".container").layout({
+    resizeWhileDragging: true,
+    north__spacing_open: 0,
+    north__size: 50,
+    east__size: 300,
+  });
+  $('#center-container').layout({
+    resizeWhileDragging: true,
+      south__size: 200,
+  });
 });

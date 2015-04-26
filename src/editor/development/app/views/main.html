@@ -1,6 +1,12 @@
-<div class="jumbotron">
-    <number-input label="x" ng-model="lau[0]" /></number-input><br/>
-    <number-input label="y" ng-model="lau[1].lauzito" /></number-input><br/>
-    lau={{lau[0]}}
-    lau2={{lau[1].lauzito}}
+<div class="ui-layout-center" id="center-container">
+    <div class="ui-layout-west">Hierarchy</div>
+    <div class="ui-layout-center">Canvas</div>
+    <div class="ui-layout-south">Project, console</div>
+</div>
+<div class="ui-layout-north">Controls</div>
+<div class="ui-layout-east">
+  <number-input label="x" ng-model="lau[0]" /></number-input><br/>
+  <number-input label="y" ng-model="lau[1].lauzito" /></number-input><br/>
+  lau={{lau[0]}}<br/>
+  lau2={{lau[1].lauzito}}
 </div>
