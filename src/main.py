@@ -1,7 +1,7 @@
 #!/usr/bin/python
-from server import Config, HTTPRequestHandler
+from server import Config, HTTPRequestHandler, WebSocketServer
 import os
 
-print Config.get('server', 'port')
 os.chdir('editor')
-HTTPRequestHandler.StartServer()
+#HTTPRequestHandler.StartServer()
+WebSocketServer.StartServer()
