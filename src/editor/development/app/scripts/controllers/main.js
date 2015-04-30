@@ -6,8 +6,7 @@ socket.onopen = function(e) {
 }
 socket.onmessage = function(e) {
   var evData = JSON.parse(e.data);
-  if(this.hasOwnProperty('callbacks_') &&
-          this.callbacks_.hasOwnProperty(evData.event)) {
+  if(this.hasOwnProperty('callbacks_') && this.callbacks_.hasOwnProperty(evData.event)) {
     var cblist = this.callbacks_[evData.event];
     for(var i = 0; i < cblist.length; ++i) {
       cblist[i](evData);
@@ -47,7 +46,6 @@ function setupProjectPanel(interact, $scope, $timeout) {
     // $digest is already running, use $timeout
     $timeout(function() {
       $scope.projectFiles = e.files;
-      console.log(e.files)
     });
   });
 
@@ -55,11 +53,11 @@ function setupProjectPanel(interact, $scope, $timeout) {
 
   // setup draggable elements.
   interact('.js-drag')
-    .draggable({ max: Infinity })
-    .on('dragstart', function (event) {
-      event.interaction.x = parseInt(event.target.getAttribute('data-x'), 10) || 0;
-      event.interaction.y = parseInt(event.target.getAttribute('data-y'), 10) || 0;
-    })
+  .draggable({ max: Infinity })
+  .on('dragstart', function (event) {
+    event.interaction.x = parseInt(event.target.getAttribute('data-x'), 10) || 0;
+    event.interaction.y = parseInt(event.target.getAttribute('data-y'), 10) || 0;
+  })
   .on('move', function (event) {
     var interaction = event.interaction;
     var ay = interaction.y;
@@ -68,8 +66,8 @@ function setupProjectPanel(interact, $scope, $timeout) {
     // and an interaction hasn't started yet
     if (interaction.pointerIsDown && !interaction.interacting()) {
       var original = event.currentTarget,
-      // create a clone of the currentTarget element
-      clone = event.currentTarget.cloneNode(true);
+        // create a clone of the currentTarget element
+        clone = event.currentTarget.cloneNode(true);
 
       // insert the clone to the page
       clone.style.position='absolute';
@@ -78,11 +76,11 @@ function setupProjectPanel(interact, $scope, $timeout) {
 
       // start a drag interaction targeting the clone
       interaction.start({ name: 'drag' },
-        event.interactable,
-        clone);
-      var originalBoundingRect = original.getBoundingClientRect();
-      event.interaction.x = -(-clone.offsetLeft-originalBoundingRect.left);
-      event.interaction.y = -(-originalBoundingRect.top);
+                        event.interactable,
+                        clone);
+                        var originalBoundingRect = original.getBoundingClientRect();
+                        event.interaction.x = -(-clone.offsetLeft-originalBoundingRect.left);
+                        event.interaction.y = -(-originalBoundingRect.top);
     }
   })
   .on('dragmove', function (event) {
@@ -110,16 +108,15 @@ function setupProjectPanel(interact, $scope, $timeout) {
    * @param {String} accept
    */
   function setupDropzone(el, accept) {
-    interact(el)
-      .dropzone({
-        accept: accept,
-        ondropactivate: function (event) {
-          addClass(event.relatedTarget, '-drop-possible');
-        },
-        ondropdeactivate: function (event) {
-          removeClass(event.relatedTarget, '-drop-possible');
-        }
-      })
+    interact(el).dropzone({
+      accept: accept,
+      ondropactivate: function (event) {
+        addClass(event.relatedTarget, '-drop-possible');
+      },
+      ondropdeactivate: function (event) {
+        removeClass(event.relatedTarget, '-drop-possible');
+      }
+    })
     .on('dropactivate', function (event) {
       var active = event.target.getAttribute('active')|0;
 
@@ -183,28 +180,31 @@ function setupProjectPanel(interact, $scope, $timeout) {
  * # MainCtrl
  * Controller of the lauEditor
  */
-angular.module('lauEditor')
-.controller('MainCtrl', function ($scope, $timeout) {
+angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
   $scope.awesomeThings = [
-  'HTML5 Boilerplate',
-'AngularJS',
-'Karma'
+    'HTML5 Boilerplate',
+    'AngularJS',
+    'Karma'
   ];
-$scope.lau = [2.0, 1.5];
-$scope.projectFiles = [];
+  $scope.lau = [2.0, 1.5];
+  $scope.projectFiles = [];
 
-// Setup main layout
-$(".container").layout({
-  resizeWhileDragging: true,
-  north__spacing_open: 0,
-  north__size: 50,
-  east__size: 300,
-});
-$('#center-container').layout({
-  resizeWhileDragging: true,
-  south__size: 200,
-});
+  // Setup main layout
+  $(".container").layout({
+    resizeWhileDragging: true,
+    north__spacing_open: 0,
+    north__size: 50,
+    east__size: 300,
+  });
+  $('#center-container').layout({
+    resizeWhileDragging: true,
+    south__size: 200,
+  });
 
-// Setup project panel
-setupProjectPanel(window.interact, $scope, $timeout);
+  // Setup project panel
+  $scope.componentTypes=['um', 'dois', {tres:['subum', 'subdois', 'subtres']}];
+  setupProjectPanel(window.interact, $scope, $timeout);
+  lau={s:$scope,t:$timeout};
+
 });
+var lau;
