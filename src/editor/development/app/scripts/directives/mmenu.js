@@ -7,18 +7,19 @@
  * # mmenu
  */
 angular.module('lauEditor')
-.directive('mmenu', function ($interpolate) {
-  function genMenu(lvlElements) {
+.directive('mmenu', function ($compile) {
+  function genMenu(lvlElements, callbackArguments) {
     var newMenu = '';
     for(var i in lvlElements) {
       if(lvlElements.hasOwnProperty(i)) {
-        if(lvlElements[i] instanceof Object) {
-          for(var j in lvlElements[i]) {
-            if(lvlElements[i].hasOwnProperty(j))
-              newMenu = newMenu+'<li><a href="#">'+j+'</a><ul>'+genMenu(lvlElements[i][j])+'</ul></li>';
-          }
+        if(lvlElements[i] instanceof Array) {
+          var childArguments = callbackArguments.slice(0);
+          childArguments.push(i);
+          newMenu = newMenu+'<li><a href="#">'+i+'</a><ul>'+genMenu(lvlElements[i], childArguments)+'</ul></li>';
         } else {
-          newMenu = newMenu+'<li><a href="#">'+lvlElements[i]+'</a></li>';
+          var childArguments = callbackArguments.slice(0);
+          childArguments.push(i);
+          newMenu = newMenu+'<li><a href="#" ng-click=\'elementSelected('+JSON.stringify(childArguments)+')\'>'+lvlElements[i].label+'</a></li>';
         }
       }
     }
@@ -39,9 +40,15 @@ angular.module('lauEditor')
   return {
     template: '<div><nav></nav></div>',
     restrict: 'E',
-    scope: {elements: '=elements'},
+    replace: true,
+    scope: {
+      elements: '=elements',
+      callback: '=callback',
+    },
     link: function postLink(scope, element, attrs) {
-      element.mmenu(mmenuOptions, mmenuParameters);
+      scope.elementSelected = function(i) {
+        scope.callback(i);
+      }
 
       scope.$watch('elements', function() {
         // Delete old menu
@@ -52,9 +59,10 @@ angular.module('lauEditor')
         element.removeData('mmenu');
 
         // Create new menu
-        var newMenu = '<ul>' + genMenu(scope.elements) + '</ul>';
-        element.append($(newMenu))
-        .mmenu(mmenuOptions, mmenuParameters);
+        var newMenu = '<ul>' + genMenu(scope.elements, []) + '</ul>';
+        var newMenuDOM = $compile($(newMenu))(scope.$new());
+
+        element.append(newMenuDOM).mmenu(mmenuOptions, mmenuParameters);
       }, true);
     }
   };

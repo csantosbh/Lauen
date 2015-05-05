@@ -1,47 +1,11 @@
 'use strict';
 
-// TODO: Move this socket service to its own file
-var socket = new WebSocket("ws://localhost:9001");
-socket.onopen = function(e) {
-}
-socket.onmessage = function(e) {
-  var evData = JSON.parse(e.data);
-  if(this.hasOwnProperty('callbacks_') && this.callbacks_.hasOwnProperty(evData.event)) {
-    var cblist = this.callbacks_[evData.event];
-    for(var i = 0; i < cblist.length; ++i) {
-      cblist[i](evData);
-    }
-  }
-  else {
-    // Store message and deliver it when theres a subscriber
-    if(!this.hasOwnProperty('pendingQueue_'))
-      this.pendingQueue_ = {};
-    if(!this.pendingQueue_.hasOwnProperty(evData.event))
-      this.pendingQueue_[evData.event] = [];
-    this.pendingQueue_[evData.event].push(evData);
-  }
-}
-socket.subscribe = function(e, callback) {
-  if(!this.hasOwnProperty('callbacks_'))
-    this.callbacks_ = {};
-  if(!this.callbacks_.hasOwnProperty(e))
-    this.callbacks_[e] = [];
-  this.callbacks_[e].push(callback);
-  if(this.hasOwnProperty('pendingQueue_') && this.pendingQueue_.hasOwnProperty(e)) {
-    var queue = this.pendingQueue_[e];
-    for(var i = 0; i < queue.length; ++i) {
-      callback(queue[i]);
-    }
-    delete this.pendingQueue_[e];
-  }
-}
-
 /*
  * Project panel
  */
 function setupProjectPanel(interact, $scope, $timeout) {
   // TODO the project panel could be its own view
-  socket.subscribe('assetlist', function(e) {
+  $event.listen('assetlist', function(e) {
     // Instead of scope.$apply, which may not work if the
     // $digest is already running, use $timeout
     $timeout(function() {
@@ -170,7 +134,28 @@ function setupProjectPanel(interact, $scope, $timeout) {
   }
 
   // Start websocket connection with server and listen to file change events
-  //socket.emit('evento', {doze: 12});
+  //$socket.emit('evento', {doze: 12});
+}
+
+/*
+ * Component menu
+ */
+function setupComponentMenu($scope, $timeout) {
+  $scope.componentTypes = {'Scripts':[]};
+  $scope.menuPickup=function(item){
+    console.log(item)
+    console.log($scope.componentTypes[item[0]][item[1]])
+  };
+  $event.listen('assetlist', function(fileListEvent) {
+    $timeout(function() {
+      for(var i=0; i < fileListEvent.files.length; ++i) {
+        $scope.componentTypes['Scripts'].push({
+          label: fileListEvent.files[i].name,
+          data: fileListEvent.files[i]
+        });
+      }
+    });
+  });
 }
 
 /**
@@ -202,9 +187,6 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
   });
 
   // Setup project panel
-  $scope.componentTypes=['um', 'dois', {tres:['subum', 'subdois', 'subtres']}];
   setupProjectPanel(window.interact, $scope, $timeout);
-  lau={s:$scope,t:$timeout};
-
+  setupComponentMenu($scope, $timeout);
 });
-var lau;
