@@ -143,8 +143,8 @@ function setupProjectPanel(interact, $scope, $timeout) {
 function setupComponentMenu($scope, $timeout) {
   $scope.componentTypes = {'Scripts':[]};
   $scope.menuPickup=function(item){
-    console.log(item)
-    console.log($scope.componentTypes[item[0]][item[1]])
+    // The item array contains the menu item selected
+    $event.broadcast('addComponent', $scope.componentTypes[item[0]][item[1]]);
   };
   $event.listen('assetlist', function(fileListEvent) {
     $timeout(function() {
@@ -155,6 +155,21 @@ function setupComponentMenu($scope, $timeout) {
         });
       }
     });
+  });
+}
+
+/*
+ * Entity editor menu
+ */
+function setupEntityEditorMenu($scope, $timeout) {
+  $scope.currentEntity = {
+    components: [
+      {type: 'transform', data: {x: 0, y: 0, z: 0, qx: 1, qy: 0, qz: 0, qw: 1}}
+    ]
+  };
+  setupComponentMenu($scope, $timeout);
+  $event.listen('addComponent', function(componentData) {
+    $scope.currentEntity.components.push({type: 'script', data: componentData});
   });
 }
 
@@ -188,5 +203,5 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
 
   // Setup project panel
   setupProjectPanel(window.interact, $scope, $timeout);
-  setupComponentMenu($scope, $timeout);
+  setupEntityEditorMenu($scope, $timeout);
 });

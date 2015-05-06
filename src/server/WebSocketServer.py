@@ -38,7 +38,7 @@ class BroadcastWebSocket(EchoWebSocket):
         import json
         self.cm = clientManager
         self.cm.clients.append(self)
-        #time.sleep(1)
+        time.sleep(1)
         self.send(json.dumps(dict(event='assetlist', files=GetCPPFilesFromFolder('/home/csantos/workspace/LauEngine/bin/assets/'))))
 
     def received_message(self, m):

@@ -2,14 +2,10 @@
   <div class="ui-layout-west">Hierarchy</div>
   <div class="ui-layout-center">Canvas</div>
   <div class="ui-layout-south" style="overflow-y: scroll" id="project-panel">
-    <!-- TODO: Move this to its own view -->
-    <div ng-repeat="file in projectFiles" class="file-widget js-drag"><img src="images/icons/file-cpp.svg"/><label>{{file.name}} ({{file.classes.fields.length}} field(s))</label></div>
+    <project-panel></project-panel>
   </div>
 </div>
 <div class="ui-layout-north">Controls</div>
 <div class="ui-layout-east dropzone js-drop" id="drop1">
-  <!-- TODO: Move this to its own view -->
-  <number-input label="x" ng-model="lau[0]" /></number-input><br/>
-  <number-input label="y" ng-model="lau[1]" /></number-input><br/>
-  <div style="width: 100%; position: relative; height: 200px; display: inline-block;"><mmenu elements="componentTypes" callback="menuPickup"></mmenu></div>
+  <entity-editor></entity-editor>
 </div>

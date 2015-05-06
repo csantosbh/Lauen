@@ -36,6 +36,7 @@ def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False):
             'name': node.spelling,
             'visibility': 0,
             'pragmas': childPragmas,
+            'type': node.type.spelling,
         }
         if node.access_specifier == AccessSpecifier.PROTECTED:
             dictNode['visibility'] = 1
@@ -90,7 +91,7 @@ def GetSimpleClasses(fileName):
         simpleClass['fields'] = []
         for child in parsedFile[0]['children']:
             if child['kind'] == 'FIELD_DECL':
-                simpleClass['fields'].append(dict(name=child['name'], pragmas=child['pragmas'], visibility=child['visibility']))
+                simpleClass['fields'].append(dict(name=child['name'], type=child['type'], pragmas=child['pragmas'], visibility=child['visibility']))
             pass
 
     return simpleClass
