@@ -4,7 +4,7 @@
  * Project panel
  */
 function setupProjectPanel(interact, $scope, $timeout) {
-  // TODO the project panel could be its own view
+  $scope.projectFiles = [];
   $event.listen('assetlist', function(e) {
     // Instead of scope.$apply, which may not work if the
     // $digest is already running, use $timeout
@@ -144,7 +144,10 @@ function setupComponentMenu($scope, $timeout) {
   $scope.componentTypes = {'Scripts':[]};
   $scope.menuPickup=function(item){
     // The item array contains the menu item selected
-    $event.broadcast('addComponent', $scope.componentTypes[item[0]][item[1]]);
+    $event.broadcast('addComponent', {
+      menuItem: item,
+      prefab: $scope.componentTypes[item[0]][item[1]]
+    });
   };
   $event.listen('assetlist', function(fileListEvent) {
     $timeout(function() {
@@ -159,6 +162,51 @@ function setupComponentMenu($scope, $timeout) {
 }
 
 /*
+ * Initialize script fields
+ */
+function getDefaultScriptFieldValue(type) {
+  // TODO: Document initialization rules for ALL types of controllers
+  switch(type) {
+    case 'int':
+    case 'float':
+      return 0;
+    break;
+  }
+}
+
+/*
+ * Initialize new components
+ */
+function initializeComponent(componentMenuItem, component) {
+  // The switch rules match the component menu label
+  switch(componentMenuItem[0]) {
+    case 'Scripts':
+      var componentData = {
+        type: 'script',
+        label: component.label,
+        persistentData: {
+          fields: []
+        },
+        metadata: {
+          fieldTypes: {}
+        }
+      };
+      // Initialize script fields
+      var fields = component.data.classes.fields;
+      for(var f = 0; f < fields.length; ++f) {
+        // TODO: Check for visibility constraints
+        componentData.persistentData.fields.push({
+          value: getDefaultScriptFieldValue(fields[f].type),
+          name: fields[f].name,
+        });
+        componentData.metadata.fieldTypes[fields[f].name] = fields[f].type;
+      }
+      return componentData;
+      break;
+  }
+}
+
+/*
  * Entity editor menu
  */
 function setupEntityEditorMenu($scope, $timeout) {
@@ -169,7 +217,8 @@ function setupEntityEditorMenu($scope, $timeout) {
   };
   setupComponentMenu($scope, $timeout);
   $event.listen('addComponent', function(componentData) {
-    $scope.currentEntity.components.push({type: 'script', data: componentData});
+    var componentData = initializeComponent(componentData.menuItem, componentData.prefab);
+    $scope.currentEntity.components.push(componentData);
   });
 }
 
@@ -181,14 +230,6 @@ function setupEntityEditorMenu($scope, $timeout) {
  * Controller of the lauEditor
  */
 angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
-  $scope.awesomeThings = [
-    'HTML5 Boilerplate',
-    'AngularJS',
-    'Karma'
-  ];
-  $scope.lau = [2.0, 1.5];
-  $scope.projectFiles = [];
-
   // Setup main layout
   $(".container").layout({
     resizeWhileDragging: true,
@@ -204,4 +245,6 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
   // Setup project panel
   setupProjectPanel(window.interact, $scope, $timeout);
   setupEntityEditorMenu($scope, $timeout);
+  lau=$scope;
 });
+var lau;

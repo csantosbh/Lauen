@@ -8,7 +8,7 @@
  */
 angular.module('lauEditor')
   .directive('componentEditor', function ($templateRequest, $compile) {
-    function getTemplate(controllerType) {
+    function getTemplateName(controllerType) {
       switch(controllerType) {
         case 'transform':
           return 'views/directives/component_editors/transform_editor.html';
@@ -21,7 +21,7 @@ angular.module('lauEditor')
     return {
       restrict: 'E',
       link: function postLink(scope, element, attrs) {
-        $templateRequest(getTemplate(scope.component.type)).then(function(template){
+        $templateRequest(getTemplateName(scope.component.type)).then(function(template){
           element.html(template);
           $compile(element.contents())(scope);
         });
