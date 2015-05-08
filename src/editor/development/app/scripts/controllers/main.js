@@ -207,19 +207,33 @@ function initializeComponent(componentMenuItem, component) {
 }
 
 /*
- * Entity editor menu
+ * Game Object editor menu
  */
-function setupEntityEditorMenu($scope, $timeout) {
-  $scope.currentEntity = {
-    components: [
-      {type: 'transform', data: {x: 0, y: 0, z: 0, qx: 1, qy: 0, qz: 0, qw: 1}}
-    ]
-  };
+function setupGameObjectEditorMenu($scope, $timeout) {
+  $scope.currentGameObject = 0;
   setupComponentMenu($scope, $timeout);
   $event.listen('addComponent', function(componentData) {
     var componentData = initializeComponent(componentData.menuItem, componentData.prefab);
-    $scope.currentEntity.components.push(componentData);
+    $scope.gameObjects[$scope.currentGameObject].components.push(componentData);
   });
+}
+
+/*
+ * Hierarchy panel
+ */
+function setupHierarchyPanel($scope, $timeout) {
+  $scope.gameObjects = [{
+    name: 'Static Object',
+    components: [ {
+        type: 'transform',
+        position: null, // Will be set by the threejs canvas
+        rotation: null, // Will be set by the threejs canvas
+        scale: null, // Will be set by the threejs canvas
+    } ]
+  }];
+
+  // TODO broadcast this whenever a new game object is created
+  $event.broadcast('gameObjectCreated', 0);
 }
 
 /**
@@ -243,8 +257,9 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
   });
 
   // Setup project panel
+  setupHierarchyPanel($scope, $timeout);
   setupProjectPanel(window.interact, $scope, $timeout);
-  setupEntityEditorMenu($scope, $timeout);
+  setupGameObjectEditorMenu($scope, $timeout);
   lau=$scope;
 });
 var lau;

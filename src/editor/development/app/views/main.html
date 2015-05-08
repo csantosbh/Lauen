@@ -1,7 +1,9 @@
 <div class="ui-layout-center" id="center-container">
-  <div class="ui-layout-west">Hierarchy</div>
+  <div class="ui-layout-west">Hierarchy
+    <div ng-repeat="gameObject in gameObjects">{{gameObject.name}}</div>
+  </div>
   <div class="ui-layout-center">
-    <edit-canvas></edit-canvas>
+    <edit-canvas game-objects="{{gameObjects}}"></edit-canvas>
   </div>
   <div class="ui-layout-south" style="overflow-y: scroll" id="project-panel">
     <project-panel></project-panel>
@@ -9,5 +11,5 @@
 </div>
 <div class="ui-layout-north">Controls</div>
 <div class="ui-layout-east dropzone js-drop" id="drop1">
-  <entity-editor></entity-editor>
+  <game-object-editor></game-object-editor>
 </div>
