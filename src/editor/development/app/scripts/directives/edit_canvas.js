@@ -7,9 +7,11 @@
  * # editCanvas
  */
 angular.module('lauEditor')
-.directive('editCanvas', function () {
+.directive('editCanvas', function ($http, $q) {
   var scene, camera, renderer;
   var geometry, material;
+  var planeGeometry = new THREE.PlaneBufferGeometry(2.0, 2.0);;
+  console.log(planeGeometry);
 
   var gameObjects = [];
 
@@ -39,19 +41,42 @@ angular.module('lauEditor')
     }
   }
 
-  return {
-    restrict: 'E',
-    link: function postLink(scope, element, attrs) {
-      // TODO: Auto resize when window resizes
+  function initCanvas(containerElement) {
       scene = new THREE.Scene();
 
-      var width = element.width(), height = element.height();
+      var width = containerElement.width(), height = containerElement.height();
       camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
       camera.position.z = 1000;
 
       renderer = new THREE.WebGLRenderer();
       renderer.setSize( width, height );
-      element.append(renderer.domElement);
+      containerElement.append(renderer.domElement);
+
+      // Horizontal plane shader
+      var vsPromise = $http.get('shaders/horizontal_plane.vs');
+      var fsPromise = $http.get('shaders/horizontal_plane.fs');
+      $q.all([vsPromise, fsPromise]).then(function(shaders) {
+        var vs = shaders[0].data, fs = shaders[1].data;
+
+        var mat = new THREE.ShaderMaterial({
+          uniforms: {
+            color: {type: 'f', value: 1.0}
+          },
+          transparent: true,
+          vertexShader: vs,
+          fragmentShader: fs
+        });
+
+        var obj = new THREE.Mesh(planeGeometry, mat);
+        scene.add( obj );
+      });
+  }
+
+  return {
+    restrict: 'E',
+    link: function postLink(scope, element, attrs) {
+      // TODO: Auto resize when window resizes
+      initCanvas(element);
 
       geometry = new THREE.BoxGeometry( 200, 200, 200 );
       material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
