@@ -1,3 +1,5 @@
+'use strict';
+
 var $event = (function() {
   var events = {};
   var pendingBroadcasts = {};

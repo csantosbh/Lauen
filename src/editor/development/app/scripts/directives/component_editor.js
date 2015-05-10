@@ -12,15 +12,13 @@ angular.module('lauEditor')
       switch(controllerType) {
         case 'transform':
           return 'views/directives/component_editors/transform_editor.html';
-        break;
         case 'script':
           return 'views/directives/component_editors/script_editor.html';
-        break;
       }
     }
     return {
       restrict: 'E',
-      link: function postLink(scope, element, attrs) {
+      link: function postLink(scope, element) {
         $templateRequest(getTemplateName(scope.component.type)).then(function(template){
           element.html(template);
           $compile(element.contents())(scope);

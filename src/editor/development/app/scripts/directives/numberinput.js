@@ -45,30 +45,24 @@ angular.module('lauEditor').directive('numberInput', function () {
         }
       });
       // Handle mouse-based value changing
-      labelElement.bind('mousedown', function(downE) {
-        var $document = angular.element(document);
-        var prevMouse = {x: downE.pageX, y: downE.pageY};
+      labelElement.bind('mousedown', function() {
+        $canvas.requestPointerLock();
 
         // Catch mouse move event
         function mouseMoveDocument(moveE) {
-          var xDiff = moveE.pageX - prevMouse.x;
-          if(xDiff===0 && moveE.pageY===downE.pageY){
-            xDiff = moveE.pageX===0?-1:1;
-          }
-          xDiff *= attrs.sensitivity;
+          var xDiff = moveE.movementX * attrs.sensitivity;
 
           inputElement.val(parseFloat(inputElement.val())+xDiff);
           inputElement.change();
-          prevMouse.x = moveE.pageX, prevMouse.y = moveE.pageY;
-          moveE.preventDefault();
         }
-        $document.bind('mousemove', mouseMoveDocument);
+        document.addEventListener('mousemove', mouseMoveDocument);
 
         // Catch mouse up event
-        $document.bind('mouseup', function mouseUpDocument() {
+        document.addEventListener('mouseup', function mouseUpDocument() {
           // Don't need to keep these events bound
-          $document.unbind('mouseup', mouseUpDocument);
-          $document.unbind('mousemove', mouseMoveDocument);
+          document.removeEventListener('mouseup', mouseUpDocument);
+          document.removeEventListener('mousemove', mouseMoveDocument);
+          document.exitPointerLock();
         });
       });
     },

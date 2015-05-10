@@ -1,4 +1,5 @@
 'use strict';
+var $canvas;
 
 /**
  * @ngdoc directive
@@ -7,11 +8,9 @@
  * # editCanvas
  */
 angular.module('lauEditor')
-.directive('editCanvas', function ($http, $q) {
-  var scene, camera, renderer;
+.directive('editCanvas', function () {
+  var scene, camera, renderer, planeMesh = null;
   var geometry, material;
-  var planeGeometry = new THREE.PlaneBufferGeometry(2.0, 2.0);;
-  console.log(planeGeometry);
 
   var gameObjects = [];
 
@@ -23,7 +22,7 @@ angular.module('lauEditor')
   function addGameObject($scope, gameObjectId) {
     var components = $scope.gameObjects[gameObjectId].components;
     for(var i = 0; i < components.length; ++i) {
-      if(components[i].type == 'transform') {
+      if(components[i].type === 'transform') {
         // Only visualize the current game object IF it has a transform component
         var gameObjectData = {
           mesh: new THREE.Mesh( geometry, material ),
@@ -51,30 +50,14 @@ angular.module('lauEditor')
       renderer = new THREE.WebGLRenderer();
       renderer.setSize( width, height );
       containerElement.append(renderer.domElement);
-
-      // Horizontal plane shader
-      var vsPromise = $http.get('shaders/horizontal_plane.vs');
-      var fsPromise = $http.get('shaders/horizontal_plane.fs');
-      $q.all([vsPromise, fsPromise]).then(function(shaders) {
-        var vs = shaders[0].data, fs = shaders[1].data;
-
-        var mat = new THREE.ShaderMaterial({
-          uniforms: {
-            color: {type: 'f', value: 1.0}
-          },
-          transparent: true,
-          vertexShader: vs,
-          fragmentShader: fs
-        });
-
-        var obj = new THREE.Mesh(planeGeometry, mat);
-        scene.add( obj );
-      });
+      planeMesh = new THREE.GridHelper(1000.0, 100);
+      scene.add( planeMesh );
+      $canvas = renderer.domElement;
   }
 
   return {
     restrict: 'E',
-    link: function postLink(scope, element, attrs) {
+    link: function postLink(scope, element) {
       // TODO: Auto resize when window resizes
       initCanvas(element);
 

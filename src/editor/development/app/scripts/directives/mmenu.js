@@ -12,13 +12,12 @@ angular.module('lauEditor')
     var newMenu = '';
     for(var i in lvlElements) {
       if(lvlElements.hasOwnProperty(i)) {
+        var childArguments = callbackArguments.slice(0);
+        childArguments.push(i);
+
         if(lvlElements[i] instanceof Array) {
-          var childArguments = callbackArguments.slice(0);
-          childArguments.push(i);
           newMenu = newMenu+'<li><a href="#">'+i+'</a><ul>'+genMenu(lvlElements[i], childArguments)+'</ul></li>';
         } else {
-          var childArguments = callbackArguments.slice(0);
-          childArguments.push(i);
           newMenu = newMenu+'<li><a href="#" ng-click=\'elementSelected('+JSON.stringify(childArguments)+')\'>'+lvlElements[i].label+'</a></li>';
         }
       }
@@ -45,10 +44,10 @@ angular.module('lauEditor')
       elements: '=elements',
       callback: '=callback',
     },
-    link: function postLink(scope, element, attrs) {
+    link: function postLink(scope, element) {
       scope.elementSelected = function(i) {
         scope.callback(i);
-      }
+      };
 
       scope.$watch('elements', function() {
         // Delete old menu
