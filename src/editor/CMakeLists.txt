@@ -24,7 +24,7 @@ SET(NACL_LINK_LIBRARIES -lppapi_cpp -lppapi -lppapi_gles2)
 
 ##
 # Configure main target
-FILE(GLOB_RECURSE server_static_files "*.html" "*.nmf")
+set(server_static_files "dist/")
 FILE(GLOB_RECURSE cxx_canvas_files "*.cpp")
 
 ##
@@ -63,4 +63,4 @@ ADD_CUSTOM_TARGET(canvas ALL DEPENDS lau_canvas.pexe)
 ##
 # Installation
 INSTALL(FILES ${CMAKE_CURRENT_BINARY_DIR}/lau_canvas.pexe DESTINATION editor/)
-INSTALL(FILES ${server_static_files} DESTINATION editor/)
+INSTALL(DIRECTORY ${server_static_files} DESTINATION editor)

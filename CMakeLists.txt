@@ -20,12 +20,12 @@ INCLUDE_DIRECTORIES("src/")
 ##
 # Configure main target
 FILE(GLOB_RECURSE config_lau_files "config/*.cfg")
-FILE(GLOB_RECURSE py_server_files "src/server/*.py")
+FILE(GLOB py_server_files "src/server")
 
 ##
 # Add subprojects
 ADD_SUBDIRECTORY("src/editor")
 
 INSTALL(PROGRAMS src/main.py DESTINATION .)
-INSTALL(FILES ${py_server_files} DESTINATION server/)
+INSTALL(DIRECTORY ${py_server_files} DESTINATION ./)
 INSTALL(FILES ${config_lau_files} DESTINATION config/)

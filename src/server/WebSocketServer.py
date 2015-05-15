@@ -6,6 +6,8 @@ import gevent.pywsgi
 from ws4py.server.geventserver import WebSocketWSGIApplication, WebSocketWSGIHandler, WSGIServer
 from ws4py.websocket import EchoWebSocket
 
+import Event
+
 class ClientManager(object):
     def __init__(self):
         self.clients = []
@@ -35,28 +37,37 @@ class BroadcastWebSocket(EchoWebSocket):
     def opened(self):
         global clientManager
         import time
-        import json
-        self.cm = clientManager
-        self.cm.clients.append(self)
-        time.sleep(1)
-        self.send(json.dumps(dict(event='assetlist', files=GetCPPFilesFromFolder('/home/csantos/workspace/LauEngine/bin/assets/'))))
+        clientManager.clients.append(self)
+        #time.sleep(1)
+        # TODO: Move this to somewhere else (Files?) and broadcast a connected event
+        send('assetlist', dict(files=GetCPPFilesFromFolder('/home/csantos/workspace/LauEngine/bin/assets/')))
+        pass
 
     def received_message(self, m):
         # self.clients is set from within the server
         # and holds the list of all connected servers
         # we can dispatch to
-        for client in self.cm.clients:
-            client.send(m)
+        import json
+        msg = json.loads(str(m))
+        Event.broadcast(msg['event'], msg)
+        pass
 
     def closed(self, code, msg):
-        if self in self.cm.clients:
-            self.cm.clients.remove(self)
-            for client in self.cm.clients:
-                try:
-                    client.send('Mandando msg de close')
-                except:
-                    pass
+        global clientManager
+        if self in clientManager.clients:
+            clientManager.clients.remove(self)
+
+def send(event, message):
+    import json
+    msg = dict(message)
+    msg['event'] = event
+    msg = json.dumps(msg)
+    for client in clientManager.clients:
+        client.send(msg)
+        pass
+    pass
 
 def StartServer():
     server = WSGIServer(('localhost', 9001), WebSocketWSGIApplication(handler_cls=BroadcastWebSocket))
     server.serve_forever()
+    pass

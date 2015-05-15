@@ -132,9 +132,6 @@ function setupProjectPanel(interact, $scope, $timeout) {
       element.className = element.className.replace(new RegExp(className + ' *', 'g'), '');
     }
   }
-
-  // Start websocket connection with server and listen to file change events
-  //$socket.emit('evento', {doze: 12});
 }
 
 /*
@@ -255,6 +252,10 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
     resizeWhileDragging: true,
     south__size: 200,
   });
+
+  $scope.requestBuild = function() {
+    $socket.send(JSON.stringify({event: 'build'}));
+  }
 
   // Setup project panel
   setupHierarchyPanel($scope, $timeout);
