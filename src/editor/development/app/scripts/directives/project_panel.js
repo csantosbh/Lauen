@@ -11,6 +11,12 @@ angular.module('lauEditor')
     return {
       templateUrl: 'views/directives/project_panel.html',
       restrict: 'E',
+      // TODO: transclude includes the whole parent scope here. It would be better to just receive whatever I need to make the file panel, and isolate my own scope
       transclude: true,
+      link: function(scope, element, attrs) {
+        scope.getFileName = function(name) {
+          return name.substring(name.lastIndexOf('/')+1);
+        }
+      }
     };
   });

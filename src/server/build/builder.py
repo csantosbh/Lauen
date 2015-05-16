@@ -1,4 +1,5 @@
 from server import Event
+from server import Project
 
 # TODO: Move the build tools to a separate file
 cxx_flags=''
@@ -7,7 +8,9 @@ cxx_compiler='g++'
 
 def build_game(event_msg):
     from subprocess import call
-    call(cxx_compiler + ' ' + link_flags + ' assets/standard/main.cpp -o game', shell=True)
+    # TODO: Put the project folder in its own module
+    project_folder = Project.getProjectFolder()
+    call(cxx_compiler + ' ' + project_folder+'/assets/default_assets/main.cpp -o '+project_folder+'/game' + ' ' + link_flags, shell=True)
     pass
 
 def AutoBuild():
