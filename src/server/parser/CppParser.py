@@ -8,13 +8,10 @@ def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False, request
     output=[]
 
     # TODO: Get class namespace as well!
-    print requestedFile+ ' vs '+ str(node.location.file)
     if requestedFile != None and node.location.file != None and str(node.location.file) != requestedFile:
         return output
-    print 'proceeded!'
 
     if node.kind == CursorKind.CLASS_DECL:
-
         if not withinClassContext:
             childPragmas = []
             if len(pragmaList) > 0:
@@ -63,11 +60,18 @@ def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False, request
     pass
 
 def parseCPPFile(fileName):
-    from clang.cindex import Index, TokenKind
-    from pprint import pprint
+    from clang.cindex import Index, TokenKind, TranslationUnit
+    import re
 
     index = Index.create()
-    tu = index.parse(None, [fileName, '-std=c++11'])
+    fileContent = open(fileName,'r').read()
+    # Remove #include's from source files, to prevent clang
+    # from parsing them. I know this is a horrible solution,
+    # but clang will take forever to parse the files if they
+    # have headers, and it doesn't have an option for disabling
+    # recursive parsing.
+    fileContent = re.sub(r'^.*#include.*$', '', fileContent, 0, re.MULTILINE)
+    tu = index.parse(fileName, ['-std=c++11'], unsaved_files=[(fileName,fileContent)], options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
 
     # Get list of pragmas
     prevToken = None
@@ -83,7 +87,6 @@ def parseCPPFile(fileName):
         prevToken = token
 
     rtrn=parseCPPFileRec(tu.cursor, pragmaList, 0, False, fileName)
-    #pprint(rtrn)
 
     del tu
     del index
@@ -122,13 +125,3 @@ def GetSimpleClass(fileName):
 
     return simpleClass
 
-def main():
-    from pprint import pprint
-    #pprint(parseCPPFile(sys.argv[1]))
-    pprint(GetSimpleClass(sys.argv[1]))
-
-if __name__ == '__main__':
-    if len(sys.argv)!=2:
-        print sys.argv[0] + ' <file.cpp>'
-        exit()
-    main()

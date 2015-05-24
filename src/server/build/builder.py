@@ -11,7 +11,6 @@ cxx_compiler='g++'
 def generateComponentFactory(componentFiles):
     from mako.template import Template
 
-    print componentFiles
     project_folder = Project.getProjectFolder()
 
     template = open(project_folder+'/default_assets/Factories.hpy').read()
