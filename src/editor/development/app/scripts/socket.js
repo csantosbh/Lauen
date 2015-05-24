@@ -1,13 +1,24 @@
 'use strict';
 
-var $socket;
-// Wait 200ms so that everybody can subscribe to socket related events
-// TODO: wait for angularjs to finish instead
-setTimeout(function() {
-  $socket = new WebSocket('ws://localhost:9001');
-  $socket.onmessage = function(e) {
-    var evData = JSON.parse(e.data);
-    $event.broadcast(evData.event, evData);
+var $socket = (function() {
+  var socket = null;
+  function broadcast(event, message) {
+    socket.send(JSON.stringify({
+      event: event,
+      msg: message
+    }));
+  }
+  function connect() {
+    socket = new WebSocket('ws://localhost:9001');
+    socket.onmessage = function(e) {
+      var evData = JSON.parse(e.data);
+      $event.broadcast(evData.event, evData.msg);
+    };
+  }
+
+  return {
+    broadcast: broadcast,
+    connect: connect
   };
-}, 500);
+})();
 

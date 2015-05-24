@@ -16,7 +16,7 @@ def _loadAssetList():
     from server.io import Utils
 
     # Load list of assets
-    WebSocketServer.send('assetlist', dict(files=Utils.GetCPPFilesFromFolder(Project.getProjectFolder()+'/assets')))
+    WebSocketServer.send('assetlist', dict(files=Utils.ParseHPPFilesFromFolder(Project.getProjectFolder()+'/assets')))
     pass
 
 def _loadCurrentScene():

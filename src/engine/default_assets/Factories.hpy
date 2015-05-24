@@ -1,0 +1,71 @@
+// Do NOT edit!
+// Automatically generated!
+
+#pragma once
+
+#include <memory>
+#include <vector>
+
+#include <rapidjson/document.h>
+//!debug
+#include <rapidjson/filestream.h>
+#include <rapidjson/prettywriter.h>
+//!debug
+
+// TODO rename them to hpp
+#include "Component.hpp"
+#include "GameObject.hpp"
+% for component in components:
+#include "${component['path']}"
+% endfor
+
+namespace lau {
+
+using namespace std;
+
+shared_ptr<Component> componentFactory(const rapidjson::Value& serializedComponent) {
+	shared_ptr<Component> result;
+
+	// TODO: make sure all components have an id member
+	if(serializedComponent.HasMember("id")) {
+		switch(serializedComponent["id"].GetInt()) {
+			% for component in components:
+			case ${component['id']}:
+				const rapidjson::Value& fields = serializedComponent["fields"];
+
+				${component['class']}* ptr = new ${component['class']}();
+				% for f in range(0,len(component['fields'])):
+					% if component['fields'][f]['type']=='float':
+				ptr->${component['fields'][f]['name']} = fields[${f}]["value"].GetDouble();
+					% endif
+				% endfor
+				result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
+				break;
+			% endfor
+		}
+	}
+
+	return result;
+}
+
+vector<shared_ptr<GameObject>> gameObjectFactory(const rapidjson::Document& objects) {
+	vector<shared_ptr<GameObject>> result;
+	for(int i = 0; i < objects.Size(); ++i) {
+		shared_ptr<GameObject> obj(new GameObject());
+		const rapidjson::Value& components = objects[i]["components"];
+
+		for(int c = 0; c < components.Size(); ++c) {
+			shared_ptr<Component> component = componentFactory(components[c]);
+
+			// TODO assert that component cant be null?
+			if(component != NULL) {
+				obj->addComponent(component);
+			}
+		}
+
+		result.push_back(obj);
+	}
+	return result;
+}
+
+}

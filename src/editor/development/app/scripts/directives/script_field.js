@@ -19,8 +19,7 @@ angular.module('lauEditor')
   return {
     restrict: 'E',
     link: function postLink(scope, element) {
-      // The parent scope is defined in initializeComponent()
-      $templateRequest(getTemplateName(scope.$parent.component.metadata.fieldTypes[scope.field.name])).then(function(template){
+      $templateRequest(getTemplateName(scope.field.type)).then(function(template){
         element.html(template);
         $compile(element.contents())(scope);
       });

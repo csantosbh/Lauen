@@ -1,6 +1,7 @@
 <div class="ui-layout-center" id="center-container">
   <div class="ui-layout-west">Hierarchy
-    <div ng-repeat="gameObject in gameObjects">{{gameObject.name}}</div>
+    <div ng-repeat="gameObject in gameObjects" ng-click="selectGameObject($index)">{{gameObject.name}}</div>
+    <br/><input type="button" ng-click="createGameObject()" value="+game object" />
   </div>
   <div class="ui-layout-center">
     <edit-canvas game-objects="{{gameObjects}}"></edit-canvas>
@@ -9,7 +10,7 @@
     <project-panel></project-panel>
   </div>
 </div>
-<div class="ui-layout-north">Controls <input type="button" ng-click="requestBuild()" value="Build" /></div>
+<div class="ui-layout-north">Controls <input type="button" ng-click="requestBuild()" value="Build" /> <input type="button" ng-click="requestSave()" value="Save" /></div>
 <div class="ui-layout-east dropzone js-drop" id="drop1">
   <game-object-editor></game-object-editor>
 </div>

@@ -3,11 +3,18 @@ import sys
 
 # Iterate over the source file, retrieving all classes and their
 # public fields and methods
-def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False):
+def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False, requestedFile=None):
     from clang.cindex import CursorKind, AccessSpecifier
     output=[]
 
+    # TODO: Get class namespace as well!
+    print requestedFile+ ' vs '+ str(node.location.file)
+    if requestedFile != None and node.location.file != None and str(node.location.file) != requestedFile:
+        return output
+    print 'proceeded!'
+
     if node.kind == CursorKind.CLASS_DECL:
+
         if not withinClassContext:
             childPragmas = []
             if len(pragmaList) > 0:
@@ -16,7 +23,7 @@ def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False):
 
             childNodes = []
             for child in node.get_children():
-                childNodes += parseCPPFileRec(child, pragmaList, depth+1, True)
+                childNodes += parseCPPFileRec(child, pragmaList, depth+1, True, requestedFile)
 
             node = {
                 'kind': node.kind.name,
@@ -47,7 +54,7 @@ def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False):
     else:
         childNodes = []
         for child in node.get_children():
-            childNodes += parseCPPFileRec(child, pragmaList, depth+1, False)
+            childNodes += parseCPPFileRec(child, pragmaList, depth+1, False, requestedFile)
 
         if len(childNodes)>0:
             output+=childNodes
@@ -57,9 +64,10 @@ def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False):
 
 def parseCPPFile(fileName):
     from clang.cindex import Index, TokenKind
+    from pprint import pprint
 
     index = Index.create()
-    tu = index.parse(None, [fileName])
+    tu = index.parse(None, [fileName, '-std=c++11'])
 
     # Get list of pragmas
     prevToken = None
@@ -74,13 +82,30 @@ def parseCPPFile(fileName):
             nextIsPragma=False
         prevToken = token
 
-    rtrn=parseCPPFileRec(tu.cursor, pragmaList)
+    rtrn=parseCPPFileRec(tu.cursor, pragmaList, 0, False, fileName)
+    #pprint(rtrn)
 
     del tu
     del index
     return rtrn
 
-def GetSimpleClasses(fileName):
+_className2Id = dict()
+_classId2Name = dict()
+
+def GetIdFromClass(className):
+    from random import randint
+    if not className in _className2Id:
+        candidateId = randint(0,1e9)
+        while candidateId in _classId2Name:
+            candidateId = randint(0,1e9)
+            pass
+        _className2Id[className] = candidateId
+        _classId2Name[candidateId] = className
+        pass
+
+    return _className2Id[className]
+
+def GetSimpleClass(fileName):
     parsedFile = parseCPPFile(fileName)
     if len(parsedFile) == 0:
         return dict()
@@ -88,6 +113,7 @@ def GetSimpleClasses(fileName):
     simpleClass = dict()
     if parsedFile[0]['kind'] == 'CLASS_DECL':
         simpleClass['class'] = parsedFile[0]['name']
+        simpleClass['id'] = GetIdFromClass(simpleClass['class'])
         simpleClass['fields'] = []
         for child in parsedFile[0]['children']:
             if child['kind'] == 'FIELD_DECL':

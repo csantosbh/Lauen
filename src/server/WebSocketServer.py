@@ -22,7 +22,7 @@ class BroadcastWebSocket(EchoWebSocket):
         global clientManager
         clientManager.clients.append(self)
         # TODO: Move this to somewhere else (Files?) and broadcast a connected event
-        send('assetlist', dict(files=Utils.GetCPPFilesFromFolder(Project.getProjectFolder()+'/assets')))
+        Event.broadcast('clientConnected', None)
         pass
 
     def received_message(self, m):
@@ -31,7 +31,7 @@ class BroadcastWebSocket(EchoWebSocket):
         # we can dispatch to
         import json
         msg = json.loads(str(m))
-        Event.broadcast(msg['event'], msg)
+        Event.broadcast(msg['event'], msg['msg'])
         pass
 
     def closed(self, code, msg):
@@ -41,8 +41,7 @@ class BroadcastWebSocket(EchoWebSocket):
 
 def send(event, message):
     import json
-    msg = dict(message)
-    msg['event'] = event
+    msg = dict(event=event, msg=message)
     msg = json.dumps(msg)
     for client in clientManager.clients:
         client.send(msg)

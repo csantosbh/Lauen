@@ -138,20 +138,23 @@ function setupProjectPanel(interact, $scope, $timeout) {
  * Component menu
  */
 function setupComponentMenu($scope, $timeout) {
-  $scope.componentTypes = {'Scripts':[]};
-  $scope.menuPickup=function(item){
+  $scope.componentTypes = {
+    'Basic': [{label:'Transform', flyweight: null, type: 'transform' }],
+    'Scripts':[]
+  };
+
+  $scope.menuPickup = function(item){
     // The item array contains the menu item selected
-    $event.broadcast('addComponent', {
-      menuItem: item,
-      prefab: $scope.componentTypes[item[0]][item[1]]
-    });
+    $event.broadcast('addComponent', $scope.componentTypes[item[0]][item[1]]);
   };
   $event.listen('assetlist', function(fileListEvent) {
+    console.log('vem lista'+fileListEvent);
     $timeout(function() {
       for(var i=0; i < fileListEvent.files.length; ++i) {
         $scope.componentTypes['Scripts'].push({
-          label: fileListEvent.files[i].name,
-          data: fileListEvent.files[i]
+          label: LAU.IO.getFileNameFromPath(fileListEvent.files[i].path),
+          flyweight: fileListEvent.files[i],
+          type: 'script'
         });
       }
     });
@@ -159,59 +162,16 @@ function setupComponentMenu($scope, $timeout) {
 }
 
 /*
- * Initialize script fields
- */
-function getDefaultScriptFieldValue(type) {
-  // TODO: Document initialization rules for ALL types of controllers
-  switch(type) {
-    case 'int':
-    case 'float':
-      return 0;
-    break;
-  }
-}
-
-/*
- * Initialize new components
- */
-function initializeComponent(componentMenuItem, component) {
-  // The switch rules match the component menu label
-  switch(componentMenuItem[0]) {
-    case 'Scripts':
-      var componentData = {
-        type: 'script',
-        label: component.label,
-        persistentData: {
-          fields: []
-        },
-        metadata: {
-          fieldTypes: {}
-        }
-      };
-      // Initialize script fields
-      var fields = component.data.classes.fields;
-      for(var f = 0; f < fields.length; ++f) {
-        // TODO: Check for visibility constraints
-        componentData.persistentData.fields.push({
-          value: getDefaultScriptFieldValue(fields[f].type),
-          name: fields[f].name,
-        });
-        componentData.metadata.fieldTypes[fields[f].name] = fields[f].type;
-      }
-      return componentData;
-      break;
-  }
-}
-
-/*
  * Game Object editor menu
  */
 function setupGameObjectEditorMenu($scope, $timeout) {
-  $scope.currentGameObject = 0;
+  $scope.currentGameObjectId = 0;
   setupComponentMenu($scope, $timeout);
-  $event.listen('addComponent', function(componentData) {
-    var componentData = initializeComponent(componentData.menuItem, componentData.prefab);
-    $scope.gameObjects[$scope.currentGameObject].components.push(componentData);
+  $event.listen('addComponent', function(eventData) {
+    if($scope.currentGameObjectId < 0) return;
+
+    var componentData = LAU.Components.componentFactory(eventData.type, eventData.flyweight);
+    $scope.gameObjects[$scope.currentGameObjectId].components.push(componentData);
   });
 }
 
@@ -219,18 +179,81 @@ function setupGameObjectEditorMenu($scope, $timeout) {
  * Hierarchy panel
  */
 function setupHierarchyPanel($scope, $timeout) {
-  $scope.gameObjects = [{
-    name: 'Static Object',
-    components: [ {
-        type: 'transform',
-        position: null, // Will be set by the threejs canvas
-        rotation: null, // Will be set by the threejs canvas
-        scale: null, // Will be set by the threejs canvas
-    } ]
-  }];
+  $scope.gameObjects = [];
+  $scope.createGameObject = function() {
+    $scope.gameObjects.push(new LAU.GameObject());
+  }
+  $scope.selectGameObject = function(i) {
+    $scope.currentGameObjectId = i;
+  }
+}
 
-  // TODO broadcast this whenever a new game object is created
-  $event.broadcast('gameObjectCreated', 0);
+// Menu bar (File, Edit, Help, etc..)
+function setupMenuBar($scope, $timeout) {
+  $scope.requestBuild = function() {
+    $socket.broadcast('build', null);
+  }
+  $scope.requestSave = function() {
+    var exported = [];
+    for(var g = 0; g < $scope.gameObjects.length; ++g) {
+      var gameObjComps = $scope.gameObjects[g].components;
+      var exportedComps = [];
+      for(var c = 0; c < gameObjComps.length; ++c) {
+        exportedComps.push(gameObjComps[c].export());
+      }
+      exported.push({
+        name: $scope.gameObjects[g].name,
+        components: exportedComps
+      });
+    }
+    $socket.broadcast('save', exported);
+  }
+}
+
+// Handle IO events
+function setupIOEvents($scope, $timeout) {
+  function handleIOEvents(io_event) {
+    var sceneData = JSON.parse(io_event);
+
+    $timeout(function() {
+      // Setup game objects
+      for(var i = 0; i < sceneData.length; ++i) {
+        var goComps = [];
+        // TODO create gameObject class
+        var comps = sceneData[i].components;
+        for(var c = 0; c < comps.length; ++c) {
+          var comp = LAU.Components.componentFactory(comps[c].type, comps[c], $scope, $timeout);
+          if(comp == null)
+            continue;
+          goComps.push(comp);
+        }
+
+        $scope.gameObjects.push(new LAU.GameObject(sceneData[i].name, goComps));
+
+        $event.broadcast('gameObjectCreated', i);
+      }
+
+      // TODO remove line below when the hierarchy panel is correctly created
+      $scope.currentGameObjectId = $scope.gameObjects.length-1;
+    });
+  }
+
+  $event.listen('loadCurrentScene', handleIOEvents);
+}
+
+// Display errors/warnings/etc
+function setupConsole($scope, $timeout) {
+  $event.listen('compilationStatus', function(eMsg) {
+    console.clear();
+    console.log(eMsg.message);
+  });
+  $event.listen('executionMessage', function(eMsg) {
+    console.log(eMsg);
+  });
+  $event.listen('executionStatus', function(eMsg) {
+    console.clear();
+    console.log(eMsg.message);
+  });
 }
 
 /**
@@ -253,14 +276,20 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
     south__size: 200,
   });
 
-  $scope.requestBuild = function() {
-    $socket.send(JSON.stringify({event: 'build'}));
-  }
-
   // Setup project panel
   setupHierarchyPanel($scope, $timeout);
   setupProjectPanel(window.interact, $scope, $timeout);
   setupGameObjectEditorMenu($scope, $timeout);
+  setupMenuBar($scope, $timeout);
+  setupIOEvents($scope, $timeout);
+  setupConsole($scope, $timeout);
   lau=$scope;
+
+  // Inject the LAU namespace into the global scope
+  $scope.LAU = LAU;
+
+  // Spin the wheel! By connecting to the server, we'll
+  // trigger communication between modules.
+  $socket.connect();
 });
 var lau;

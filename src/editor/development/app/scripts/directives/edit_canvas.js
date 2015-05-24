@@ -8,7 +8,7 @@ var $canvas;
  * # editCanvas
  */
 angular.module('lauEditor')
-.directive('editCanvas', function () {
+.directive('editCanvas', function ($timeout) {
   var scene, camera, renderer, planeMesh = null;
   var geometry, material;
 
@@ -19,22 +19,25 @@ angular.module('lauEditor')
     requestAnimationFrame(animate);
   }
 
+  function registerGameObject(transformComponent) {
+    var gameObjectData = {
+      mesh: new THREE.Mesh( geometry, material ),
+    };
+    // Bind transform to UI
+    transformComponent.rotation = gameObjectData.mesh.rotation;
+    transformComponent.position = gameObjectData.mesh.position;
+    transformComponent.scale = gameObjectData.mesh.scale;
+
+    scene.add( gameObjectData.mesh );
+    gameObjects.push(gameObjectData);
+  }
+
   function addGameObject($scope, gameObjectId) {
     var components = $scope.gameObjects[gameObjectId].components;
     for(var i = 0; i < components.length; ++i) {
+      // Only visualize the current game object IF it has a transform component
       if(components[i].type === 'transform') {
-        // Only visualize the current game object IF it has a transform component
-        var gameObjectData = {
-          mesh: new THREE.Mesh( geometry, material ),
-        };
-
-        // Bind transform to UI
-        components[i].rotation = gameObjectData.mesh.rotation;
-        components[i].position = gameObjectData.mesh.position;
-        components[i].scale = gameObjectData.mesh.scale;
-
-        scene.add( gameObjectData.mesh );
-        gameObjects.push(gameObjectData);
+        registerGameObject(components[i]);
         break;
       }
     }
@@ -134,8 +137,8 @@ angular.module('lauEditor')
       geometry = new THREE.BoxGeometry( 200, 200, 200 );
       material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
 
-      $event.listen('gameObjectCreated', function(gameObjectId) {
-        addGameObject(scope, gameObjectId);
+      $event.listen('transformComponentAdded', function(evData) {
+        registerGameObject(evData);
       });
 
       animate();
