@@ -50,11 +50,11 @@ LAU.Components = (function() {
     this.fields = [];
 
     if(componentFlyWeight == null) return;
-    console.log(componentFlyWeight);
 
     this.id = componentFlyWeight.id;
     this.class = componentFlyWeight.class;
     this.path = componentFlyWeight.path;
+    this.namespace = componentFlyWeight.namespace;
 
     // Initialize script fields
     var givenFields = componentFlyWeight.fields;
@@ -82,6 +82,7 @@ LAU.Components = (function() {
       return {
         type: this.type,
         path: this.path,
+        namespace: this.namespace,
         id: this.id,
         fields: exported_fields
       };

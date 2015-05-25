@@ -3,33 +3,55 @@ import sys
 
 # Iterate over the source file, retrieving all classes and their
 # public fields and methods
-def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False, requestedFile=None):
+def parseCPPFileChildren(output, node, pragmaList, context):
+    childNodes = []
+    for child in node.get_children():
+        childNodes += parseCPPFileRec(child, pragmaList, context)
+
+    if len(childNodes)>0:
+        output+=childNodes
+        pass
+    pass
+
+def parseCPPFileRec(node, pragmaList, context=dict()):
     from clang.cindex import CursorKind, AccessSpecifier
     output=[]
 
     # TODO: Get class namespace as well!
-    if requestedFile != None and node.location.file != None and str(node.location.file) != requestedFile:
+    if node.kind != CursorKind.TRANSLATION_UNIT and str(node.location.file) != context['requestedFileName']:
         return output
 
-    if node.kind == CursorKind.CLASS_DECL:
-        if not withinClassContext:
+    if node.kind == CursorKind.NAMESPACE:
+        subContext = context.copy()
+        if len(subContext['currentNameSpace']) == 0:
+            subContext['currentNameSpace'] = node.spelling;
+        else:
+            subContext['currentNameSpace'] = subContext['currentNameSpace'] + '::' + node.spelling
+            pass
+        parseCPPFileChildren(output, node, pragmaList, subContext)
+    elif node.kind == CursorKind.CLASS_DECL:
+        if not context['withinClassContext']:
             childPragmas = []
             if len(pragmaList) > 0:
                 while len(pragmaList)>0 and pragmaList[0]['line'] < node.extent.start.line:
                     childPragmas.append(pragmaList.pop(0)['identifier'])
 
             childNodes = []
+            subContext = context.copy()
+            subContext['depth'] = context['depth']+1
+            subContext['withinClassContext'] = True
             for child in node.get_children():
-                childNodes += parseCPPFileRec(child, pragmaList, depth+1, True, requestedFile)
+                childNodes += parseCPPFileRec(child, pragmaList, subContext)
 
             node = {
                 'kind': node.kind.name,
                 'name': node.spelling,
                 'children': childNodes,
                 'pragmas': childPragmas,
+                'namespace': context['currentNameSpace'],
             }
             output.append(node)
-    elif node.kind == CursorKind.FIELD_DECL or (node.kind == CursorKind.FUNCTION_DECL and withinClassContext):
+    elif node.kind == CursorKind.FIELD_DECL or (node.kind == CursorKind.FUNCTION_DECL and context['withinClassContext']):
         childPragmas = []
         if len(pragmaList) > 0:
             while len(pragmaList) > 0 and pragmaList[0]['line'] < node.extent.start.line:
@@ -49,12 +71,10 @@ def parseCPPFileRec(node, pragmaList, depth=0, withinClassContext=False, request
 
         output.append(dictNode)
     else:
-        childNodes = []
-        for child in node.get_children():
-            childNodes += parseCPPFileRec(child, pragmaList, depth+1, False, requestedFile)
-
-        if len(childNodes)>0:
-            output+=childNodes
+        subContext = context.copy()
+        subContext['depth'] = context['depth']+1
+        parseCPPFileChildren(output, node, pragmaList, subContext)
+        pass
 
     return output
     pass
@@ -86,7 +106,8 @@ def parseCPPFile(fileName):
             nextIsPragma=False
         prevToken = token
 
-    rtrn=parseCPPFileRec(tu.cursor, pragmaList, 0, False, fileName)
+    parseContext=dict(depth=0,withinClassContext=False,requestedFileName=fileName,currentNameSpace='')
+    rtrn=parseCPPFileRec(tu.cursor, pragmaList, parseContext)
 
     del tu
     del index
@@ -108,6 +129,7 @@ def GetIdFromClass(className):
 
     return _className2Id[className]
 
+# Get only what matters from the parseCPPFile function
 def GetSimpleClass(fileName):
     parsedFile = parseCPPFile(fileName)
     if len(parsedFile) == 0:
@@ -117,6 +139,7 @@ def GetSimpleClass(fileName):
     if parsedFile[0]['kind'] == 'CLASS_DECL':
         simpleClass['class'] = parsedFile[0]['name']
         simpleClass['id'] = GetIdFromClass(simpleClass['class'])
+        simpleClass['namespace']  = parsedFile[0]['namespace']
         simpleClass['fields'] = []
         for child in parsedFile[0]['children']:
             if child['kind'] == 'FIELD_DECL':

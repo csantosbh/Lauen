@@ -148,7 +148,6 @@ function setupComponentMenu($scope, $timeout) {
     $event.broadcast('addComponent', $scope.componentTypes[item[0]][item[1]]);
   };
   $event.listen('assetlist', function(fileListEvent) {
-    console.log('vem lista'+fileListEvent);
     $timeout(function() {
       for(var i=0; i < fileListEvent.files.length; ++i) {
         $scope.componentTypes['Scripts'].push({

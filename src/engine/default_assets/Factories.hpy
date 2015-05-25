@@ -33,7 +33,7 @@ shared_ptr<Component> componentFactory(const rapidjson::Value& serializedCompone
 			case ${component['id']}:
 				const rapidjson::Value& fields = serializedComponent["fields"];
 
-				${component['class']}* ptr = new ${component['class']}();
+				${component['namespace']}::${component['class']}* ptr = new ${component['namespace']}::${component['class']}();
 				% for f in range(0,len(component['fields'])):
 					% if component['fields'][f]['type']=='float':
 				ptr->${component['fields'][f]['name']} = fields[${f}]["value"].GetDouble();
