@@ -8,7 +8,7 @@ from ws4py.websocket import EchoWebSocket
 
 ###
 import Event
-import Project
+from project import Project
 from io import Utils
 ###
 

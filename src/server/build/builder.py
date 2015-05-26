@@ -1,5 +1,5 @@
 from server import Event
-from server import Project
+from server.project import Project
 from server import WebSocketServer
 from server import io
 

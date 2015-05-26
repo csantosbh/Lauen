@@ -207,6 +207,20 @@ function setupMenuBar($scope, $timeout) {
     }
     $socket.broadcast('save', exported);
   }
+
+  var isRequestingProject = false; // Multi-clock lock
+  $scope.requestNewProject = function() {
+    if(!isRequestingProject) {
+      isRequestingProject = true;
+      $rpc.call('createNewProject', null, function(folderName) {
+        if(folderName.length > 0) {
+          console.log('vou criar em '+folderName);
+        }
+        isRequestingProject = false;
+      });
+    }
+    // TODO clear current project
+  }
 }
 
 // Handle IO events
