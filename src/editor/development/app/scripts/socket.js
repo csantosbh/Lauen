@@ -2,7 +2,10 @@
 
 var $socket = (function() {
   var socket = null;
+  var publicSocketObj;
+
   function broadcast(event, message) {
+    console.log('sending:'+JSON.stringify({ event: event, msg: message }));
     socket.send(JSON.stringify({
       event: event,
       msg: message
@@ -14,11 +17,32 @@ var $socket = (function() {
       var evData = JSON.parse(e.data);
       $event.broadcast(evData.event, evData.msg);
     };
+    socket.onopen = function() {
+      publicSocketObj.broadcast = broadcast;
+      // Broadcast pending messages
+      for(var i in pendingBroadcasts) {
+        if(pendingBroadcasts.hasOwnProperty(i)) {
+          for(var j = 0; j < pendingBroadcasts[i].length; ++j) {
+            broadcast(i, pendingBroadcasts[i][j]);
+          }
+        }
+      }
+      pendingBroadcasts = null;
+    }
+  }
+  var pendingBroadcasts = {};
+  function requestBroadcast(event, message) {
+    if(!pendingBroadcasts.hasOwnProperty(event))
+      pendingBroadcasts[event] = [];
+
+    pendingBroadcasts[event].push(message);
   }
 
-  return {
-    broadcast: broadcast,
+  publicSocketObj = {
+    broadcast: requestBroadcast,
     connect: connect
   };
+
+  return publicSocketObj;
 })();
 

@@ -1,5 +1,8 @@
 from server import RPC
 
+def getRecentProjects(evData):
+    return ['/home/csantos/workspace/LauEngine/']
+
 def createNewProject(evData):
     from Tkinter import Tk
     from ttk import Style
@@ -11,4 +14,5 @@ def createNewProject(evData):
     in_path = tkFileDialog.askdirectory()
     return in_path
 
-RPC.listen('createNewProject', createNewProject)
+RPC.listen(createNewProject)
+RPC.listen(getRecentProjects)

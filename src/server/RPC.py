@@ -2,11 +2,11 @@ from server import Event
 from server import WebSocketServer
 
 procedures={}
-def listen(procedureName, callback):
-    if procedures.has_key(procedureName):
-        print 'ERROR: Procedure ' + procedureName + ' already registered!'
+def listen(callback):
+    if procedures.has_key(callback.__name__):
+        print 'ERROR: Procedure ' + callback.__name__ + ' already registered!'
         pass
-    procedures[procedureName] = callback
+    procedures[callback.__name__] = callback
     pass
 
 def _RPCHandler(event):

@@ -1,4 +1,5 @@
 from server import Event
+from server import RPC
 from server.project import Project
 from server import WebSocketServer
 
@@ -12,12 +13,11 @@ def saveScene(sceneData):
     f.close()
     pass
 
-def _loadAssetList():
+def getAssetList(evData):
     from server.io import Utils
 
     # Load list of assets
-    WebSocketServer.send('assetlist', dict(files=Utils.ParseHPPFilesFromFolder(Project.getProjectFolder()+'/assets')))
-    pass
+    return dict(files=Utils.ParseHPPFilesFromFolder(Project.getProjectFolder()+'/assets'))
 
 def _loadCurrentScene():
     # TODO define the output name from the editor
@@ -35,9 +35,9 @@ def _loadCurrentScene():
     pass
 
 def loadEditor(e):
-    _loadAssetList()
     _loadCurrentScene()
     pass
 
 Event.listen('save', saveScene)
 Event.listen('clientConnected', loadEditor)
+RPC.listen(getAssetList)

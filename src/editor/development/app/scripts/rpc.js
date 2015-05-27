@@ -14,6 +14,7 @@ var $rpc = (function() {
   }
 
   function gotRPCAnswer(answer) {
+    console.log(answer);
     pendingBroadcasts[answer.to](answer.result);
     delete pendingBroadcasts[answer.to];
   }

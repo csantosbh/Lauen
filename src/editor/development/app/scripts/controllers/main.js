@@ -5,11 +5,11 @@
  */
 function setupProjectPanel(interact, $scope, $timeout) {
   $scope.projectFiles = [];
-  $event.listen('assetlist', function(e) {
+  $rpc.call('getAssetList', null, function(assetList) {
     // Instead of scope.$apply, which may not work if the
     // $digest is already running, use $timeout
     $timeout(function() {
-      $scope.projectFiles = e.files;
+      $scope.projectFiles = assetList.files;
     });
   });
 
@@ -189,38 +189,55 @@ function setupHierarchyPanel($scope, $timeout) {
 
 // Menu bar (File, Edit, Help, etc..)
 function setupMenuBar($scope, $timeout) {
-  $scope.requestBuild = function() {
-    $socket.broadcast('build', null);
-  }
-  $scope.requestSave = function() {
-    var exported = [];
-    for(var g = 0; g < $scope.gameObjects.length; ++g) {
-      var gameObjComps = $scope.gameObjects[g].components;
-      var exportedComps = [];
-      for(var c = 0; c < gameObjComps.length; ++c) {
-        exportedComps.push(gameObjComps[c].export());
-      }
-      exported.push({
-        name: $scope.gameObjects[g].name,
-        components: exportedComps
-      });
-    }
-    $socket.broadcast('save', exported);
-  }
+  // Load list of recent projects
+  $rpc.call('getRecentProjects', null, function(recentProjects) {
+    $timeout(function() {
+      $scope.menuBar.recentProjects = recentProjects;
+    });
+  });
 
-  var isRequestingProject = false; // Multi-clock lock
-  $scope.requestNewProject = function() {
-    if(!isRequestingProject) {
-      isRequestingProject = true;
-      $rpc.call('createNewProject', null, function(folderName) {
-        if(folderName.length > 0) {
-          console.log('vou criar em '+folderName);
+  // TODO load list of recent projects
+  var isRequestingProject = false; // Multi-click lock
+  $scope.menuBar = {
+    recentProjects: [],
+    requestBuild: function() {
+      $socket.broadcast('build', null);
+    },
+    requestSave: function() {
+      var exported = [];
+      for(var g = 0; g < $scope.gameObjects.length; ++g) {
+        var gameObjComps = $scope.gameObjects[g].components;
+        var exportedComps = [];
+        for(var c = 0; c < gameObjComps.length; ++c) {
+          exportedComps.push(gameObjComps[c].export());
         }
-        isRequestingProject = false;
-      });
+        exported.push({
+          name: $scope.gameObjects[g].name,
+          components: exportedComps
+        });
+      }
+      $socket.broadcast('save', exported);
+    },
+    requestLoadProject: function(path) {
+      if(path.length > 0) {
+        console.log(path);
+      } else {
+        // TODO ask for path
+      }
+    },
+    requestNewProject: function() {
+      if(!isRequestingProject) {
+        isRequestingProject = true;
+        $rpc.call('createNewProject', null, function(folderName) {
+          if(folderName.length > 0) {
+            console.log('vou criar em '+folderName);
+          }
+          isRequestingProject = false;
+        });
+      }
+      // TODO clear current project
     }
-    // TODO clear current project
-  }
+  };
 }
 
 // Handle IO events
@@ -277,8 +294,10 @@ function setupConsole($scope, $timeout) {
  * Controller of the lauEditor
  */
 angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
+  $socket.connect();
+
   // Setup main layout
-  $(".container").layout({
+  $("#main-wnd-container").layout({
     resizeWhileDragging: true,
     north__spacing_open: 0,
     north__size: 50,
@@ -300,9 +319,5 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
 
   // Inject the LAU namespace into the global scope
   $scope.LAU = LAU;
-
-  // Spin the wheel! By connecting to the server, we'll
-  // trigger communication between modules.
-  $socket.connect();
 });
 var lau;
