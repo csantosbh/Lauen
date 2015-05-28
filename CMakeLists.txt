@@ -19,7 +19,6 @@ INCLUDE_DIRECTORIES("src/")
 
 ##
 # Configure main target
-FILE(GLOB_RECURSE config_lau_files "config/*.cfg")
 FILE(GLOB py_server_files "src/server")
 
 ##
@@ -31,4 +30,3 @@ ADD_SUBDIRECTORY("src/engine")
 # Configure installation
 INSTALL(PROGRAMS src/main.py DESTINATION .)
 INSTALL(DIRECTORY ${py_server_files} DESTINATION ./)
-INSTALL(FILES ${config_lau_files} DESTINATION config/)
