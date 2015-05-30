@@ -3,8 +3,6 @@ from server.project import Project
 from server import WebSocketServer
 from server import io
 
-# TODO: Move the build tools to a separate file
-cxx_flags='-I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/'
 link_flags='-rdynamic -lglfw3 -lglfw3 -lrt -lXrandr -lXinerama -lXi -lXcursor -lGL -lm -ldl -lXrender -ldrm -lXdamage -lX11-xcb -lxcb-glx -lxcb-dri2 -lxcb-dri3 -lxcb-present -lxcb-sync -lxshmfence -lXxf86vm -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lGLEW'
 cxx_compiler='g++'
 
@@ -37,6 +35,10 @@ def run_game(path, workFolder):
 
 def build_game(event_msg):
     import subprocess
+
+	# TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
+    cxx_flags='-I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/'
+
     project_folder = Project.getProjectFolder()
     compilationStatus = dict(returncode=0, message='')
     try:

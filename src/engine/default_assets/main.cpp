@@ -122,7 +122,7 @@ void gameInit() {
 	
 	// Load game objects
 	rapidjson::Document serializedGameObjects;
-    string scene = utils::io::readFile("scene.json");
+    string scene = utils::io::readFile("scenes/scene0.json");
 	serializedGameObjects.Parse(scene.c_str());
 	gameObjects = gameObjectFactory(serializedGameObjects);
 }
@@ -168,7 +168,7 @@ void gameLoop() {
             lag -= MS_PER_FRAME;
         }
 
-        cout << "lag = " <<lag<< "/" << MAXIMUM_LAG<< endl;
+        //cout << "lag = " <<lag<< "/" << MAXIMUM_LAG<< endl;
 
         /* Render here */
         draw(lag/MS_PER_FRAME);

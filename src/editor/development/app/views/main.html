@@ -6,7 +6,7 @@
   <div class="ui-layout-center">
     <edit-canvas game-objects="{{gameObjects}}"></edit-canvas>
   </div>
-  <div class="ui-layout-south" style="overflow-y: scroll" id="project-panel">
+  <div class="ui-layout-south scroll-y" id="project-panel">
     <project-panel></project-panel>
   </div>
 </div>
@@ -14,6 +14,6 @@
   <menu-bar></menu-bar>
   <input type="button" ng-click="menuBar.requestBuild()" value="Build" />
 </div>
-<div class="ui-layout-east dropzone js-drop" id="drop1">
+<div class="ui-layout-east dropzone js-drop scroll-y" id="drop1">
   <game-object-editor></game-object-editor>
 </div>

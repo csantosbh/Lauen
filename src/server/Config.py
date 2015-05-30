@@ -1,6 +1,4 @@
-import ConfigParser, os
-import json
-import collections
+import os, sys, json, collections
 
 defaults=dict(
   DEFAULT=dict(
@@ -22,7 +20,11 @@ def _update(d, u):
     return d
 
 def _initialize():
-    user_config = json.loads(open(os.path.expanduser('~/.laurc'), 'r').read())
+    try:
+        user_config = json.loads(open(os.path.expanduser('~/.laurc'), 'r').read())
+    except IOError:
+        user_config = {}
+        pass
     config = _update(defaults, user_config)
     open(os.path.expanduser('~/.laurc'), 'w').write(json.dumps(config, indent=2))
     pass
@@ -45,5 +47,11 @@ def set(section, field, value):
     config[section][field] = value
     open(os.path.expanduser('~/.laurc'), 'w').write(json.dumps(config, indent=2))
     pass
+
+_env={
+    'install_location': os.path.dirname(os.path.realpath(sys.argv[0]))
+}
+def env(section):
+    return _env[section]
 
 _initialize()

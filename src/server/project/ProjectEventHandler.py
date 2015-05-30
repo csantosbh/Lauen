@@ -1,30 +1,58 @@
-from server import RPC
-from server import Config
+from Tkinter import Tk
+from ttk import Style
+import tkFileDialog
+
+from server import RPC, Config
+import Project
+
+root = Tk()
+root.style = Style()
+root.style.theme_use('clam')
+root.withdraw()
 
 def getRecentProjects(evData):
     return Config.get('runtime', 'recent_projects')
 
+def _pushProjectToRecentList(path):
+    recent_projects = Config.get('runtime', 'recent_projects')
+    try:
+        # Remove current folder from path list, if it's there
+        recent_projects.remove(path)
+    except:
+        pass
+
+    recent_projects.insert(0, path)
+    if len(recent_projects) > Config.get('project', 'recent_project_history'):
+        recent_projects.pop(-1)
+        pass
+    Config.set('runtime', 'recent_projects', recent_projects)
+    pass
+
+def loadProject(evData):
+    if evData:
+        in_path = evData
+    else:
+        in_path = tkFileDialog.askopenfilename()
+        pass
+
+    if len(in_path) != 0:
+        _pushProjectToRecentList(in_path)
+        # Load project!
+        return Project.loadProject(in_path)
+    return False
+
 def createNewProject(evData):
-    from Tkinter import Tk
-    from ttk import Style
-    import tkFileDialog
-    root=Tk()
-    root.style=Style()
-    root.style.theme_use('clam')
-    root.withdraw()
-    in_path = tkFileDialog.askdirectory()
+    in_path = tkFileDialog.askopenfilename(initialfile='project.json')
 
     if len(in_path)!=0:
+        _pushProjectToRecentList(in_path)
+
         # Create new project!
-        recent_projects = Config.get('runtime', 'recent_projects')
-        recent_projects.insert(0, in_path)
-        if len(recent_projects) > Config.get('project', 'recent_project_history'):
-            recent_projects.pop(-1)
-            pass
-        Config.set('runtime', 'recent_projects', recent_projects)
+        Project.createNewProject(in_path)
         pass
 
     return in_path
 
 RPC.listen(createNewProject)
 RPC.listen(getRecentProjects)
+RPC.listen(loadProject)

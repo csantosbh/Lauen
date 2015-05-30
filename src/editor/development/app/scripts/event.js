@@ -1,6 +1,13 @@
 'use strict';
 
 var $event = (function() {
+  function arrayHasElement(myArray, searchTerm) {
+    for(var i = 0, len = myArray.length; i < len; i++) {
+      if (myArray[i] === searchTerm) return i;
+    }
+    return -1;
+  }
+
   var events = {};
   var pendingBroadcasts = {};
   function EventSystem() { }

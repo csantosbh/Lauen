@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+from server.project import Project
 
 # Iterate over the source file, retrieving all classes and their
 # public fields and methods
@@ -113,22 +114,6 @@ def parseCPPFile(fileName):
     del index
     return rtrn
 
-_className2Id = dict()
-_classId2Name = dict()
-
-def GetIdFromClass(className):
-    from random import randint
-    if not className in _className2Id:
-        candidateId = randint(0,1e9)
-        while candidateId in _classId2Name:
-            candidateId = randint(0,1e9)
-            pass
-        _className2Id[className] = candidateId
-        _classId2Name[candidateId] = className
-        pass
-
-    return _className2Id[className]
-
 # Get only what matters from the parseCPPFile function
 def GetSimpleClass(fileName):
     parsedFile = parseCPPFile(fileName)
@@ -138,13 +123,15 @@ def GetSimpleClass(fileName):
     simpleClass = dict()
     if parsedFile[0]['kind'] == 'CLASS_DECL':
         simpleClass['class'] = parsedFile[0]['name']
-        simpleClass['id'] = GetIdFromClass(simpleClass['class'])
+        simpleClass['id'] = Project.getScriptId(fileName)
         simpleClass['namespace']  = parsedFile[0]['namespace']
         simpleClass['fields'] = []
         for child in parsedFile[0]['children']:
             if child['kind'] == 'FIELD_DECL':
                 simpleClass['fields'].append(dict(name=child['name'], type=child['type'], pragmas=child['pragmas'], visibility=child['visibility']))
+                pass
             pass
+        pass
 
     return simpleClass
 

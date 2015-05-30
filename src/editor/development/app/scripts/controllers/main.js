@@ -5,16 +5,10 @@
  */
 function setupProjectPanel(interact, $scope, $timeout) {
   $scope.projectFiles = [];
-  $rpc.call('getAssetList', null, function(assetList) {
-    // Instead of scope.$apply, which may not work if the
-    // $digest is already running, use $timeout
-    $timeout(function() {
-      $scope.projectFiles = assetList.files;
-    });
-  });
 
   interact.maxInteractions(Infinity);
 
+  // TODO make this a directive
   // setup draggable elements.
   interact('.js-drag')
   .draggable({ max: Infinity })
@@ -147,12 +141,14 @@ function setupComponentMenu($scope, $timeout) {
     // The item array contains the menu item selected
     $event.broadcast('addComponent', $scope.componentTypes[item[0]][item[1]]);
   };
-  $event.listen('assetlist', function(fileListEvent) {
+  $rpc.call('getAssetList', null, function(fileList) {
     $timeout(function() {
-      for(var i=0; i < fileListEvent.files.length; ++i) {
+      $scope.projectFiles = fileList;
+
+      for(var i=0; i < fileList.length; ++i) {
         $scope.componentTypes['Scripts'].push({
-          label: LAU.IO.getFileNameFromPath(fileListEvent.files[i].path),
-          flyweight: fileListEvent.files[i],
+          label: LAU.IO.getFileNameFromPath(fileList[i].path),
+          flyweight: fileList[i],
           type: 'script'
         });
       }
@@ -164,7 +160,7 @@ function setupComponentMenu($scope, $timeout) {
  * Game Object editor menu
  */
 function setupGameObjectEditorMenu($scope, $timeout) {
-  $scope.currentGameObjectId = 0;
+  $scope.currentGameObjectId = -1;
   setupComponentMenu($scope, $timeout);
   $event.listen('addComponent', function(eventData) {
     if($scope.currentGameObjectId < 0) return;
@@ -216,13 +212,19 @@ function setupMenuBar($scope, $timeout) {
           components: exportedComps
         });
       }
-      $socket.broadcast('save', exported);
+      $rpc.call('save', exported, function(saveRes) {
+        console.log('Save success: ' + saveRes);
+      });
     },
     requestLoadProject: function(path) {
-      if(path.length > 0) {
-        console.log(path);
-      } else {
-        // TODO ask for path
+      if(!isRequestingProject) {
+        isRequestingProject = true;
+        $rpc.call('loadProject', path?path:null, function(success) {
+          if(success) {
+            $event.broadcast('reloadProject', null);
+          }
+          isRequestingProject = false;
+        });
       }
     },
     requestNewProject: function() {
@@ -230,7 +232,7 @@ function setupMenuBar($scope, $timeout) {
         isRequestingProject = true;
         $rpc.call('createNewProject', null, function(folderName) {
           if(folderName.length > 0) {
-            console.log('vou criar em '+folderName);
+            $event.broadcast('reloadProject', null);
           }
           isRequestingProject = false;
         });
@@ -242,9 +244,7 @@ function setupMenuBar($scope, $timeout) {
 
 // Handle IO events
 function setupIOEvents($scope, $timeout) {
-  function handleIOEvents(io_event) {
-    var sceneData = JSON.parse(io_event);
-
+  function handleIOEvents(sceneData) {
     $timeout(function() {
       // Setup game objects
       for(var i = 0; i < sceneData.length; ++i) {
@@ -268,7 +268,7 @@ function setupIOEvents($scope, $timeout) {
     });
   }
 
-  $event.listen('loadCurrentScene', handleIOEvents);
+  $rpc.call('loadCurrentScene', null, handleIOEvents);
 }
 
 // Display errors/warnings/etc
@@ -293,14 +293,14 @@ function setupConsole($scope, $timeout) {
  * # MainCtrl
  * Controller of the lauEditor
  */
-angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
+angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $window) {
   $socket.connect();
 
   // Setup main layout
   $("#main-wnd-container").layout({
     resizeWhileDragging: true,
     north__spacing_open: 0,
-    north__size: 50,
+    north__size: 70,
     east__size: 300,
   });
   $('#center-container').layout({
@@ -308,16 +308,17 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout) {
     south__size: 200,
   });
 
-  // Setup project panel
+  // Inject the LAU namespace into the global scope
+  $scope.LAU = LAU;
+
+  // Initialize editor
   setupHierarchyPanel($scope, $timeout);
   setupProjectPanel(window.interact, $scope, $timeout);
   setupGameObjectEditorMenu($scope, $timeout);
   setupMenuBar($scope, $timeout);
   setupIOEvents($scope, $timeout);
   setupConsole($scope, $timeout);
-  lau=$scope;
-
-  // Inject the LAU namespace into the global scope
-  $scope.LAU = LAU;
+  $event.listen('reloadProject', function() {
+    $window.location.reload();
+  });
 });
-var lau;

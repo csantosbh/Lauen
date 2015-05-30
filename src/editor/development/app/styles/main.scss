@@ -5,7 +5,10 @@ $icon-font-path: "../bower_components/bootstrap-sass-official/assets/fonts/boots
 
 body {
   padding: 0px;
-  padding-top: 30px;
+}
+
+.scroll-y {
+  overflow-y: scroll;
 }
 
 .main-wnd-container {
@@ -47,6 +50,9 @@ body {
 
 
 ///// TODO put this in a menubar.scss file
+.navbar {
+  margin-bottom: 0px;
+}
 .dropdown-submenu {
   position: relative;
 }

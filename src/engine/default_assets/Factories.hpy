@@ -30,6 +30,7 @@ shared_ptr<Component> componentFactory(const rapidjson::Value& serializedCompone
 	if(serializedComponent.HasMember("id")) {
 		switch(serializedComponent["id"].GetInt()) {
 			% for component in components:
+				% if component['type']=='script':
 			case ${component['id']}:
 				const rapidjson::Value& fields = serializedComponent["fields"];
 
@@ -41,6 +42,7 @@ shared_ptr<Component> componentFactory(const rapidjson::Value& serializedCompone
 				% endfor
 				result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
 				break;
+				% endif
 			% endfor
 		}
 	}

@@ -12,6 +12,8 @@ def listen(callback):
 def _RPCHandler(event):
     if procedures.has_key(event['procedure']):
         WebSocketServer.send('RPCAnswer', dict(to=event['from'], result=procedures[event['procedure']](event['parameters'])))
+    else:
+        print '[warn] RPC procedure not found: ' + event['procedure']
         pass
     pass
 

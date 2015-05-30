@@ -3,9 +3,9 @@
 var $socket = (function() {
   var socket = null;
   var publicSocketObj;
+  var pendingBroadcasts = {};
 
   function broadcast(event, message) {
-    console.log('sending:'+JSON.stringify({ event: event, msg: message }));
     socket.send(JSON.stringify({
       event: event,
       msg: message
@@ -30,7 +30,6 @@ var $socket = (function() {
       pendingBroadcasts = null;
     }
   }
-  var pendingBroadcasts = {};
   function requestBroadcast(event, message) {
     if(!pendingBroadcasts.hasOwnProperty(event))
       pendingBroadcasts[event] = [];
