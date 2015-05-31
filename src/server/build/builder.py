@@ -1,11 +1,11 @@
-from server import Event
+from server import Event, WebSocketServer, io
 from server.project import Project
-from server import WebSocketServer
-from server import io
+from server.components import DefaultComponentManager
 
 link_flags='-rdynamic -lglfw3 -lglfw3 -lrt -lXrandr -lXinerama -lXi -lXcursor -lGL -lm -ldl -lXrender -ldrm -lXdamage -lX11-xcb -lxcb-glx -lxcb-dri2 -lxcb-dri3 -lxcb-present -lxcb-sync -lxshmfence -lXxf86vm -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lGLEW'
 cxx_compiler='g++'
 
+# TODO only re-call this when we change the number of scripts available
 def generateComponentFactory(componentFiles):
     from mako.template import Template
 
@@ -13,7 +13,7 @@ def generateComponentFactory(componentFiles):
 
     template = open(project_folder+'/default_assets/Factories.hpy').read()
     with open(project_folder+'/default_assets/Factories.hpp', 'w') as outputHandle:
-        outputHandle.write(Template(template).render(components=componentFiles))
+        outputHandle.write(Template(template).render(components=componentFiles, default_components=DefaultComponentManager.getDefaultComponents()))
         pass
     pass
 

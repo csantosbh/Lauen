@@ -28,15 +28,19 @@ LAU.Components = (function() {
     $event.broadcast('transformComponentAdded', this);
 
     if(obj != null) {
-      this.position.x = obj.x, this.position.y = obj.y, this.position.z = obj.z;
-      this.rotation.x = obj.rx, this.rotation.y = obj.ry, this.rotation.z = obj.rz;
-      this.scale.x = obj.sx, this.scale.y = obj.sy, this.scale.z = obj.sz;
+      this.id = obj.id;
+      if(obj.hasOwnProperty('x')) {
+        this.position.x = obj.x, this.position.y = obj.y, this.position.z = obj.z;
+        this.rotation.x = obj.rx, this.rotation.y = obj.ry, this.rotation.z = obj.rz;
+        this.scale.x = obj.sx, this.scale.y = obj.sy, this.scale.z = obj.sz;
+      }
     }
   }
   TransformComponent.prototype = {
     export: function() {
       return {
         type: this.type,
+        id: this.id,
         x: this.position.x, y: this.position.y, z: this.position.z,
         rx: this.rotation.x, ry: this.rotation.y, rz: this.rotation.z,
         sx: this.scale.x, sy: this.scale.y, sz: this.scale.z

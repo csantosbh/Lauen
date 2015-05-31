@@ -132,21 +132,34 @@ function setupProjectPanel(interact, $scope, $timeout) {
  * Component menu
  */
 function setupComponentMenu($scope, $timeout) {
-  $scope.componentTypes = {
-    'Basic': [{label:'Transform', flyweight: null, type: 'transform' }],
+  var componentTypes = {
+    'transform': {label:'Transform', flyweight: null }
+  };
+
+  $rpc.call('getDefaultComponents', null, function(dcs) {
+    for(var i in dcs) {
+      if(dcs.hasOwnProperty(i)) {
+        componentTypes[i].flyweight = dcs[i];
+        componentTypes[i].type = i;
+      }
+    }
+  });
+
+  $scope.componentMenu = {
+    'Basic': [componentTypes.transform],
     'Scripts':[]
   };
 
   $scope.menuPickup = function(item){
     // The item array contains the menu item selected
-    $event.broadcast('addComponent', $scope.componentTypes[item[0]][item[1]]);
+    $event.broadcast('addComponent', $scope.componentMenu[item[0]][item[1]]);
   };
   $rpc.call('getAssetList', null, function(fileList) {
     $timeout(function() {
       $scope.projectFiles = fileList;
 
       for(var i=0; i < fileList.length; ++i) {
-        $scope.componentTypes['Scripts'].push({
+        $scope.componentMenu['Scripts'].push({
           label: LAU.IO.getFileNameFromPath(fileList[i].path),
           flyweight: fileList[i],
           type: 'script'

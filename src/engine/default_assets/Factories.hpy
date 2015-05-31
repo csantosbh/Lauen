@@ -7,14 +7,14 @@
 #include <vector>
 
 #include <rapidjson/document.h>
-//!debug
-#include <rapidjson/filestream.h>
-#include <rapidjson/prettywriter.h>
-//!debug
 
 // TODO rename them to hpp
 #include "Component.hpp"
 #include "GameObject.hpp"
+
+% for type,default_component in default_components.iteritems():
+#include "${default_component['path']}"
+% endfor
 % for component in components:
 #include "${component['path']}"
 % endfor
@@ -29,9 +29,18 @@ shared_ptr<Component> componentFactory(const rapidjson::Value& serializedCompone
 	// TODO: make sure all components have an id member
 	if(serializedComponent.HasMember("id")) {
 		switch(serializedComponent["id"].GetInt()) {
+			// Default components
+			% for type, default_component in default_components.iteritems():
+			case ${default_component['id']}: {
+				${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(serializedComponent);
+				result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
+				break;
+			}
+			% endfor
+
+			// User scripts
 			% for component in components:
-				% if component['type']=='script':
-			case ${component['id']}:
+			case ${component['id']}: {
 				const rapidjson::Value& fields = serializedComponent["fields"];
 
 				${component['namespace']}::${component['class']}* ptr = new ${component['namespace']}::${component['class']}();
@@ -42,7 +51,7 @@ shared_ptr<Component> componentFactory(const rapidjson::Value& serializedCompone
 				% endfor
 				result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
 				break;
-				% endif
+			}
 			% endfor
 		}
 	}
