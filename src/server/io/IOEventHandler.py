@@ -1,7 +1,5 @@
-from server import Event
-from server import RPC
+from server import Event, RPC, WebSocketServer
 from server.project import Project
-from server import WebSocketServer
 
 def save(sceneData):
     # TODO define the scene name from the editor

@@ -49,7 +49,8 @@ def set(section, field, value):
     pass
 
 _env={
-    'install_location': os.path.dirname(os.path.realpath(sys.argv[0]))
+    'install_location': os.path.dirname(os.path.realpath(sys.argv[0])),
+    'asset_extensions': ['.vs', '.fs']
 }
 def env(section):
     return _env[section]

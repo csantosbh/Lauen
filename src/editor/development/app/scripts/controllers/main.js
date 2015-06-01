@@ -197,7 +197,7 @@ function setupHierarchyPanel($scope, $timeout) {
 }
 
 // Menu bar (File, Edit, Help, etc..)
-function setupMenuBar($scope, $timeout) {
+function setupMenuBar($scope, $timeout, $dialog) {
   // Load list of recent projects
   $rpc.call('getRecentProjects', null, function(recentProjects) {
     $timeout(function() {
@@ -210,7 +210,7 @@ function setupMenuBar($scope, $timeout) {
   $scope.menuBar = {
     recentProjects: [],
     requestBuild: function() {
-      $socket.broadcast('build', null);
+      $rpc.call('buildGame', null, function(stat){});
     },
     requestSave: function() {
       var exported = [];
@@ -251,8 +251,26 @@ function setupMenuBar($scope, $timeout) {
         });
       }
       // TODO clear current project
-    }
+    },
+    requestBuildDialog: function() {
+      $dialog.open({
+        template: 'views/dialogs/build.html',
+        scope: $scope
+      });
+    },
+    requestExport: function(buildAndRun) {
+      $rpc.call('exportGame', {
+        buildAndRun: buildAndRun,
+        compilationMode: $scope.menuBar._requestBuildCompMode,
+      }, function(status) {
+        console.log($scope.menuBar._requestBuildCompMode);
+        console.log('build status: ' + status);
+      });
+    },
   };
+
+  // Internal fields
+  $scope.menuBar._requestBuildCompMode='RELEASE';
 }
 
 // Handle IO events
@@ -306,7 +324,7 @@ function setupConsole($scope, $timeout) {
  * # MainCtrl
  * Controller of the lauEditor
  */
-angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $window) {
+angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $window, ngDialog) {
   $socket.connect();
 
   // Setup main layout
@@ -328,7 +346,7 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
   setupHierarchyPanel($scope, $timeout);
   setupProjectPanel(window.interact, $scope, $timeout);
   setupGameObjectEditorMenu($scope, $timeout);
-  setupMenuBar($scope, $timeout);
+  setupMenuBar($scope, $timeout, ngDialog);
   setupIOEvents($scope, $timeout);
   setupConsole($scope, $timeout);
   $event.listen('reloadProject', function() {

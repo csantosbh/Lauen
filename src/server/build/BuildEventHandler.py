@@ -1,9 +1,13 @@
-from server import Event, WebSocketServer, io
+from server import RPC, WebSocketServer, io
 from server.project import Project
 from server.components import DefaultComponentManager
 
 link_flags='-rdynamic -lglfw3 -lglfw3 -lrt -lXrandr -lXinerama -lXi -lXcursor -lGL -lm -ldl -lXrender -ldrm -lXdamage -lX11-xcb -lxcb-glx -lxcb-dri2 -lxcb-dri3 -lxcb-present -lxcb-sync -lxshmfence -lXxf86vm -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lGLEW'
 cxx_compiler='g++'
+cxx_mode_flags={
+    'DEBUG': ' -g',
+    'RELEASE': ' -O3'
+}
 
 # TODO only re-call this when we change the number of scripts available
 def generateComponentFactory(componentFiles):
@@ -33,13 +37,16 @@ def run_game(path, workFolder):
         pass
     pass
 
-def build_game(event_msg):
+def buildGame(event_msg, runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess
-
-	# TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
-    cxx_flags='-I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/'
+    # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
+    cxx_flags=' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxx_mode_flags[compilationMode]
 
     project_folder = Project.getProjectFolder()
+
+    if outputFolder == None:
+        outputFolder = project_folder
+
     compilationStatus = dict(returncode=0, message='')
     try:
         # TODO use threads
@@ -63,15 +70,16 @@ def build_game(event_msg):
             pass
 
         # Compile
+        compilationModeFlags = ' -D'+compilationMode
         precompiledFiles = ''
         for sourceFile in sourceFiles:
-            precompiledFile = project_folder+'/build/'+io.Utils.GetFileNameFromPath(sourceFile)+'.o '
-            compilationStatus['message'] += subprocess.check_output(cxx_compiler + ' -c ' + sourceFile +' -o '+precompiledFile + cxx_flags, shell=True, stderr=subprocess.STDOUT)
+            precompiledFile = outputFolder+'/build/'+io.Utils.GetFileNameFromPath(sourceFile)+'.o '
+            compilationStatus['message'] += subprocess.check_output(cxx_compiler + ' -c ' + sourceFile +' -o '+precompiledFile + compilationModeFlags + cxx_flags, shell=True, stderr=subprocess.STDOUT)
             precompiledFiles += precompiledFile
             pass
 
         # Link
-        compilationStatus['message'] += subprocess.check_output(cxx_compiler + ' ' + precompiledFiles +' -o '+project_folder+'/game ' + link_flags, shell=True, stderr=subprocess.STDOUT)
+        compilationStatus['message'] += subprocess.check_output(cxx_compiler + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + link_flags, shell=True, stderr=subprocess.STDOUT)
 
     except subprocess.CalledProcessError as e:
         # TODO show compilation error messages on console
@@ -82,13 +90,34 @@ def build_game(event_msg):
 
     WebSocketServer.send('compilationStatus', compilationStatus)
 
-    if compilationStatus['returncode'] == 0:
+    if compilationStatus['returncode'] == 0 and runGame:
         # TODO use threads
-        run_game(project_folder+'/game', project_folder)
+        run_game(outputFolder+'/game', outputFolder)
+        pass
+
+    return compilationStatus
     pass
 
 def AutoBuild():
     # TODO: Watch for file modifications and re-generate .o's
     pass
 
-Event.listen('build', build_game)
+def ExportGame(buildAndRun, compilationMode, outputFolder):
+    from distutils import dir_util
+    from server import Config
+    import shutil, os
+    # Create folder for temporary .o files
+    dir_util.mkpath(outputFolder + '/build')
+    buildGame(None, buildAndRun, compilationMode, outputFolder)
+    # Copy scenes to destination folder
+    project_folder = Project.getProjectFolder()
+    dir_util.copy_tree(project_folder + '/scenes', outputFolder+'/scenes')
+    # Copy assets to destination folder
+    io.Utils.CopyFilesOfTypes(project_folder+'/assets', outputFolder, Config.env('asset_extensions'), project_folder)
+    io.Utils.CopyFilesOfTypes(project_folder+'/default_assets', outputFolder, Config.env('asset_extensions'), project_folder)
+    # Remove temporary build folder
+    dir_util.remove_tree(outputFolder + '/build')
+    return True
+    pass
+
+RPC.listen(buildGame)

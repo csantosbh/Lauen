@@ -2,7 +2,7 @@
 import os, sys
 
 from server import Config, HTTPRequestHandler, WebSocketServer
-from server.build import builder
+from server.build import BuildEventHandler
 from server.io import IOEventHandler
 from server.project import ProjectEventHandler
 from server.components import DefaultComponentManager

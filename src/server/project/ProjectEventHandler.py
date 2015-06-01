@@ -3,6 +3,7 @@ from ttk import Style
 import tkFileDialog
 
 from server import RPC, Config
+from server.build import BuildEventHandler
 import Project
 
 root = Tk()
@@ -53,6 +54,15 @@ def createNewProject(evData):
 
     return in_path
 
+def exportGame(params):
+    out_path = tkFileDialog.askdirectory()
+
+    if len(out_path)!=0:
+        return BuildEventHandler.ExportGame(params['buildAndRun'], params['compilationMode'], out_path)
+    return False
+    pass
+
 RPC.listen(createNewProject)
 RPC.listen(getRecentProjects)
 RPC.listen(loadProject)
+RPC.listen(exportGame)
