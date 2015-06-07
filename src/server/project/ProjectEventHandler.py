@@ -58,7 +58,7 @@ def exportGame(params):
     out_path = tkFileDialog.askdirectory()
 
     if len(out_path)!=0:
-        return BuildEventHandler.ExportGame(params['buildAndRun'], params['compilationMode'], out_path)
+        return BuildEventHandler.ExportGame(params['platform'], params['buildAndRun'], params['compilationMode'], out_path)
     return False
     pass
 

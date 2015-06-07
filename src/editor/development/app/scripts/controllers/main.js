@@ -260,6 +260,7 @@ function setupMenuBar($scope, $timeout, $dialog) {
     },
     requestExport: function(buildAndRun) {
       $rpc.call('exportGame', {
+        platform: $scope.menuBar._requestBuildCompPlatform,
         buildAndRun: buildAndRun,
         compilationMode: $scope.menuBar._requestBuildCompMode,
       }, function(status) {
@@ -270,6 +271,7 @@ function setupMenuBar($scope, $timeout, $dialog) {
   };
 
   // Internal fields
+  $scope.menuBar._requestBuildCompPlatform='linux';
   $scope.menuBar._requestBuildCompMode='RELEASE';
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <rapidjson/document.h>
+#include <iostream>
 
 #include "Component.hpp"
 

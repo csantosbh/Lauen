@@ -2,9 +2,12 @@ import os, sys, json, collections
 
 defaults=dict(
   DEFAULT=dict(
-    port='8080',
-    recent_project_history=5,
-    recent_projects=[],
+    port='8080', # server
+    recent_project_history=5, # project
+    recent_projects=[], # runtime
+    win_compilers={ # export
+        'g++': '/opt/mingw64/bin/x86_64-w64-mingw32-g++.exe',
+    }
   )
 )
 
