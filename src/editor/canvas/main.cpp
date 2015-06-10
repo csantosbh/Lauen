@@ -1,29 +1,3 @@
-// Copyright (c) 2013 The Chromium Authors. All rights reserved.
-// Use of this source code is governed by a BSD-style license that can be
-// found in the LICENSE file.
-
-/// @file hello_tutorial.cc
-/// This example demonstrates loading, running and scripting a very simple NaCl
-/// module.  To load the NaCl module, the browser first looks for the
-/// CreateModule() factory method (at the end of this file).  It calls
-/// CreateModule() once to load the module code.  After the code is loaded,
-/// CreateModule() is not called again.
-///
-/// Once the code is loaded, the browser calls the CreateInstance()
-/// method on the object returned by CreateModule().  It calls CreateInstance()
-/// each time it encounters an <embed> tag that references your NaCl module.
-///
-/// The browser can talk to your NaCl module via the postMessage() Javascript
-/// function.  When you call postMessage() on your NaCl module from the browser,
-/// this becomes a call to the HandleMessage() method of your pp::Instance
-/// subclass.  You can send messages back to the browser by calling the
-/// PostMessage() method on your pp::Instance.  Note that these two methods
-/// (postMessage() in Javascript and PostMessage() in C++) are asynchronous.
-/// This means they return immediately - there is no waiting for the message
-/// to be handled.  This has implications in your program design, particularly
-/// when mutating property values that are exposed to both the browser and the
-/// NaCl module.
-
 #include <unistd.h>
 #include "ppapi/cpp/instance.h"
 #include "ppapi/cpp/module.h"
@@ -36,15 +10,6 @@
 #include "ppapi/utility/completion_callback_factory.h"
 #include <stdio.h>
 
-/// The Instance class.  One of these exists for each instance of your NaCl
-/// module on the web page.  The browser will ask the Module object to create
-/// a new Instance for each occurrence of the <embed> tag that has these
-/// attributes:
-///     src="hello_tutorial.nmf"
-///     type="application/x-pnacl"
-/// To communicate with the browser, you must override HandleMessage() to
-/// receive messages from the browser, and use PostMessage() to send messages
-/// back to the browser.  Note that this interface is asynchronous.
 class GLCanvasInstance : public pp::Instance {
     pp::CompletionCallbackFactory<GLCanvasInstance> callback_factory_;
 public:
@@ -54,6 +19,7 @@ public:
         pp::Instance(instance),
         callback_factory_(this)
     {
+        PostMessage("creating instance");
         /*
         FILE* tst = fopen("/tmp/lau.txt", "rw");
         fprintf(tst, "Teste!");
@@ -62,7 +28,12 @@ public:
     }
     virtual ~GLCanvasInstance() {}
 
+  virtual bool Init(uint32_t argc, const char* argn[], const char* argv[]) {
+    return true;
+  }
+
     bool InitGL(int32_t new_width, int32_t new_height) {
+        PostMessage("init opengl");
         if (!glInitializePPAPI(pp::Module::Get()->get_browser_interface())) {
             return false;
         }

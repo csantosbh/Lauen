@@ -196,6 +196,18 @@ function setupHierarchyPanel($scope, $timeout) {
   }
 }
 
+/*
+ * WebGL and NaCl canvas
+ */
+function setupCanvas($scope, $timeout) {
+  $scope.canvas = {
+    editMode: true,
+    toggleEditMode: function() {
+      this.editMode = !this.editMode;
+    }
+  };
+}
+
 // Menu bar (File, Edit, Help, etc..)
 function setupMenuBar($scope, $timeout, $dialog) {
   // Load list of recent projects
@@ -346,6 +358,7 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
 
   // Initialize editor
   setupHierarchyPanel($scope, $timeout);
+  setupCanvas($scope, $timeout);
   setupProjectPanel(window.interact, $scope, $timeout);
   setupGameObjectEditorMenu($scope, $timeout);
   setupMenuBar($scope, $timeout, ngDialog);

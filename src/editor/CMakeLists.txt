@@ -5,6 +5,7 @@ PROJECT("LauEngineCanvas")
 ##
 # Configure compiler
 SET(NACL_CXX_COMPILER "${NACL_PEPPER_FOLDER}/toolchain/linux_pnacl/bin/pnacl-clang++")
+SET(NACL_STRIP "${NACL_PEPPER_FOLDER}/toolchain/linux_pnacl/bin/pnacl-strip")
 SET(CMAKE_CXX_FLAGS_DEBUG -Wall -g -DDEBUG)
 SET(CMAKE_CXX_FLAGS_RELEASE -Wall -O3 -DRELEASE)
 
@@ -25,7 +26,7 @@ SET(NACL_LINK_LIBRARIES -lppapi_cpp -lppapi -lppapi_gles2)
 ##
 # Configure main target
 set(server_static_files "dist/")
-FILE(GLOB_RECURSE cxx_canvas_files "*.cpp")
+FILE(GLOB_RECURSE cxx_canvas_files "canvas/*.cpp")
 
 ##
 # Now take a breath. There's a reason why I'm not using cmake's
@@ -53,11 +54,18 @@ ADD_CUSTOM_COMMAND(OUTPUT lau_canvas
     COMMENT "Linking NaCL canvas...")
 
 # Post build nacl-finalize
-ADD_CUSTOM_COMMAND( OUTPUT lau_canvas.pexe
+ADD_CUSTOM_COMMAND( OUTPUT lau_canvas_unstripped.pexe
     COMMAND ${NACL_PEPPER_BIN_FOLDER}/pnacl-finalize
-    lau_canvas -o lau_canvas.pexe
+    lau_canvas -o lau_canvas_unstripped.pexe
     DEPENDS lau_canvas
     COMMENT "Finalizing NaCL canvas...")
+ADD_CUSTOM_TARGET(canvas_unstripped ALL DEPENDS lau_canvas_unstripped.pexe)
+
+# Post build nacl-strip
+ADD_CUSTOM_COMMAND( OUTPUT lau_canvas.pexe
+    COMMAND ${NACL_STRIP} lau_canvas_unstripped.pexe -o lau_canvas.pexe
+    DEPENDS lau_canvas_unstripped.pexe
+    COMMENT "Stripping NaCL canvas...")
 ADD_CUSTOM_TARGET(canvas ALL DEPENDS lau_canvas.pexe)
 
 ##
