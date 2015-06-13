@@ -1,134 +1,6 @@
 'use strict';
 
 /*
- * Project panel
- */
-function setupProjectPanel(interact, $scope, $timeout) {
-  $scope.projectFiles = [];
-
-  interact.maxInteractions(Infinity);
-
-  // TODO make this a directive
-  // setup draggable elements.
-  interact('.js-drag')
-  .draggable({ max: Infinity })
-  .on('dragstart', function (event) {
-    event.interaction.x = parseInt(event.target.getAttribute('data-x'), 10) || 0;
-    event.interaction.y = parseInt(event.target.getAttribute('data-y'), 10) || 0;
-  })
-  .on('move', function (event) {
-    var interaction = event.interaction;
-    var ay = interaction.y;
-
-    // if the pointer was moved while being held down
-    // and an interaction hasn't started yet
-    if (interaction.pointerIsDown && !interaction.interacting()) {
-      var original = event.currentTarget,
-        // create a clone of the currentTarget element
-        clone = event.currentTarget.cloneNode(true);
-
-      // insert the clone to the page
-      clone.style.position='absolute';
-      clone.style.zIndex=800;
-      document.body.appendChild(clone);
-
-      // start a drag interaction targeting the clone
-      interaction.start({ name: 'drag' },
-                        event.interactable,
-                        clone);
-                        var originalBoundingRect = original.getBoundingClientRect();
-                        event.interaction.x = -(-clone.offsetLeft-originalBoundingRect.left);
-                        event.interaction.y = -(-originalBoundingRect.top);
-    }
-  })
-  .on('dragmove', function (event) {
-    event.interaction.x += event.dx;
-    event.interaction.y += event.dy;
-
-    event.target.style.left = event.interaction.x + 'px';
-    event.target.style.top  = event.interaction.y + 'px';
-  })
-  .on('dragend', function (event) {
-    event.target.setAttribute('data-x', event.interaction.x);
-    event.target.setAttribute('data-y', event.interaction.y);
-    interact(event.target).unset();
-    event.target.parentNode.removeChild(event.target);
-  });
-
-  // setup drop areas.
-  // dropzone #1 accepts draggable #1
-  setupDropzone('#drop1', '#drag1');
-
-  /**
-   * Setup a given element as a dropzone.
-   *
-   * @param {HTMLElement|String} el
-   * @param {String} accept
-   */
-  function setupDropzone(el, accept) {
-    interact(el).dropzone({
-      accept: accept,
-      ondropactivate: function (event) {
-        addClass(event.relatedTarget, '-drop-possible');
-      },
-      ondropdeactivate: function (event) {
-        removeClass(event.relatedTarget, '-drop-possible');
-      }
-    })
-    .on('dropactivate', function (event) {
-      var active = event.target.getAttribute('active')|0;
-
-      // change style if it was previously not active
-      if (active === 0) {
-        addClass(event.target, '-drop-possible');
-        event.target.textContent = 'Drop me here!';
-      }
-
-      event.target.setAttribute('active', active + 1);
-    })
-    .on('dropdeactivate', function (event) {
-      var active = event.target.getAttribute('active')|0;
-
-      // change style if it was previously active
-      // but will no longer be active
-      if (active === 1) {
-        removeClass(event.target, '-drop-possible');
-        event.target.textContent = 'Dropzone';
-      }
-
-      event.target.setAttribute('active', active - 1);
-    })
-    .on('dragenter', function (event) {
-      addClass(event.target, '-drop-over');
-    })
-    .on('dragleave', function (event) {
-      removeClass(event.target, '-drop-over');
-    })
-    .on('drop', function (event) {
-      removeClass(event.target, '-drop-over');
-    });
-  }
-
-  function addClass (element, className) {
-    if (element.classList) {
-      return element.classList.add(className);
-    }
-    else {
-      element.className += ' ' + className;
-    }
-  }
-
-  function removeClass (element, className) {
-    if (element.classList) {
-      return element.classList.remove(className);
-    }
-    else {
-      element.className = element.className.replace(new RegExp(className + ' *', 'g'), '');
-    }
-  }
-}
-
-/*
  * Component menu
  */
 function setupComponentMenu($scope, $timeout) {
@@ -154,18 +26,14 @@ function setupComponentMenu($scope, $timeout) {
     // The item array contains the menu item selected
     $event.broadcast('addComponent', $scope.componentMenu[item[0]][item[1]]);
   };
-  $rpc.call('getAssetList', null, function(fileList) {
-    $timeout(function() {
-      $scope.projectFiles = fileList;
-
-      for(var i=0; i < fileList.length; ++i) {
-        $scope.componentMenu['Scripts'].push({
-          label: LAU.IO.getFileNameFromPath(fileList[i].path),
-          flyweight: fileList[i],
-          type: 'script'
-        });
-      }
-    });
+  $event.listen('initialAssetList', function(fileList) {
+    for(var i=0; i < fileList.length; ++i) {
+      $scope.componentMenu['Scripts'].push({
+        label: LAU.IO.getFileNameFromPath(fileList[i].path),
+        flyweight: fileList[i],
+        type: 'script'
+      });
+    }
   });
 }
 
@@ -181,31 +49,6 @@ function setupGameObjectEditorMenu($scope, $timeout) {
     var componentData = LAU.Components.componentFactory(eventData.type, eventData.flyweight);
     $scope.gameObjects[$scope.currentGameObjectId].components.push(componentData);
   });
-}
-
-/*
- * Hierarchy panel
- */
-function setupHierarchyPanel($scope, $timeout) {
-  $scope.gameObjects = [];
-  $scope.createGameObject = function() {
-    $scope.gameObjects.push(new LAU.GameObject());
-  }
-  $scope.selectGameObject = function(i) {
-    $scope.currentGameObjectId = i;
-  }
-}
-
-/*
- * WebGL and NaCl canvas
- */
-function setupCanvas($scope, $timeout) {
-  $scope.canvas = {
-    editMode: true,
-    toggleEditMode: function() {
-      this.editMode = !this.editMode;
-    }
-  };
 }
 
 // Menu bar (File, Edit, Help, etc..)
@@ -355,11 +198,8 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
 
   // Inject the LAU namespace into the global scope
   $scope.LAU = LAU;
-
   // Initialize editor
-  setupHierarchyPanel($scope, $timeout);
-  setupCanvas($scope, $timeout);
-  setupProjectPanel(window.interact, $scope, $timeout);
+  $scope.gameObjects = [];
   setupGameObjectEditorMenu($scope, $timeout);
   setupMenuBar($scope, $timeout, ngDialog);
   setupIOEvents($scope, $timeout);
@@ -368,3 +208,4 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
     $window.location.reload();
   });
 });
+var lau;

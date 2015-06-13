@@ -131,6 +131,13 @@ angular.module('lauEditor')
   return {
     restrict: 'E',
     link: function postLink(scope, element) {
+      scope.canvas = {
+        editMode: true,
+        toggleEditMode: function() {
+          this.editMode = !this.editMode;
+        }
+      };
+
       // TODO: Auto resize when window resizes
       initCanvas(element);
 

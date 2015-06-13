@@ -6,11 +6,25 @@
  * @description
  * # projectPanel
  */
-angular.module('lauEditor').directive('projectPanel', function () {
+angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($timeout) {
   return {
     templateUrl: 'views/directives/project_panel.html',
     restrict: 'E',
-    // TODO: transclude includes the whole parent scope here. It would be better to just receive whatever I need to make the file panel, and isolate my own scope
-    transclude: true,
+    link: function postLink(scope, element, attrs) {
+      scope.projectPanel = {
+        projectFiles: [],
+        onDrop: function() {
+          console.log('hue!');
+          console.log(scope.projectPanel.dropBucket);
+        }
+      };
+
+      $rpc.call('getAssetList', null, function(fileList) {
+        $timeout(function() {
+          scope.projectPanel.projectFiles = fileList;
+          $event.broadcast('initialAssetList', fileList);
+        });
+      });
+    }
   };
-});
+}]);

@@ -19,6 +19,7 @@ angular
     'ngSanitize',
     'ngTouch',
     'ngDialog',
+    'ngDragDrop',
   ])
   .config(function ($routeProvider) {
     $routeProvider

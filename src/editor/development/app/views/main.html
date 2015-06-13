@@ -1,7 +1,9 @@
+<div class="ui-layout-east dropzone scroll-y" ng-model="projectPanel.dropBucket" data-drop="true" data-jqyoui-options jqyoui-droppable="{multiple:true, onDrop:'projectPanel.onDrop()'}">
+  <game-object-editor></game-object-editor>
+</div>
 <div class="ui-layout-center" id="center-container">
-  <div class="ui-layout-west">Hierarchy
-    <div ng-repeat="gameObject in gameObjects" ng-click="selectGameObject($index)">{{gameObject.name}}</div>
-    <br/><input type="button" ng-click="createGameObject()" value="+game object" />
+  <div class="ui-layout-west">
+    <game-object-hierarchy></game-object-hierarchy>
   </div>
   <div class="ui-layout-center">
     <edit-canvas class="main-canvas" ng-show="canvas.editMode" game-objects="{{gameObjects}}"></edit-canvas>
@@ -15,7 +17,4 @@
   <menu-bar></menu-bar>
   <input type="button" ng-click="menuBar.requestBuild()" value="Build" />
   <div class="btn-group" data-toggle="buttons"><label class="btn btn-primary" ng-click="canvas.toggleEditMode()"> <input type="checkbox">Play</label></div>
-</div>
-<div class="ui-layout-east dropzone js-drop scroll-y" id="drop1">
-  <game-object-editor></game-object-editor>
 </div>
