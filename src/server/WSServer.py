@@ -7,7 +7,7 @@ from ws4py.server.geventserver import WebSocketWSGIApplication, WebSocketWSGIHan
 from ws4py.websocket import EchoWebSocket
 
 ###
-import Event
+import Config, Event
 from project import Project
 from io import Utils
 ###
@@ -17,7 +17,7 @@ class ClientManager(object):
         self.clients = []
 clientManager = ClientManager()
 
-class BroadcastWebSocket(EchoWebSocket):
+class _LAUWebSocketHandler(EchoWebSocket):
     def opened(self):
         global clientManager
         clientManager.clients.append(self)
@@ -48,7 +48,11 @@ def send(event, message):
         pass
     pass
 
-def StartServer():
-    server = WSGIServer(('localhost', 9001), WebSocketWSGIApplication(handler_cls=BroadcastWebSocket))
-    server.serve_forever()
+def serve(blocking = False):
+    ws_server = WSGIServer(('localhost', int(Config.get('server', 'ws_port'))), WebSocketWSGIApplication(handler_cls=_LAUWebSocketHandler))
+    if blocking == True:
+        ws_server.serve_forever() # Non-blocking serve
+    else:
+        ws_server.start() # Non-blocking serve
+        pass
     pass

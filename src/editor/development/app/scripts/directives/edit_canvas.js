@@ -134,7 +134,10 @@ angular.module('lauEditor')
       scope.canvas = {
         editMode: true,
         toggleEditMode: function() {
-          this.editMode = !this.editMode;
+          $rpc.call('previewGame', null, function(status) {
+            console.log('build status: ' + status);
+            this.editMode = !this.editMode;
+          });
         }
       };
 

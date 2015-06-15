@@ -1,11 +1,13 @@
-from server import RPC, WebSocketServer, io, Config
+from server import RPC, WSServer, io, Config
 from server.project import Project
 from server.components import DefaultComponentManager
 
 link_flags={
     'linux': '-rdynamic -lglfw3 -lrt -lXrandr -lXinerama -lXi -lXcursor -lGL -lm -ldl -lXrender -ldrm -lXdamage -lX11-xcb -lxcb-glx -lxcb-dri2 -lxcb-dri3 -lxcb-present -lxcb-sync -lxshmfence -lXxf86vm -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lGLEW',
     # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
-    'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/lib/ -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/build/src/'
+    'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/lib/ -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/build/src/',
+    # TODO the -L depends on the cxx_mode flag (RELEASE/DEBUG)
+    'nacl': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/Debug -lppapi_cpp -lppapi -lppapi_gles2'
 }
 cxx_preprocessors={
     'linux': '-DLINUX -DDESKTOP',
@@ -15,18 +17,19 @@ cxx_preprocessors={
 cxx_compiler={
     'linux': 'g++',
     'windows': Config.get('export', 'win_compilers')['g++'],
-}
-cxx_mode_flags={
-    'DEBUG': ' -g',
-    'RELEASE': ' -O3'
+    'nacl': Config.get('export', 'nacl')['pepper_folder']+'/'+Config.get('export', 'nacl')['compiler'],
 }
 
-"""
-Windows compilation:
-
-rm -rf /tmp/lauzin/; mkdir /tmp/lauzin; for i in `find -iname "*.cpp"`; do /opt/mingw64/bin/x86_64-w64-mingw32-g++.exe -march=native -c $i -o /tmp/lauzin/`basename $i .cpp`.o -I default_assets -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I ~/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I ~/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11; done; /opt/mingw64/bin/x86_64-w64-mingw32-g++.exe -march=native /tmp/lauzin/*.o -o /tmp/lauzin/lau -lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L ~/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/lib/ -L ~/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/build/src/
-
-"""
+def _cxx_flags(compilationMode):
+    cxx_mode_flags={
+            'DEBUG': ' -g',
+            'RELEASE': ' -O3'
+    }
+    return {
+        'linux': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxx_mode_flags[compilationMode],
+        'windows': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
+        'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxx_mode_flags[compilationMode],
+    }
 
 # TODO only re-call this when we change the number of scripts available
 def generateComponentFactory(componentFiles):
@@ -49,7 +52,7 @@ def run_game(path, workFolder):
         process.poll()
         strMsg = process.stdout.readline()
         if len(strMsg)>0:
-            WebSocketServer.send('executionMessage', strMsg)
+            WSServer.send('executionMessage', strMsg)
             pass
         pass
     pass
@@ -57,10 +60,7 @@ def run_game(path, workFolder):
 def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess
     # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
-    cxx_flags={
-        'linux': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxx_mode_flags[compilationMode],
-        'windows': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/'
-    }
+    cxx_flags=_cxx_flags(compilationMode)
 
     project_folder = Project.getProjectFolder()
 
@@ -108,7 +108,7 @@ def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DE
         print 'Compilation error: ', e.returncode
         pass
 
-    WebSocketServer.send('compilationStatus', compilationStatus)
+    WSServer.send('compilationStatus', compilationStatus)
 
     if compilationStatus['returncode'] == 0 and runGame:
         # TODO use threads
@@ -123,9 +123,14 @@ def AutoBuild():
     pass
 
 def _PostExportStep(platform, outputFolder):
+    import subprocess
     if platform == 'windows':
         # TODO third_party folder must come from config
         io.Utils.CopyFilesOfTypes('/home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/redist', outputFolder, ['.dll'])
+        pass
+    elif platform == 'nacl':
+        # TODO finalize build
+        subprocess.check_output('/home/csantos/workspace/nacl_sdk/pepper_41/toolchain/linux_pnacl/bin/pnacl-finalize '+outputFolder+'/game -o '+outputFolder+'/lau_canvas.pexe', shell=True)
         pass
     pass
 
@@ -150,4 +155,9 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder):
         return True
     pass
 
+def previewGame(event_msg):
+    ExportGame('nacl', False, 'DEBUG', Project.getProjectFolder()+'/build/nacl/')
+    return True
+
 RPC.listen(buildGame)
+RPC.listen(previewGame)

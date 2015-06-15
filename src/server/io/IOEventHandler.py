@@ -1,4 +1,4 @@
-from server import Event, RPC, WebSocketServer
+from server import Event, RPC
 from server.project import Project
 
 def save(sceneData):

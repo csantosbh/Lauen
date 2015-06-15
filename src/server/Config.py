@@ -2,11 +2,16 @@ import os, sys, json, collections
 
 defaults=dict(
   DEFAULT=dict(
-    port='8080', # server
+    ws_port='9001', # server
+    http_port='9002', # server
     recent_project_history=5, # project
     recent_projects=[], # runtime
     win_compilers={ # export
         'g++': '/opt/mingw64/bin/x86_64-w64-mingw32-g++.exe',
+    },
+    nacl={
+        'pepper_folder': '/home/csantos/workspace/nacl_sdk/pepper_41',
+        'compiler': 'toolchain/linux_pnacl/bin/pnacl-clang++'
     }
   )
 )

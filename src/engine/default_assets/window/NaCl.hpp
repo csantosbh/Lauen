@@ -7,31 +7,30 @@
 #include "ppapi/cpp/var.h"
 #include "ppapi/cpp/var_dictionary.h"
 #include "ppapi/gles2/gl2ext_ppapi.h"
-#include "GLES2/gl2.h"
 #include "ppapi/cpp/graphics_3d.h"
 #include "ppapi/cpp/completion_callback.h"
 #include "ppapi/utility/completion_callback_factory.h"
 
+/*
 #include "utils/Time.h"
 #include "window/Window.hpp"
+*/
+
+#include "GLES2/gl2.h"
 
 namespace lau {
 
 class NaCl : public pp::Instance {
-    void init() {
+public:
+    explicit NaCl(PP_Instance instance) :
+    pp::Instance(instance),
+    callback_factory_(this) {
     }
 
-    void loop() {
-    }
-
-    void terminate() {
-    }
-
-    virtual ~NaCl() {
-    }
+    virtual ~NaCl() { }
 private:
     pp::CompletionCallbackFactory<NaCl> callback_factory_;
-}
+};
 
 class NaClCanvasModule : public pp::Module {
     public:

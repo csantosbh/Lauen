@@ -1,11 +1,11 @@
 #pragma once
 
-#include <GL/glew.h>
 #include "utils/IO.h"
 #include "Factories.hpp"
 
 namespace lau {
 
+#ifndef NACL
 class Game {
 public:
     void init() {
@@ -119,8 +119,11 @@ private:
         glLinkProgram(program);
         glUseProgram(program);
     }
-
-
 };
+#else
+class Game {
+public:
+};
+#endif
 
 } // namespace lau

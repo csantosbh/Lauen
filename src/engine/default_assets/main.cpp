@@ -1,8 +1,6 @@
+#if defined(DESKTOP)
 #include "window/Desktop.hpp"
 
-using namespace std;
-
-#if defined(DESKTOP)
 int main(void)
 {
     lau::Window* window = lau::Window::getInstance();
@@ -16,6 +14,8 @@ int main(void)
     return 0;
 }
 #elif defined(NACL)
+#include "window/NaCl.hpp"
+
 namespace pp { // TODO tem que ser no namespace pp?
     Module* CreateModule() {
         return new lau::NaClCanvasModule();

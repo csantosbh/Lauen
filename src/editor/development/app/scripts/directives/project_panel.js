@@ -14,15 +14,21 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($ti
       scope.projectPanel = {
         projectFiles: [],
         onDrop: function() {
-          console.log('hue!');
           console.log(scope.projectPanel.dropBucket);
+          $event.broadcast('addComponent', scope.projectPanel.dropBucket);
         }
       };
 
       $rpc.call('getAssetList', null, function(fileList) {
         $timeout(function() {
-          scope.projectPanel.projectFiles = fileList;
-          $event.broadcast('initialAssetList', fileList);
+          for(var i=0; i < fileList.length; ++i) {
+            scope.projectPanel.projectFiles.push({
+              label: LAU.IO.getFileNameFromPath(fileList[i].path),
+              flyweight: fileList[i],
+              type: 'script'
+            });
+          }
+          $event.broadcast('initialAssetList', scope.projectPanel.projectFiles);
         });
       });
     }

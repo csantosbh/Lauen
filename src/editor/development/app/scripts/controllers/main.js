@@ -27,13 +27,7 @@ function setupComponentMenu($scope, $timeout) {
     $event.broadcast('addComponent', $scope.componentMenu[item[0]][item[1]]);
   };
   $event.listen('initialAssetList', function(fileList) {
-    for(var i=0; i < fileList.length; ++i) {
-      $scope.componentMenu['Scripts'].push({
-        label: LAU.IO.getFileNameFromPath(fileList[i].path),
-        flyweight: fileList[i],
-        type: 'script'
-      });
-    }
+    $scope.componentMenu['Scripts'] = fileList;
   });
 }
 
