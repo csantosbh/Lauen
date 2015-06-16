@@ -1,0 +1,26 @@
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-md-12">x86 Build</div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">Platform</div>
+    <div class="col-md-6">
+      <select style="width: 100%" ng-model="menuBar._requestBuildCompPlatform">
+        <option value="linux">Linux</option>
+        <option value="windows">Windows</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-6">Build mode</div>
+    <div class="col-md-6">
+      <select style="width: 100%" ng-model="menuBar._requestBuildCompMode" >
+        <option value="RELEASE">Release</option>
+        <option value="DEBUG">Debug</option>
+      </select>
+    </div>
+  </div>
+  <div class="row">
+    <div class="col-md-12"><input type="button" value="Build" ng-click="menuBar.requestExport(false)" /><input type="button" value="Build & Run" ng-click="menuBar.requestExport(true)" /></div>
+  </div>
+</div>

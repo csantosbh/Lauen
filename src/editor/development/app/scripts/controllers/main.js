@@ -1,129 +1,5 @@
 'use strict';
 
-/*
- * Component menu
- */
-function setupComponentMenu($scope, $timeout) {
-  var componentTypes = {
-    'transform': {label:'Transform', flyweight: null }
-  };
-
-  $rpc.call('getDefaultComponents', null, function(dcs) {
-    for(var i in dcs) {
-      if(dcs.hasOwnProperty(i)) {
-        componentTypes[i].flyweight = dcs[i];
-        componentTypes[i].type = i;
-      }
-    }
-  });
-
-  $scope.componentMenu = {
-    'Basic': [componentTypes.transform],
-    'Scripts':[]
-  };
-
-  $scope.menuPickup = function(item){
-    // The item array contains the menu item selected
-    $event.broadcast('addComponent', $scope.componentMenu[item[0]][item[1]]);
-  };
-  $event.listen('initialAssetList', function(fileList) {
-    $scope.componentMenu['Scripts'] = fileList;
-  });
-}
-
-/*
- * Game Object editor menu
- */
-function setupGameObjectEditorMenu($scope, $timeout) {
-  $scope.currentGameObjectId = -1;
-  setupComponentMenu($scope, $timeout);
-  $event.listen('addComponent', function(eventData) {
-    if($scope.currentGameObjectId < 0) return;
-
-    var componentData = LAU.Components.componentFactory(eventData.type, eventData.flyweight);
-    $scope.gameObjects[$scope.currentGameObjectId].components.push(componentData);
-  });
-}
-
-// Menu bar (File, Edit, Help, etc..)
-function setupMenuBar($scope, $timeout, $dialog) {
-  // Load list of recent projects
-  $rpc.call('getRecentProjects', null, function(recentProjects) {
-    $timeout(function() {
-      $scope.menuBar.recentProjects = recentProjects;
-    });
-  });
-
-  // TODO load list of recent projects
-  var isRequestingProject = false; // Multi-click lock
-  $scope.menuBar = {
-    recentProjects: [],
-    requestBuild: function() {
-      $rpc.call('buildGame', null, function(stat){});
-    },
-    requestSave: function() {
-      var exported = [];
-      for(var g = 0; g < $scope.gameObjects.length; ++g) {
-        var gameObjComps = $scope.gameObjects[g].components;
-        var exportedComps = [];
-        for(var c = 0; c < gameObjComps.length; ++c) {
-          exportedComps.push(gameObjComps[c].export());
-        }
-        exported.push({
-          name: $scope.gameObjects[g].name,
-          components: exportedComps
-        });
-      }
-      $rpc.call('save', exported, function(saveRes) {
-        console.log('Save success: ' + saveRes);
-      });
-    },
-    requestLoadProject: function(path) {
-      if(!isRequestingProject) {
-        isRequestingProject = true;
-        $rpc.call('loadProject', path?path:null, function(success) {
-          if(success) {
-            $event.broadcast('reloadProject', null);
-          }
-          isRequestingProject = false;
-        });
-      }
-    },
-    requestNewProject: function() {
-      if(!isRequestingProject) {
-        isRequestingProject = true;
-        $rpc.call('createNewProject', null, function(folderName) {
-          if(folderName.length > 0) {
-            $event.broadcast('reloadProject', null);
-          }
-          isRequestingProject = false;
-        });
-      }
-      // TODO clear current project
-    },
-    requestBuildDialog: function() {
-      $dialog.open({
-        template: 'views/dialogs/build.html',
-        scope: $scope
-      });
-    },
-    requestExport: function(buildAndRun) {
-      $rpc.call('exportGame', {
-        platform: $scope.menuBar._requestBuildCompPlatform,
-        buildAndRun: buildAndRun,
-        compilationMode: $scope.menuBar._requestBuildCompMode,
-      }, function(status) {
-        console.log($scope.menuBar._requestBuildCompMode);
-        console.log('build status: ' + status);
-      });
-    },
-  };
-
-  // Internal fields
-  $scope.menuBar._requestBuildCompPlatform='linux';
-  $scope.menuBar._requestBuildCompMode='RELEASE';
-}
-
 // Handle IO events
 function setupIOEvents($scope, $timeout) {
   function handleIOEvents(sceneData) {
@@ -145,7 +21,7 @@ function setupIOEvents($scope, $timeout) {
         $event.broadcast('gameObjectCreated', i);
       }
 
-      // TODO remove line below when the hierarchy panel is correctly created
+      // TODO remove line below when the hierarchy panel is correctly created (with blur events to un-select game objects)
       $scope.currentGameObjectId = $scope.gameObjects.length-1;
     });
   }
@@ -194,8 +70,7 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
   $scope.LAU = LAU;
   // Initialize editor
   $scope.gameObjects = [];
-  setupGameObjectEditorMenu($scope, $timeout);
-  setupMenuBar($scope, $timeout, ngDialog);
+  $scope.currentGameObjectId = -1;
   setupIOEvents($scope, $timeout);
   setupConsole($scope, $timeout);
   $event.listen('reloadProject', function() {

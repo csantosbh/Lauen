@@ -30,7 +30,6 @@ class _LAUHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
 def serve():
     SocketServer.TCPServer.allow_reuse_address = True
 
-    print 'Porta!',Config.get('server', 'http_port')
     http_server = SocketServer.ForkingTCPServer(('localhost', int(Config.get('server', 'http_port'))), _LAUHTTPRequestHandler)
     http_server.serve_forever()
     pass

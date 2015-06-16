@@ -1,5 +1,10 @@
 #pragma once
 
+#ifndef NACL
+#include <GL/glew.h>
+#include <GL/gl.h>
+#endif
+
 #include "utils/IO.h"
 #include "Factories.hpp"
 

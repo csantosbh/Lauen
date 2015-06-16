@@ -7,8 +7,7 @@ var $canvas;
  * @description
  * # editCanvas
  */
-angular.module('lauEditor')
-.directive('editCanvas', function ($timeout) {
+angular.module('lauEditor').directive('editCanvas', function () {
   var scene, camera, renderer, planeMesh = null;
   var geometry, material;
 

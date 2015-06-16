@@ -4,7 +4,7 @@
 
 #include "utils/Time.h"
 #include "window/Window.hpp"
-#include <GL/glew.h>
+
 #include <GLFW/glfw3.h>
 
 namespace lau {

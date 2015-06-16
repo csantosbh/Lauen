@@ -9,7 +9,7 @@ Lau Engine documentation
 Contents:
 
 .. toctree::
-   :maxdepth: 3
+   :maxdepth: 6
 
    introduction
    inside_the_engine
