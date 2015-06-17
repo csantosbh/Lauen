@@ -27,9 +27,65 @@ public:
     callback_factory_(this) {
     }
 
+    bool InitGL(int32_t new_width, int32_t new_height) {
+        PostMessage("init opengl");
+        if (!glInitializePPAPI(pp::Module::Get()->get_browser_interface())) {
+            return false;
+        }
+
+        const int32_t attrib_list[] = {
+            PP_GRAPHICS3DATTRIB_ALPHA_SIZE, 8,
+            PP_GRAPHICS3DATTRIB_DEPTH_SIZE, 24,
+            PP_GRAPHICS3DATTRIB_WIDTH, new_width,
+            PP_GRAPHICS3DATTRIB_HEIGHT, new_height,
+            PP_GRAPHICS3DATTRIB_NONE
+        };
+
+        context_ = pp::Graphics3D(this, attrib_list);
+        if (!BindGraphics(context_)) {
+            context_ = pp::Graphics3D();
+            glSetCurrentContextPPAPI(0);
+            return false;
+        }
+
+        glSetCurrentContextPPAPI(context_.pp_resource());
+        return true;
+    }
+
+    void loop(int32_t) {
+        glClearDepthf(1.0f);                               
+        glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+        context_.SwapBuffers(callback_factory_.NewCallback(&NaCl::loop));
+    }
+
+    virtual void DidChangeView(const pp::View& view) {
+        int32_t new_width = view.GetRect().width() * view.GetDeviceScale();
+        int32_t new_height = view.GetRect().height() * view.GetDeviceScale();
+
+        if(context_.is_null()) {
+            if(!InitGL(new_width,new_height)) {
+                PostMessage("Failed to init opengl");
+                return;
+            }
+
+            PostMessage("Success on opengl");
+            loop(0);
+        } else {
+            int32_t result = context_.ResizeBuffers(new_width, new_height);
+            if(result < 0) {
+                PostMessage("Unsuccesful view change");
+            }
+        }
+
+        glViewport(0, 0, new_width, new_height);
+        glClearColor(0.05, 0.7, 0.25, 1);                    
+    }
+
+
     virtual ~NaCl() { }
 private:
     pp::CompletionCallbackFactory<NaCl> callback_factory_;
+    pp::Graphics3D context_;
 };
 
 class NaClCanvasModule : public pp::Module {

@@ -7,7 +7,7 @@
   </div>
   <div class="ui-layout-center">
     <edit-canvas class="main-canvas" ng-show="canvas.editMode" game-objects="{{gameObjects}}"></edit-canvas>
-    <embed class="main-canvas" ng-show="!canvas.editMode" src="lau_canvas.nmf" type="application/x-pnacl" />
+    <preview-canvas class="main-canvas" ng-show="!canvas.editMode" /></preview-canvas>
   </div>
   <div class="ui-layout-south scroll-y" id="project-panel">
     <project-panel></project-panel>

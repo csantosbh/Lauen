@@ -32,14 +32,14 @@ function setupIOEvents($scope, $timeout) {
 // Display errors/warnings/etc
 function setupConsole($scope, $timeout) {
   $event.listen('compilationStatus', function(eMsg) {
-    console.clear();
+    //console.clear();
     console.log(eMsg.message);
   });
   $event.listen('executionMessage', function(eMsg) {
     console.log(eMsg);
   });
   $event.listen('executionStatus', function(eMsg) {
-    console.clear();
+    //console.clear();
     console.log(eMsg.message);
   });
 }

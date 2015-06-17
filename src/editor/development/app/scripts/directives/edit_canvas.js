@@ -7,7 +7,7 @@ var $canvas;
  * @description
  * # editCanvas
  */
-angular.module('lauEditor').directive('editCanvas', function () {
+angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($timeout) {
   var scene, camera, renderer, planeMesh = null;
   var geometry, material;
 
@@ -130,13 +130,28 @@ angular.module('lauEditor').directive('editCanvas', function () {
   return {
     restrict: 'E',
     link: function postLink(scope, element) {
+      var _editRequested = false;
       scope.canvas = {
         editMode: true,
         toggleEditMode: function() {
-          $rpc.call('previewGame', null, function(status) {
-            console.log('build status: ' + status);
-            this.editMode = !this.editMode;
-          });
+          if(!_editRequested) {
+            if(scope.canvas.editMode == true) {
+              _editRequested = true;
+              $rpc.call('previewGame', null, function(status) {
+                $timeout(function() {
+                  console.log('build status: ' + status);
+                  scope.canvas.editMode = false;
+                  _editRequested = false;
+                });
+              });
+            } else {
+              _editRequested = true;
+              $timeout(function() {
+                _editRequested = false;
+                scope.canvas.editMode = true;
+              });
+            }
+          }
         }
       };
 
@@ -153,4 +168,4 @@ angular.module('lauEditor').directive('editCanvas', function () {
       animate();
     }
   };
-});
+}]);

@@ -1,5 +1,8 @@
 #pragma once
 
+#include <vector>
+#include <queue>
+
 #ifndef NACL
 #include <GL/glew.h>
 #include <GL/gl.h>
@@ -10,6 +13,8 @@
 
 namespace lau {
 
+using namespace std;
+
 #ifndef NACL
 class Game {
 public:
@@ -19,10 +24,12 @@ public:
         createSimpleGeometry();
 
         // Load game objects
-        rapidjson::Document serializedGameObjects;
-        string scene = utils::io::readFile("scenes/scene0.json");
-        serializedGameObjects.Parse(scene.c_str());
-        gameObjects = Factories::gameObjectFactory(serializedGameObjects);
+        utils::io::requestFile("scenes/scene0.json");
+        utils::io::onLoad([this] (queue<vector<uint8_t>>& fileData) {
+            rapidjson::Document serializedGameObjects;
+            serializedGameObjects.Parse((char*)(&fileData.front()[0]));
+            gameObjects = Factories::gameObjectFactory(serializedGameObjects);
+        });
     }
 
     void draw(double temporalAlpha) {
@@ -100,29 +107,37 @@ private:
         glVertexAttribPointer(vertexAttribId, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         // Create shaders
-        string vs = utils::io::readFile("default_assets/shaders/basic.vs");
-        string fs = utils::io::readFile("default_assets/shaders/basic.fs");
+        utils::io::requestFile("default_assets/shaders/basic.vs");
+        utils::io::requestFile("default_assets/shaders/basic.fs");
 
-        GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
-        GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
+        utils::io::onLoad([this] (queue<vector<uint8_t>>&shaderFiles) {
+            GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
+            GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
 
-        const GLchar *shaders[] = {vs.c_str(), fs.c_str()};
-        glShaderSource(vsId, 1, &shaders[0], NULL);
-        glShaderSource(fsId, 1, &shaders[1], NULL);
+            const auto& vs = shaderFiles.front();
+            shaderFiles.pop();
+            const auto& fs = shaderFiles.front();
+            const GLchar *shaders[] = {
+                (char*)(&vs[0]),
+                (char*)(&fs[0])
+            };
+            glShaderSource(vsId, 1, &shaders[0], NULL);
+            glShaderSource(fsId, 1, &shaders[1], NULL);
 
-        glCompileShader(vsId);
-        glCompileShader(fsId);
+            glCompileShader(vsId);
+            glCompileShader(fsId);
 
-        // Get shader compilation status
-        checkShaderCompilation(vsId);
-        checkShaderCompilation(fsId);
+            // Get shader compilation status
+            checkShaderCompilation(vsId);
+            checkShaderCompilation(fsId);
 
-        program = glCreateProgram();
-        glAttachShader(program, vsId);
-        glAttachShader(program, fsId);
-        glBindAttribLocation(program, vertexAttribId, "in_Position");
-        glLinkProgram(program);
-        glUseProgram(program);
+            program = glCreateProgram();
+            glAttachShader(program, vsId);
+            glAttachShader(program, fsId);
+            glBindAttribLocation(program, vertexAttribId, "in_Position");
+            glLinkProgram(program);
+            glUseProgram(program);
+        });
     }
 };
 #else
