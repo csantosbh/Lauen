@@ -1,12 +1,9 @@
 #pragma once
 
 #include <vector>
-#include <queue>
+#include <deque>
 
-#ifndef NACL
-#include <GL/glew.h>
-#include <GL/gl.h>
-#endif
+#include "LauCommon.h"
 
 #include "utils/IO.h"
 #include "Factories.hpp"
@@ -15,7 +12,6 @@ namespace lau {
 
 using namespace std;
 
-#ifndef NACL
 class Game {
 public:
     void init() {
@@ -24,10 +20,10 @@ public:
         createSimpleGeometry();
 
         // Load game objects
-        utils::io::requestFile("scenes/scene0.json");
-        utils::io::onLoad([this] (queue<vector<uint8_t>>& fileData) {
+        utils::IO::getInstance().requestFiles({"scenes/scene0.json"}, [this] (deque<pair<bool, vector<uint8_t>>>& fileData) {
+            fileData.begin()->second.push_back('\0');
             rapidjson::Document serializedGameObjects;
-            serializedGameObjects.Parse((char*)(&fileData.front()[0]));
+            serializedGameObjects.Parse((char*)(&fileData.begin()->second[0]));
             gameObjects = Factories::gameObjectFactory(serializedGameObjects);
         });
     }
@@ -69,10 +65,12 @@ private:
             GLint logSize = 0;
             glGetShaderiv(shaderId, GL_INFO_LOG_LENGTH, &logSize);
             vector<char> infoLog(logSize);
-            glGetShaderInfoLog(shaderId, logSize, &logSize, &infoLog[0]);
+            glGetShaderInfoLog(shaderId, logSize, &logSize, (char*)&infoLog[0]);
             // TODO proper error handling here
-            cerr << &infoLog[0] << endl;
+            cout << (char*)&infoLog[0] << endl;
+#ifndef NACL
             exit(0);
+#endif
         }
     }
 
@@ -107,43 +105,42 @@ private:
         glVertexAttribPointer(vertexAttribId, 3, GL_FLOAT, GL_FALSE, 0, 0);
 
         // Create shaders
-        utils::io::requestFile("default_assets/shaders/basic.vs");
-        utils::io::requestFile("default_assets/shaders/basic.fs");
+        utils::IO::getInstance().requestFiles({
+          "default_assets/shaders/basic.vs",
+          "default_assets/shaders/basic.fs"
+        }, std::bind(&Game::onLoadShaders, this, std::placeholders::_1));
+    }
 
-        utils::io::onLoad([this] (queue<vector<uint8_t>>&shaderFiles) {
-            GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
-            GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
+    void onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles) {
+        program = glCreateProgram();
+        GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
+        GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
 
-            const auto& vs = shaderFiles.front();
-            shaderFiles.pop();
-            const auto& fs = shaderFiles.front();
-            const GLchar *shaders[] = {
-                (char*)(&vs[0]),
-                (char*)(&fs[0])
-            };
-            glShaderSource(vsId, 1, &shaders[0], NULL);
-            glShaderSource(fsId, 1, &shaders[1], NULL);
+        const GLchar *shaders[2];
+        int i = 0;
+        for(auto& pair: shaderFiles) {
+            pair.second.push_back('\0');
+            shaders[i] = (char*)(&(pair.second[0]));
+            i++;
+        }
 
-            glCompileShader(vsId);
-            glCompileShader(fsId);
+        glShaderSource(vsId, 1, &shaders[0], NULL);
+        glShaderSource(fsId, 1, &shaders[1], NULL);
 
-            // Get shader compilation status
-            checkShaderCompilation(vsId);
-            checkShaderCompilation(fsId);
+        glCompileShader(vsId);
+        glCompileShader(fsId);
 
-            program = glCreateProgram();
-            glAttachShader(program, vsId);
-            glAttachShader(program, fsId);
-            glBindAttribLocation(program, vertexAttribId, "in_Position");
-            glLinkProgram(program);
-            glUseProgram(program);
-        });
+        // Get shader compilation status
+        checkShaderCompilation(vsId);
+        checkShaderCompilation(fsId);
+
+        glAttachShader(program, vsId);
+        glAttachShader(program, fsId);
+        glBindAttribLocation(program, vertexAttribId, "in_Position");
+        glLinkProgram(program);
+        glUseProgram(program);
+        cout << "terminei shaders"<<endl;
     }
 };
-#else
-class Game {
-public:
-};
-#endif
 
 } // namespace lau

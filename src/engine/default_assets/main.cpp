@@ -1,15 +1,19 @@
 #if defined(DESKTOP)
 #include "window/Desktop.hpp"
 
+using namespace std;
+
 int main(void)
 {
-    lau::Window* window = lau::Window::getInstance();
+#if defined(DESKTOP)
+    lau::Desktop window;
+#endif
 
     // Initialize window
-    window->init();
+    window.init();
 
     // Run game
-    window->loop();
+    window.loop();
 
     return 0;
 }

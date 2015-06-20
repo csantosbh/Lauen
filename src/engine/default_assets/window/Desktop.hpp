@@ -43,8 +43,6 @@ public:
     void loop() {
         double current = utils::time::now();
         double previous = current, lag = 0;
-        const double MS_PER_FRAME = 1.0/60.0;
-        const double MAXIMUM_LAG = 1.0/60.0*5.0;
 
         /* Loop until the user closes the window */
         while (!glfwWindowShouldClose(window))

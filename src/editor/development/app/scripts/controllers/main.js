@@ -71,10 +71,11 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
   // Initialize editor
   $scope.gameObjects = [];
   $scope.currentGameObjectId = -1;
+  $scope.reloadProject = function() {
+    $window.location.reload();
+  };
+
   setupIOEvents($scope, $timeout);
   setupConsole($scope, $timeout);
-  $event.listen('reloadProject', function() {
-    $window.location.reload();
-  });
 });
 var lau;

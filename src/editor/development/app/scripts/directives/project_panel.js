@@ -14,8 +14,8 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($ti
       scope.projectPanel = {
         projectFiles: [],
         onDrop: function() {
-          console.log(scope.projectPanel.dropBucket);
-          $event.broadcast('addComponent', scope.projectPanel.dropBucket);
+          console.log(scope);
+          scope.gameObjectEditor.addComponent(scope.projectPanel.dropBucket);
         }
       };
 

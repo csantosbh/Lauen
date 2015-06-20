@@ -21,17 +21,25 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
       }
     });
 
-    $scope.componentMenu = {
-      'Basic': [componentTypes.transform],
-      'Scripts':[]
+    $scope.gameObjectEditor = {
+      componentMenu: {
+        'Basic': [componentTypes.transform],
+        'Scripts':[]
+      },
+      _menuPickup: function(item) {
+        // The item array contains the menu item selected
+        $scope.gameObjectEditor.addComponent($scope.gameObjectEditor.componentMenu[item[0]][item[1]]);
+      },
+      addComponent: function(eventData) {
+        if($scope.currentGameObjectId < 0) return;
+
+        var componentData = LAU.Components.componentFactory(eventData.type, eventData.flyweight);
+        $scope.gameObjects[$scope.currentGameObjectId].components.push(componentData);
+      }
     };
 
-    $scope.menuPickup = function(item){
-      // The item array contains the menu item selected
-      $event.broadcast('addComponent', $scope.componentMenu[item[0]][item[1]]);
-    };
     $event.listen('initialAssetList', function(fileList) {
-      $scope.componentMenu['Scripts'] = fileList;
+      $scope.gameObjectEditor.componentMenu['Scripts'] = fileList;
     });
   }
 
@@ -41,12 +49,6 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
     transclude: true,
     link: function postLink(scope, element) {
       setupComponentMenu(scope);
-      $event.listen('addComponent', function(eventData) {
-        if(scope.currentGameObjectId < 0) return;
-
-        var componentData = LAU.Components.componentFactory(eventData.type, eventData.flyweight);
-        scope.gameObjects[scope.currentGameObjectId].components.push(componentData);
-      });
     },
   };
 });

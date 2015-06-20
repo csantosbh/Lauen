@@ -28,7 +28,7 @@ def _cxx_flags(compilationMode):
     return {
         'linux': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxx_mode_flags[compilationMode],
         'windows': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
-        'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxx_mode_flags[compilationMode],
+        'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxx_mode_flags[compilationMode],
     }
 
 # TODO only re-call this when we change the number of scripts available

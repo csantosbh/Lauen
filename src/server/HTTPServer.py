@@ -20,6 +20,10 @@ class _LAUHTTPRequestHandler(SimpleHTTPServer.SimpleHTTPRequestHandler):
             projFolder = Project.getProjectFolder()
             print 'lau_canvas.pexe requested'
             self.copyfile(open(projFolder+'/build/nacl/lau_canvas.pexe', 'r'), self.wfile)
+        elif self.path.startswith('/default_assets/') or self.path.startswith('/assets/') or self.path.startswith('/scenes/'):
+            print 'asked for asset!',self.path
+            projFolder = Project.getProjectFolder()
+            self.copyfile(open(projFolder+self.path, 'r'), self.wfile)
         else:
             return SimpleHTTPServer.SimpleHTTPRequestHandler.do_GET(self)
             #self.copyfile(open('./'+self.path, 'r'), self.wfile)

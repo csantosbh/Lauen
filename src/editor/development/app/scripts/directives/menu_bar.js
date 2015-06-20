@@ -48,7 +48,7 @@ angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', functi
             isRequestingProject = true;
             $rpc.call('loadProject', path?path:null, function(success) {
               if(success) {
-                $event.broadcast('reloadProject', null);
+                scope.reloadProject();
               }
               isRequestingProject = false;
             });
@@ -59,7 +59,7 @@ angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', functi
             isRequestingProject = true;
             $rpc.call('createNewProject', null, function(folderName) {
               if(folderName.length > 0) {
-                $event.broadcast('reloadProject', null);
+                scope.reloadProject();
               }
               isRequestingProject = false;
             });

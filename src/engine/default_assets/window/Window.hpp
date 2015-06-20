@@ -13,11 +13,12 @@ public:
     virtual void loop() = 0;
     virtual void terminate() = 0;
     virtual ~Window() {}
-    static Window* getInstance();
 
 protected:
+    const double MS_PER_FRAME = 1.0/60.0;
+    const double MAXIMUM_LAG = 1.0/60.0*5.0;
+
     Game game;
-    static shared_ptr<Window> wndInstance;
 };
 
 } // namespace lau

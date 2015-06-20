@@ -1,45 +1,170 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
-#ifndef NACL
+#include <queue>
+
 #include <iostream>
+
+#ifdef NACL
+#include "ppapi/cpp/url_loader.h"
+#include "utils/UrlLoaderHandler.h"
+#else
 #include <fstream>
 #endif
 
-#include "IO.h"
+#include "utils/IO.h"
 
 using namespace std;
 
-namespace lau { namespace utils { namespace io {
+namespace lau {
 
 #ifdef NACL
-void requestFile(const string& filename)
-{
-    // TODO implement this for NaCl!
-    // Maybe better to do it in a separate file?
-    return "";
-}
-#else
-queue<vector<uint8_t>> filesRead;
-// TODO implement async loading
-void requestFile(const string& filename)
-{
-    std::ifstream in;
-    in.open(filename.c_str(), std::ios::in | std::ios::binary);
-    if (in) {
-        filesRead.push(std::vector<uint8_t>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>()));
-        return;
-    }
-    // TODO: have a proper exception system
-    cerr << strerror(errno) << endl;
-    throw(1);
-}
+extern pp::Instance* GlobalInstance;
+#endif
 
-void onLoad(const std::function<void(std::queue<std::vector<uint8_t>>&)>& callback) {
-    callback(filesRead);
-    while(!filesRead.empty()) filesRead.pop();
-}
+namespace utils {
+
+#ifdef NACL
+
+using namespace pp;
+
+class NaClIO: public IO {
+public:
+    virtual void requestFiles(const std::initializer_list<std::string>& filenames,
+            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    {
+        requestFiles<const initializer_list<string>&>(filenames, callback);
+    }
+
+    virtual void requestFiles(const std::vector<std::string>& filenames,
+            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    {
+        requestFiles<const vector<string>&>(filenames, callback);
+    }
+
+    NaClIO() :
+        handler(NULL),
+        onLoadDone(bind(&NaClIO::onLoadDoneImpl, this, std::placeholders::_1, std::placeholders::_2))
+    {}
+
+private:
+    URLLoaderHandler* handler;
+    std::function<void(bool success, const std::string& data)> onLoadDone;
+
+    queue<queue<string>> pendingRequests;
+    queue<std::function<void(std::deque<std::pair<bool,std::vector<uint8_t>>>&)>> pendingCallbacks;
+    deque<pair<bool, vector<uint8_t>>> filesRead;
+
+    void onLoadDoneImpl(bool success, const string& data) {
+        filesRead.push_back(make_pair(success, vector<uint8_t>(data.begin(), data.end())));
+        auto tst = vector<uint8_t>(data.begin(), data.end());
+        if(!pendingRequests.front().empty()) {
+            // We still have files to load
+            handler = URLLoaderHandler::Create(GlobalInstance, pendingRequests.front().front());
+            pendingRequests.front().pop();
+            handler->onFinishCallback = onLoadDone;
+            handler->Start();
+        } else {
+            // The current request is done! Forward the requested data
+            pendingCallbacks.front()(filesRead);
+
+            // Clear filesRead container
+            filesRead.clear();
+
+            pendingRequests.pop();
+            pendingCallbacks.pop();
+            if(!pendingRequests.empty()) {
+                // Proceed to next request
+                handler = URLLoaderHandler::Create(GlobalInstance, pendingRequests.front().front());
+                pendingRequests.front().pop();
+                handler->onFinishCallback = onLoadDone;
+                handler->Start();
+            } else {
+                // No more requests to process.
+                handler = NULL;
+            }
+        }
+    }
+
+    template<class Container>
+    void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)>& callback)
+    {
+        queue<string> pendingFiles;
+        for(const auto& file: requestedFiles)//const auto &file = firstFile; file != lastFile; ++file)
+        {
+            pendingFiles.push(file);
+        }
+
+        if(!pendingFiles.empty()) {
+            pendingRequests.push(pendingFiles);
+            pendingCallbacks.push(callback);
+        }
+
+        if(handler == NULL) {
+            handler = URLLoaderHandler::Create(GlobalInstance, pendingRequests.front().front());
+            pendingRequests.front().pop();
+            // TODO investigate if this is going to be called from a different thread
+            handler->onFinishCallback = onLoadDone;
+            handler->Start();
+        }
+    }
+};
+
+#else
+
+class DesktopIO: public IO {
+public:
+    virtual void requestFiles(const std::initializer_list<std::string>& filenames,
+            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    {
+        requestFiles<const initializer_list<string>&>(filenames, callback);
+    }
+
+    virtual void requestFiles(const std::vector<std::string>& filenames,
+            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    {
+        requestFiles<const vector<string>&>(filenames, callback);
+    }
+
+    DesktopIO()
+    {}
+
+private:
+    queue<queue<string>> pendingRequests;
+    queue<std::function<void(std::deque<std::pair<bool,std::vector<uint8_t>>>&)>> pendingCallbacks;
+
+    template<class Container>
+    void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)>& callback)
+    {
+        // TODO make this procedure asynchronous
+        deque<pair<bool, vector<uint8_t>>> filesRead;
+
+        for(const auto& filename: requestedFiles) {
+            std::ifstream in;
+            in.open(filename.c_str(), std::ios::in | std::ios::binary);
+            if (in) {
+                filesRead.push_back(make_pair(true, std::vector<uint8_t>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>())));
+            } else {
+                filesRead.push_back(make_pair(false, vector<uint8_t>()));
+            }
+        }
+        callback(filesRead);
+    }
+};
 
 #endif
 
-}}} // namespace
+
+shared_ptr<IO> IO::instance;
+IO& IO::getInstance() {
+    if(instance==NULL) {
+#ifdef NACL
+        instance = shared_ptr<IO>(dynamic_cast<IO*>(new NaClIO()));
+#else
+        instance = shared_ptr<IO>(dynamic_cast<IO*>(new DesktopIO()));
+#endif
+    }
+    return *instance;
+}
+
+}} // namespace

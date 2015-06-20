@@ -73,16 +73,102 @@ Events
 Listening and broadcasting events
 ----
 
+.. function:: $event.listen(event_name, callback)
+
+   Listen to an event. The callback function will be called whenever the event is raised. It is possible to have many listeners to each event.
+
+   :param event_name: String defining the name of the event.
+   :param event_data: Callback function that will be executed when the event is broadcast.
+
+Sample:
+
+.. code-block:: javascript
+
+    $event.listen('myEvent', function(eventData) {
+        console.log(eventData);
+    });
+
+.. function:: $event.broadcast(event_name, event_data)
+
+   Broadcasts an event with name defined by the string event_name. Every listener will receive event_data as a parameter.
+
+   :param event_name: String defining the name of the event.
+   :param event_data: Object with the event data.
+
+Sample:
+
+.. code-block:: javascript
+
+    $event.broadcast('myEvent', {id: 123});
+
+
 ----
 Available events
 ----
-list of available events...
+
+========================= ========================================
+ Event name                Description                            
+========================= ========================================
+ gameObjectCreated         A new gameobject was created.
+                           **Parameter:** The numeric index
+                           referring to the position of the new
+                           gameobject in the $scope.gameObjects
+                           array.
+ initialAssetList          Raised when the user asset list is
+                           received for the first time.
+                           **Parameter:** Array of asset objects with
+                           format {flyweight: AssetFlyweight, label:
+                           "file_name", type: "file_type"}. For more
+                           information on asset types and flyweights,
+                           refer to :ref:`Asset Types <asset-types>`.
+ transformComponentAdded   Whenever the Transform component is added
+                           to the currently selected game object.
+                           **Parameter:** The transform component
+                           flyweight. For more information on this object,
+                           refer to :ref:`Asset Types <asset-types>`.
+========================= ========================================
+
+=============
+Socket events
+=============
+Socket events are events that are broadcast to the server module. To broadcast a message to the server, use ``$socket.broadcast("event_name", eventData)``.
+The server can also broadcast events to the Editor frontend (check out the list of server events :ref:`here <server-events>`). To subscribe, simply listen to the corresponding event with the ``$event`` object:
+
+.. code-block:: javascript
+
+   $event.listen("server_event", function(eventData) {
+     console.log(eventData);
+   });
+
+The socket module is implemented in ``scripts/socket.js``.
 
 ====
 RPCs
 ====
-RPCs are... they are implemented as...
-To see what RPCs are available, check out the ref <server rpcs>
+RPC stands for *Remote Procedure Call*. There are many functions implemented in the server module (like script compilation and file monitoring) that the editor frontend must trigger, and they do so by exchanging websocket messages.
+
+Whenever the editor needs to trigger a server function, it does so by broadcasting the `RPCCall` socket event to the server, with the following parameter:
+
+.. code-block:: javascript
+
+   {
+     procedure: "procedure_name",
+     from: randomUniqueID,
+     parameters: userParameters
+   }
+
+The server receives this request, processes it (to see the details on server-side RPCs, check out :ref:`Server RPC <server-rpc>`) and returns an object to the callee (the return value varies across functions -- refer to :ref:`Server RPC <server-rpc>` for more info on this).
+
+In order to call an RPC, use the ``$rpc.call(procedureName, parameters, callback)`` function. Example:
+
+.. code-block:: javascript
+
+   $rpc.call("serverMethod", {data: 12}, function(returnValue) {
+     console.log(returnValue);
+   });
+
+
+The RPC module is implemented in ``scripts/rpc.js``.
 
 ====
 Creating component types
@@ -92,3 +178,9 @@ Creating component types
 Creating component widgets
 ====
 
+.. _asset-types:
+
+======
+Asset Types
+======
+Asset flyweight formats...
