@@ -9,7 +9,7 @@
 angular.module('lauEditor').directive('gameObjectEditor', function () {
   function setupComponentMenu($scope) {
     var componentTypes = {
-      'transform': {label:'Transform', flyweight: null }
+      'transform': {menu_label:'Transform', flyweight: null },
     };
 
     $rpc.call('getDefaultComponents', null, function(dcs) {
@@ -22,13 +22,22 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
     });
 
     $scope.gameObjectEditor = {
-      componentMenu: {
-        'Basic': [componentTypes.transform],
-        'Scripts':[]
-      },
+      /*
+       * Menu indices:
+       * 0 transform component
+       * 1 Scripts category
+       */
+      componentMenu: [
+        componentTypes.transform,
+        {menu_label: 'Scripts', children: []}
+      ],
       _menuPickup: function(item) {
+        var componentType = $scope.gameObjectEditor.componentMenu;
+        for(var i = 0; i < item.length; ++i) {
+          componentType = componentType[item[i]];
+        }
         // The item array contains the menu item selected
-        $scope.gameObjectEditor.addComponent($scope.gameObjectEditor.componentMenu[item[0]][item[1]]);
+        $scope.gameObjectEditor.addComponent(componentType);
       },
       addComponent: function(eventData) {
         if($scope.currentGameObjectId < 0) return;
@@ -39,7 +48,7 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
     };
 
     $event.listen('initialAssetList', function(fileList) {
-      $scope.gameObjectEditor.componentMenu['Scripts'] = fileList;
+      $scope.gameObjectEditor.componentMenu[1].children = fileList;
     });
   }
 

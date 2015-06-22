@@ -52,7 +52,7 @@ Each game object is an instance of a prototype defined in ``scripts/lau/game_obj
 Script Field directives
 -----------------------
 
-.. class:: numberInput
+.. function:: <number-input lbl-class lbl-id label inp-class inp-id sensitivity/>
 
    This directive creates a number input whose value can be changed by dragging the mouse. A label can be specified via the ``label`` attribute.
 
@@ -62,7 +62,6 @@ Script Field directives
    :param inpClass: CSS class for the input tag.
    :param inpId:  ID for the input tag.
    :param sensitivity: Defines how much will the input value change for each pixel that the mouse moves. Default: ``0.109375``.
-
 
 ====
 Events
@@ -173,6 +172,96 @@ The RPC module is implemented in ``scripts/rpc.js``.
 ====
 Creating component types
 ====
+For each new component type (for instance, a Transform or a Script component), all of the following items are required:
+
+* **An editor view** An HTML template with the component's editable fields. Must be located inside ``views/directives/component_editors/``.
+* **Make the editor view loadable** Add a ``case 'transform_name'`` to make the new transform loadable in ``scripts/directives/component_editor.js``.
+* **Add the new component to the component menu** This involves editing the file ``scripts/directives/game_object_editor.js``, and the required changes will depend on the type of component you are creating. This step is explained in detail :ref:`down below <add-component-to-menu>`.
+* **Define a unique numeric id for the new component** This requires modifying **server** files in order to make these ids accessible from the whole project. It depends on the type of component being created, and is explained in detail :ref:`down below <define-unique-component-id>`.
+* **Implement the runtime for the new component** If you are implementing the runtime for this component, its path and class name must be specified in the :ref:`server as well <implementing-custom-components>`.
+* **Make the component persistent** In order to make the component persistent, that is, you must implement the code that will export it to a serializable format, and the code that will receive data in that format and transform it back into something that the editor can use. This is done in the file ``lau/component_prototypes.js``, and is explained :ref:`down below <persistent-components>`.
+
+.. _add-component-to-menu:
+
+----
+Adding new components to the Component Menu
+----
+The Component Menu displays all objects listed within ``$scope.gameObjectEditor.componentMenu``, defined in ``scripts/directives/game_object_editor.js``.
+
+This object is an array of dictionaries. Within this array, a component type is a dictionary in the format:
+
+.. code-block:: javascript
+
+   {
+     menu_label: "Component Type Label",
+     flyweight: {..internal data...}
+   }
+   
+and a category has the format:
+
+.. code-block:: javascript
+
+   {
+     menu_label: "Component Type Label",
+     children: [..components or subcategories...]
+   }
+
+Notice that a category may contain both components and subcategories.
+
+.. warning::
+
+   Avoid adding components to random positions of the Component Menu, always
+   prefer to append them to the end of their sections. There is some code that
+   is sensible to the order in which the elements were inserted in this array
+   (for instance, the Scripts section is assumed to be on index 1, so new
+   scripts detected by the backend are appended to this position).
+
+
+The **label** field in the component object is the name that will be displayed
+in the Component Menu; the **flyweight** field points to an object with
+implementation specific data (for instance, the unique numeric id and the path
+to the file where the component is implemented). Typically, the *flyweight*
+will be provided by the server through the ``getDefaultComponents`` RPC. This
+is the case when the component is implemented by a single class. In different
+cases (for instance, the Script type has one implementation per file, and is
+given by the engine user), the flyweight has to be managed and retrieved from
+the server accordingly (the Script components are managed by the Project Panel
+module, and are given by the server during startup and every time a new script
+is detected). Normal components, however, are only required to be added to the ``componentTypes`` object and directly to the menu via a reference to the ``componentTypes`` object.
+
+.. _define-unique-component-id:
+
+----
+Defining a unique numeric id for the new Component
+----
+The engine requires each component to have a unique numeric ID. Even individual scripts have their own unique ID, and two different scripts have different IDs. This is required by the Component instantiation code, which looks up to the required ID in order to decide which class to instantiate.
+
+User script IDs are determined by the server in the file ``server/project/Project.py``, by the function ``getScriptId()``. Normal components (default components) must be manually specified in ``server/components/DefaultComponentManager.py``, in the ``_defaultComponents`` dictionary. The format of this dictionary is:
+
+.. code-block:: python
+
+   '<unique_string_identifier>': {
+       'id': <unique_numeric_id>,
+       'path': '<path to component file.hpp>',
+       'full_class_name': 'lau::ComponentClassName'
+   }
+
+If you setup your component on this file (which you'll do whenever creating a typical component), make sure to edit the ``scripts/directives/game_object_editor.js`` file accordingly, as :ref:`explained above <add-component-to-menu>`.
+
+.. _implementing-custom-components:
+
+----
+Implementing custom components
+----
+
+Custom components are typically within the ``lau`` namespace. Although not obligatory, this is a good practice since it will prevent from cluttering the global namespace.
+
+.. _persistent-components:
+
+------
+Making the new component persistent
+------
+
 
 ====
 Creating component widgets

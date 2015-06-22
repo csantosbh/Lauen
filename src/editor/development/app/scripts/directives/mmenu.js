@@ -11,14 +11,18 @@ angular.module('lauEditor')
   function genMenu(lvlElements, callbackArguments) {
     var newMenu = '';
     for(var i in lvlElements) {
-      if(lvlElements.hasOwnProperty(i)) {
+      if(lvlElements.hasOwnProperty(i) && lvlElements[i] != null) {
         var childArguments = callbackArguments.slice(0);
         childArguments.push(i);
 
-        if(lvlElements[i] instanceof Array) {
-          newMenu = newMenu+'<li><a href="#">'+i+'</a><ul>'+genMenu(lvlElements[i], childArguments)+'</ul></li>';
+        if(lvlElements[i].hasOwnProperty('children')) {
+          // lvlElements[i] is a subcategory
+          var catArguments = childArguments.slice(0);
+          catArguments.push('children');
+          newMenu = newMenu+'<li><a href="#">'+lvlElements[i].menu_label+'</a><ul>'+genMenu(lvlElements[i].children, catArguments)+'</ul></li>';
         } else {
-          newMenu = newMenu+'<li><a href="#" ng-click=\'elementSelected('+JSON.stringify(childArguments)+')\'>'+lvlElements[i].label+'</a></li>';
+          // lvlElements[i] is a component type
+          newMenu = newMenu+'<li><a href="#" ng-click=\'elementSelected('+JSON.stringify(childArguments)+')\'>'+lvlElements[i].menu_label+'</a></li>';
         }
       }
     }

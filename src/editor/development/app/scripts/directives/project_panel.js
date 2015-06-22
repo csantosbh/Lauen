@@ -23,9 +23,9 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($ti
         $timeout(function() {
           for(var i=0; i < fileList.length; ++i) {
             scope.projectPanel.projectFiles.push({
-              label: LAU.IO.getFileNameFromPath(fileList[i].path),
-              flyweight: fileList[i],
-              type: 'script'
+              menu_label: LAU.IO.getFileNameFromPath(fileList[i].path),
+              type: 'script',
+              flyweight: fileList[i]
             });
           }
           $event.broadcast('initialAssetList', scope.projectPanel.projectFiles);
