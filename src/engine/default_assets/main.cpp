@@ -10,7 +10,7 @@ int main(void)
 #endif
 
     // Initialize window
-    window.init();
+    window.init(640, 480);
 
     // Run game
     window.loop();

@@ -11,7 +11,7 @@ namespace lau {
 
 class Desktop : public Window {
 public:
-    void init() {
+    void init(int winWidth, int winHeight) {
         if (!glfwInit())
             throw 1; // TODO properly handle errors
         glfwSetErrorCallback(&windowErrorCallback);
@@ -37,7 +37,7 @@ public:
             }
         }
 
-        game.init();
+        game.init(winWidth, winHeight);
     }
 
     void loop() {

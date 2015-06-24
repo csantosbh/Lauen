@@ -3,6 +3,7 @@
 #ifdef NACL
 #include <queue>
 #include <iostream>
+#include <sstream>
 
 #include "ppapi/cpp/var.h"
 #include "ppapi/cpp/var_dictionary.h"
@@ -16,10 +17,7 @@
 namespace lau {
 
 using namespace std;
-queue<const char*> messageQueue;
-inline void LOG(const char* c) {
-    messageQueue.push(c);
-}
+std::stringstream lout;
 pp::Instance* GlobalInstance = NULL; // TODO think of something better. Having to pass this guy around sucks.
 
 class NaCl : public pp::Instance {
@@ -30,13 +28,11 @@ public:
         GlobalInstance = this;
     }
 
-    bool InitGL(int32_t new_width, int32_t new_height) {
+    bool init(int32_t new_width, int32_t new_height) {
         PostMessage("init opengl");
-        cout << "teste0" << endl;
         if (!glInitializePPAPI(pp::Module::Get()->get_browser_interface())) {
             return false;
         }
-        cout << "teste3" << endl;
 
         const int32_t attrib_list[] = {
             PP_GRAPHICS3DATTRIB_ALPHA_SIZE, 8,
@@ -45,7 +41,6 @@ public:
             PP_GRAPHICS3DATTRIB_HEIGHT, new_height,
             PP_GRAPHICS3DATTRIB_NONE
         };
-        cout << "teste1" << endl;
 
         context_ = pp::Graphics3D(this, attrib_list);
         if (!BindGraphics(context_)) {
@@ -53,26 +48,24 @@ public:
             glSetCurrentContextPPAPI(0);
             return false;
         }
-        cout << "teste5" << endl;
 
         glSetCurrentContextPPAPI(context_.pp_resource());
-        game.init();
+        game.init(new_width, new_height);
         return true;
     }
 
     void loop(int32_t) {
-        //glClearDepthf(1.0f);                               
-        //glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-        cout << "Loop..." << endl;
         const double MS_PER_FRAME = 1.0/60.0;
         game.update(MS_PER_FRAME);
         game.draw(0.0);
         context_.SwapBuffers(callback_factory_.NewCallback(&NaCl::loop));
 
         // Flush log
-        while(!messageQueue.empty()) {
-            PostMessage(messageQueue.front());
-            messageQueue.pop();
+        string loutStr = lout.str();
+        if(loutStr.length() != 0) {
+            PostMessage(loutStr);
+            lout.str(string());
+            lout.clear();
         }
     }
 
@@ -81,7 +74,7 @@ public:
         int32_t new_height = view.GetRect().height() * view.GetDeviceScale();
 
         if(context_.is_null()) {
-            if(!InitGL(new_width,new_height)) {
+            if(!init(new_width,new_height)) {
                 PostMessage("Failed to init opengl");
                 return;
             }
@@ -94,9 +87,6 @@ public:
                 PostMessage("Unsuccesful view change");
             }
         }
-
-        glViewport(0, 0, new_width, new_height);
-        glClearColor(0.05, 0.7, 0.25, 1);                    
     }
 
 

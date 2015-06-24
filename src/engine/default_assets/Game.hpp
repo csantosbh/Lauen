@@ -14,9 +14,9 @@ using namespace std;
 
 class Game {
 public:
-    void init() {
+    void init(int windowWidth, int windowHeight) {
         glClearColor(0,0,0,1);
-        glViewport(0, 0, 640, 480);
+        glViewport(0, 0, windowWidth, windowHeight);
         createSimpleGeometry();
 
         // Load game objects
@@ -67,7 +67,7 @@ private:
             vector<char> infoLog(logSize);
             glGetShaderInfoLog(shaderId, logSize, &logSize, (char*)&infoLog[0]);
             // TODO proper error handling here
-            cout << (char*)&infoLog[0] << endl;
+            lerr << (char*)&infoLog[0] << endl;
 #ifndef NACL
             exit(0);
 #endif
@@ -116,16 +116,27 @@ private:
         GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
         GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);
 
-        const GLchar *shaders[2];
-        int i = 0;
-        for(auto& pair: shaderFiles) {
-            pair.second.push_back('\0');
-            shaders[i] = (char*)(&(pair.second[0]));
-            i++;
-        }
+#ifdef GL_ES
+        // GL ES
+        // TODO pass the versions dynamically, since they will be chosen by the user in the interface
+        const char version[] = "#version 100\n";
+#else
+        // GL core
+        const char version[] = "#version 150\n";
+#endif
+        const GLchar *vsFull[] = {
+            version,
+            NULL,
+        };
+        const GLchar *fsFull[] = {
+            version,
+            NULL,
+        };
+        vsFull[1] = (char*)(&shaderFiles.begin()->second[0]);
+        fsFull[1] = (char*)(&(++shaderFiles.begin())->second[0]);
 
-        glShaderSource(vsId, 1, &shaders[0], NULL);
-        glShaderSource(fsId, 1, &shaders[1], NULL);
+        glShaderSource(vsId, 2, vsFull, NULL);
+        glShaderSource(fsId, 2, fsFull, NULL);
 
         glCompileShader(vsId);
         glCompileShader(fsId);
@@ -139,7 +150,6 @@ private:
         glBindAttribLocation(program, vertexAttribId, "in_Position");
         glLinkProgram(program);
         glUseProgram(program);
-        cout << "terminei shaders"<<endl;
     }
 };
 

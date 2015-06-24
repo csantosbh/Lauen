@@ -9,7 +9,7 @@ using namespace std;
 
 class Window {
 public:
-    virtual void init() = 0;
+    virtual void init(int winWidth, int winHeight) = 0;
     virtual void loop() = 0;
     virtual void terminate() = 0;
     virtual ~Window() {}

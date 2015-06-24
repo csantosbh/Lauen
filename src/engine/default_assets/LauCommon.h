@@ -5,9 +5,13 @@
 #include "ppapi/cpp/instance.h"
 // TODO implement custom cout/cerr that uses PostMessage
 namespace lau {
-void LOG(const char*);
+extern std::stringstream lout;
+#define lerr cerr // TODO implement lerr as well
 }
+#define GL_ES
 #else
 #include <GL/glew.h>
 #include <GL/gl.h>
+#define lout cout
+#define lerr cerr
 #endif

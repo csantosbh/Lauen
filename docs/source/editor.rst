@@ -123,7 +123,7 @@ Available events
  transformComponentAdded   Whenever the Transform component is added
                            to the currently selected game object.
                            **Parameter:** The transform component
-                           flyweight. For more information on this object,
+                           flyweight. For more information on flyweights,
                            refer to :ref:`Asset Types <asset-types>`.
 ========================= ========================================
 
@@ -243,7 +243,7 @@ User script IDs are determined by the server in the file ``server/project/Projec
    '<unique_string_identifier>': {
        'id': <unique_numeric_id>,
        'path': '<path to component file.hpp>',
-       'full_class_name': 'lau::ComponentClassName'
+       'full_class_name': 'lau::ComponentClassNameWithNamespace'
    }
 
 If you setup your component on this file (which you'll do whenever creating a typical component), make sure to edit the ``scripts/directives/game_object_editor.js`` file accordingly, as :ref:`explained above <add-component-to-menu>`.
@@ -256,20 +256,66 @@ Implementing custom components
 
 Custom components are typically within the ``lau`` namespace. Although not obligatory, this is a good practice since it will prevent from cluttering the global namespace.
 
+Whenever implementing a standard component, make sure to fill the :ref:`DefaultComponentManager.py file accordingly <define-unique-component-id>`.
+
 .. _persistent-components:
 
 ------
 Making the new component persistent
 ------
+In order to make your new component's public data savable and loadable by both the editor and its own instances, you need to define which fields need to be saved, and how these fields can be converted into instance-specific usable information.
+
+This is performed in ``scripts/lau/component_prototypes.js`` file. First of
+all, this file has a ``componentFactory`` function that creates javascript
+instances of that particular component everytime it is added to a game object.
+These instances need to implement a constructor whose parameter is the
+serialized data (provided if the component is being loaded from a saved
+project) or a null object (if the component was just inserted to a game
+object). Its prototype must implement an ``export()`` function that converts
+its internal serializable data into an object, that will be saved with the
+project (and loaded by the component instance when the game is run).
 
 
 ====
 Creating component widgets
 ====
+Every component type (Number, Color, String, etc) that can be potentially used
+by scripts must have their initialization rule defined in
+``scripts/lau/component_prototypes.js``, in the function
+``getDefaultScriptFieldValue(type)``. This function receives the unique string
+identifier of that field, and returns the default value associated with it.
 
 .. _asset-types:
 
 ======
-Asset Types
+Component Flyweights
 ======
-Asset flyweight formats...
+
+The flyweights of standard components are defined in the :ref:`DefaultComponentManager.py server file <define-unique-component-id>`. Non-standard components have different flyweights, as specified below.
+
+------
+Script
+------
+The script flyweights contains both their unique numeric ID and implementation
+specific data parsed from their C++ files. They are created by the server in
+the file ``server/io/IOEventHandler.py``, and are loaded in the editor by
+``scripts/directives/project_panel.js``, being made public to other modules via
+the ``initialAssetList`` event.
+
+.. code-block:: javascript
+
+   {
+     fields: {
+       name: "variableName",
+       pragmas: ["defined", "pragmas"],
+       type: "fieldType",
+       visibility: visibilityLevel
+     },
+     path: "/full/path/to/script/File.hpp",
+     namespace: "sample::inner",
+     class: "CPPClassName",
+     id: uniqueNumericId
+   }
+
+The ``visibilityLevel`` can be 0 (public), 1 (protected) or 2 (private).
+
