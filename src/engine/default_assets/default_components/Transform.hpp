@@ -13,11 +13,11 @@ using namespace std;
 class Transform : public Component {
 public:
 	Transform(const rapidjson::Value& fields) {}
-	virtual void update(float dt) {
+	void update(float dt) {
 #ifndef NACL
-		cout << "Transform update!" << endl;
+        cout << "Transform update!" << endl;
 #endif
-	}
+    }
 };
 
 } // namespace

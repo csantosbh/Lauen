@@ -23,6 +23,51 @@ namespace lau {
 
 using namespace std;
 
+////
+// Component Peekers
+////
+template<typename T>
+class ComponentPeeker : public Component {};
+
+% for component in components:
+template<>
+class ComponentPeeker<${component['namespace']}::${component['class']}> : public Component
+{
+public:
+	ComponentPeeker(shared_ptr<${component['namespace']}::${component['class']}> actualComp) : impl(actualComp) {
+	}
+
+	void update(float dt) {
+		impl->update(dt);
+		// Peek class fields
+		% for f in range(0, len(component['fields'])):
+		cout << impl->${component['fields'][f]['name']} << endl;
+		% endfor
+
+	}
+
+    shared_ptr<${component['namespace']}::${component['class']}> impl; // Pointer to the actual component
+};
+% endfor
+
+///// Transform
+template<>
+class ComponentPeeker<Transform> : public Component
+{
+public:
+	ComponentPeeker(shared_ptr<Transform> actualComp) : impl(actualComp) {
+	}
+
+	void update(float dt) {
+		impl->update(dt);
+	}
+
+	shared_ptr<Transform> impl;
+};
+
+////
+// Factories
+////
 class Factories {
 public:
 	static shared_ptr<Component> componentFactory(const rapidjson::Value& serializedComponent) {
@@ -34,7 +79,13 @@ public:
 				// Default components
 				% for type, default_component in default_components.iteritems():
 				case ${default_component['id']}: {
+#ifndef PREVIEW_MODE
 					${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(serializedComponent);
+#else
+					ComponentPeeker<${default_component['full_class_name']}>* ptr = new ComponentPeeker<${default_component['full_class_name']}>(
+							shared_ptr<${default_component['full_class_name']}>(new ${default_component['full_class_name']}(serializedComponent))
+							);
+#endif
 					result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
 					break;
 				}
@@ -45,10 +96,20 @@ public:
 				case ${component['id']}: {
 					const rapidjson::Value& fields = serializedComponent["fields"];
 
+#ifndef PREVIEW_MODE
 					${component['namespace']}::${component['class']}* ptr = new ${component['namespace']}::${component['class']}();
+#else
+					auto* ptr = new ComponentPeeker<${component['namespace']}::${component['class']}>(
+							shared_ptr<${component['namespace']}::${component['class']}>(new ${component['namespace']}::${component['class']}())
+							);
+#endif
 					% for f in range(0,len(component['fields'])):
 						% if component['fields'][f]['type']=='float':
+#ifndef PREVIEW_MODE
 					ptr->${component['fields'][f]['name']} = fields[${f}]["value"].GetDouble();
+#else
+					ptr->impl->${component['fields'][f]['name']} = fields[${f}]["value"].GetDouble();
+#endif
 						% endif
 					% endfor
 					result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));

@@ -12,7 +12,7 @@ link_flags={
 cxx_preprocessors={
     'linux': '-DLINUX -DDESKTOP',
     'windows': '-DLINUX -DDESKTOP',
-    'nacl': '-DNACL',
+    'nacl': '-DNACL -DPREVIEW_MODE', # TODO create a "preview" target that resembles nacl and defines PREVIEW_MODE
 }
 cxx_compiler={
     'linux': 'g++',
@@ -32,14 +32,14 @@ def _cxx_flags(compilationMode):
     }
 
 # TODO only re-call this when we change the number of scripts available
-def generateComponentFactory(componentFiles):
+def renderTemplateSources(componentFiles):
     from mako.template import Template
 
     project_folder = Project.getProjectFolder()
 
-    template = open(project_folder+'/default_assets/Factories.hpy').read()
+    componentFactoryTemplate = open(project_folder+'/default_assets/Factories.hpy').read()
     with open(project_folder+'/default_assets/Factories.hpp', 'w') as outputHandle:
-        outputHandle.write(Template(template).render(components=componentFiles, default_components=DefaultComponentManager.getDefaultComponents()))
+        outputHandle.write(Template(componentFactoryTemplate).render(components=componentFiles, default_components=DefaultComponentManager.getDefaultComponents()))
         pass
     pass
 
@@ -74,7 +74,7 @@ def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DE
         componentScripts = io.Utils.ParseHPPFilesFromFolder(project_folder+'/assets')
 
         # Generate component factory
-        generateComponentFactory(componentScripts)
+        renderTemplateSources(componentScripts)
         
         # Generate build list
         sourceFiles = []
