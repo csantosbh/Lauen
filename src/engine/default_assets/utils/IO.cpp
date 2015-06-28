@@ -12,15 +12,12 @@
 #include <fstream>
 #endif
 
+#include "window/NaCl.hpp"
 #include "utils/IO.h"
 
 using namespace std;
 
 namespace lau {
-
-#ifdef NACL
-extern pp::Instance* GlobalInstance;
-#endif
 
 namespace utils {
 

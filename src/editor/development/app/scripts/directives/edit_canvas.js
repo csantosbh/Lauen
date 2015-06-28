@@ -130,29 +130,8 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
   return {
     restrict: 'E',
     link: function postLink(scope, element) {
-      var _editRequested = false;
       scope.canvas = {
         editMode: true,
-        toggleEditMode: function() {
-          if(!_editRequested) {
-            if(scope.canvas.editMode == true) {
-              _editRequested = true;
-              $rpc.call('previewGame', null, function(status) {
-                $timeout(function() {
-                  console.log('build status: ' + status);
-                  scope.canvas.editMode = false;
-                  _editRequested = false;
-                });
-              });
-            } else {
-              _editRequested = true;
-              $timeout(function() {
-                _editRequested = false;
-                scope.canvas.editMode = true;
-              });
-            }
-          }
-        }
       };
 
       // TODO: Auto resize when window resizes
@@ -162,7 +141,16 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
       material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
 
       $event.listen('transformComponentAdded', function(evData) {
-        registerGameObject(evData);
+        // TODO figure out a better way to attatch gameobjects
+        // to the edit_canvas, something that allows for easy
+        // removal.
+        if(scope.canvas.editMode) {
+          registerGameObject(evData);
+        } else {
+          evData.rotation = new THREE.Vector3();
+          evData.position = new THREE.Vector3();
+          evData.scale = new THREE.Vector3();
+        }
       });
 
       animate();

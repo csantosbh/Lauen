@@ -125,10 +125,10 @@ def GetSimpleClass(fileName):
         simpleClass['class'] = parsedFile[0]['name']
         simpleClass['id'] = Project.getScriptId(fileName)
         simpleClass['namespace']  = parsedFile[0]['namespace']
-        simpleClass['fields'] = []
+        simpleClass['fields'] = {}
         for child in parsedFile[0]['children']:
-            if child['kind'] == 'FIELD_DECL':
-                simpleClass['fields'].append(dict(name=child['name'], type=child['type'], pragmas=child['pragmas'], visibility=child['visibility']))
+            if child['kind'] == 'FIELD_DECL' and child['visibility']==0:
+                simpleClass['fields'][child['name']] = dict(type=child['type'], pragmas=child['pragmas'], visibility=child['visibility'])
                 pass
             pass
         pass

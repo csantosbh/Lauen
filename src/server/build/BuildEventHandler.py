@@ -7,7 +7,7 @@ link_flags={
     # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
     'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/lib/ -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/build/src/',
     # TODO the -L depends on the cxx_mode flag (RELEASE/DEBUG)
-    'nacl': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/Debug -lppapi_cpp -lppapi -lppapi_gles2'
+    'nacl': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/Debug -lppapi_cpp -lppapi -lppapi_gles2 -lm'
 }
 cxx_preprocessors={
     'linux': '-DLINUX -DDESKTOP',
@@ -26,9 +26,9 @@ def _cxx_flags(compilationMode):
             'RELEASE': ' -O3'
     }
     return {
-        'linux': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxx_mode_flags[compilationMode],
-        'windows': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
-        'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxx_mode_flags[compilationMode],
+        'linux': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxx_mode_flags[compilationMode],
+        'windows': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
+        'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxx_mode_flags[compilationMode],
     }
 
 # TODO only re-call this when we change the number of scripts available
@@ -37,8 +37,8 @@ def renderTemplateSources(componentFiles):
 
     project_folder = Project.getProjectFolder()
 
-    componentFactoryTemplate = open(project_folder+'/default_assets/Factories.hpy').read()
-    with open(project_folder+'/default_assets/Factories.hpp', 'w') as outputHandle:
+    componentFactoryTemplate = open(project_folder+'/default_assets/Factories.cpy').read()
+    with open(project_folder+'/default_assets/Factories.cpp', 'w') as outputHandle:
         outputHandle.write(Template(componentFactoryTemplate).render(components=componentFiles, default_components=DefaultComponentManager.getDefaultComponents()))
         pass
     pass

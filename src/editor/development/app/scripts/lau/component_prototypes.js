@@ -45,13 +45,27 @@ LAU.Components = (function() {
         rx: this.rotation.x, ry: this.rotation.y, rz: this.rotation.z,
         sx: this.scale.x, sy: this.scale.y, sz: this.scale.z
       };
+    },
+    setField: function(name, value) {
+      // TODO this is redundant with the initialization seen previously. Refactor.
+      switch(name) {
+        case 'rx':
+          this.rotation.x = value;
+          break;
+        case 'ry':
+          this.rotation.y = value;
+          break;
+        case 'rz':
+          this.rotation.z = value;
+          break;
+      }
     }
   };
 
   // Script Component
   function ScriptComponent(componentFlyWeight) {
     this.type = 'script';
-    this.fields = [];
+    this.fields = {};
 
     if(componentFlyWeight == null) return;
 
@@ -62,25 +76,27 @@ LAU.Components = (function() {
 
     // Initialize script fields
     var givenFields = componentFlyWeight.fields;
-    for(var f = 0; f < givenFields.length; ++f) {
-      // TODO: Check for visibility constraints
-      this.fields.push({
-        value: givenFields[f].hasOwnProperty('value') ?
-          givenFields[f].value : getDefaultScriptFieldValue(givenFields[f].type),
-        name: givenFields[f].name,
-        type: givenFields[f].type
-      });
+    for(var f in givenFields) {
+      if(givenFields.hasOwnProperty(f)) {
+        // TODO: Check for visibility constraints
+        this.fields[f] = {
+          value: givenFields[f].hasOwnProperty('value') ?
+            givenFields[f].value : getDefaultScriptFieldValue(givenFields[f].type),
+          type: givenFields[f].type
+        };
+      }
     }
   }
   ScriptComponent.prototype = {
     export: function() {
-      var exported_fields = [];
-      for(var f = 0; f < this.fields.length; f++) {
-        exported_fields.push({
-          name: this.fields[f].name,
-          value: this.fields[f].value,
-          type: this.fields[f].type
-        });
+      var exported_fields = {};
+      for(var f in this.fields) {
+        if(this.fields.hasOwnProperty(f)) {
+          exported_fields[this.fields[f].name] = {
+            value: this.fields[f].value,
+            type: this.fields[f].type
+          };
+        }
       }
 
       return {
@@ -91,9 +107,15 @@ LAU.Components = (function() {
         fields: exported_fields
       };
     },
+    setField: function(name, value) {
+      //console.log('fields:')
+      //console.log(this.fields)
+      this.fields[name].value = value;
+    },
   };
 
   // Instantiate new components (component factory)
+  // TODO rename this to createComponentFromFlyWeight and only pass the flyweight (the componenttype lies within it -- maybe we can even get rid of the componentType as a string and only use a numeric id)
   function componentFactory(componentType, componentFlyWeight) {
     // The switch rules match the component menu label
     switch(componentType) {
@@ -104,8 +126,29 @@ LAU.Components = (function() {
     }
   }
 
+  function getFlyweightById(componentMenu, id) {
+    for(var i = 0; i < componentMenu.length; ++i) {
+      if(componentMenu[i].hasOwnProperty('children')) {
+        var deepSearchResult = getFlyweightById(componentMenu[i].children, id);
+        if(deepSearchResult != null)
+          return deepSearchResult;
+      } else if(componentMenu[i].flyweight.id == id) {
+        return componentMenu[i];
+      }
+    }
+    return null;
+  }
+
+  function createComponentFromId(id, scope) {
+    // Search for component flyweight.
+    var component = getFlyweightById(scope.gameObjectEditor.componentMenu, id);
+    return componentFactory(component.type, component.flyweight);
+    return res;
+  }
+
   return {
     TransformComponent: TransformComponent,
-    componentFactory: componentFactory
+    componentFactory: componentFactory,
+    createComponentFromId: createComponentFromId
   };
 })();

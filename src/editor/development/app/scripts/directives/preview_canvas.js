@@ -7,17 +7,121 @@
  * # previewCanvas
  */
 angular.module('lauEditor')
-.directive('previewCanvas', function () {
-  function handleNaClMessage(msg) {
-    console.log('got nacl message:');
-    console.log(msg);
-  }
-
+.directive('previewCanvas', ['$timeout', function ($timeout) {
   return {
     template: '<embed class="main-canvas" src="lau_canvas.nmf" type="application/x-pnacl" />',
     restrict: 'E',
     link: function postLink(scope, element, attrs) {
+      function getGameObjectByInstanceId(id) {
+        for(var i = 0; i < scope.gameObjects.length; ++i) {
+          if(scope.gameObjects[i].instanceId == id)
+            return scope.gameObjects[i];
+        }
+        // TODO assert that this line will never be achieved
+        return null;
+      }
+
+      function getComponentByInstanceId(gameObj, id) {
+        for(var i = 0; i < gameObj.components.length; ++i) {
+          var comp = gameObj.components[i];
+          if(comp.instanceId == id)
+            return comp;
+        }
+        // TODO assert that this line will never be achieved
+        return null;
+      }
+
+      function handleNaClMessage(message) {
+        function processMessage() {
+          var msg = message.data;
+          if(msg.messages.length > 0) {
+            console.log(msg.messages);
+          }
+          // Add new game objects
+          if(msg.newGameObjects.length > 0) {
+            for(var i = 0; i < msg.newGameObjects.length; ++i) {
+              // TODO refactor this to somewhere else (a game object creation center)
+              var newGameObject = new LAU.GameObject(null, null, msg.newGameObjects[i].instanceId);
+              scope.gameObjects.push(newGameObject);
+            }
+          }
+          // Add new components
+          if(msg.newComponents.length > 0) {
+            for(var i = 0; i < msg.newComponents.length; ++i) {
+              var gameObj = getGameObjectByInstanceId(msg.newComponents[i].instanceId);
+              var componentData = LAU.Components.createComponentFromId(msg.newComponents[i].component.componentId, scope);
+              // TODO refactor this below: it is a terrible thing to edit this guy like this
+              componentData.instanceId = msg.newComponents[i].component.instanceId;
+              gameObj.components.push(componentData);
+            }
+          }
+          // Remove game object
+          if(msg.deletedGameObjects.length > 0) {
+            for(var i = 0; i < msg.deletedGameObjects.length; ++i) {
+              // Look for deleted game object
+              var gameObjs = scope.gameObjects;
+              var deletedObj = msg.deletedGameObjects[i];
+              for(var j = 0; j < gameObjs.length; ++j) {
+                if(gameObjs[j].instanceId == deletedObj.instanceId) {
+                  scope.gameObjects.splice(j, 1);
+                  break;
+                }
+              }
+            }
+          }
+          // Update states
+          if(msg.currentStates.length > 0) {
+            for(var i = 0; i < msg.currentStates.length; ++i) {
+              var state = msg.currentStates[i];
+              var gameObj = getGameObjectByInstanceId(state.instanceId);
+              // Update its components
+              for(var j = 0; j < state.components.length; ++j) {
+                var srcComponent = state.components[j];
+                var dstComponent = getComponentByInstanceId(gameObj, srcComponent.instanceId);
+                for(var k in srcComponent.state) {
+                  if(srcComponent.state.hasOwnProperty(k)) {
+                    dstComponent.setField(k, srcComponent.state[k]);
+                  }
+                }
+              }
+            }
+          }
+        }
+
+        // Check if the edit mode is still enabled,
+        // to avoid race conditions.
+        if(!scope.canvas.editMode) {
+          $timeout(processMessage);
+        }
+      }
+
       element.find('embed')[0].addEventListener('message', handleNaClMessage, true);
+      var _editRequested = false;
+      scope.previewCanvas = {
+        toggleEditMode: function() {
+          if(!_editRequested) {
+            if(scope.canvas.editMode == true) {
+              _editRequested = true;
+              $rpc.call('previewGame', null, function(status) {
+                $timeout(function() {
+                  $event.broadcast('togglePreviewMode', true);
+                  console.log('build status: ' + status);
+                  scope.canvas.editMode = false;
+                  _editRequested = false;
+                });
+              });
+            } else {
+              _editRequested = true;
+              $timeout(function() {
+                $event.broadcast('togglePreviewMode', false);
+                _editRequested = false;
+                scope.canvas.editMode = true;
+              });
+            }
+          }
+        }
+      }
+
     }
   };
-});
+}]);

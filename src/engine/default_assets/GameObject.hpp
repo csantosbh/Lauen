@@ -14,17 +14,19 @@ class GameObject {
 public:
     GameObject() { }
 
-    void update(float dt) {
+    virtual void update(float dt) {
         for(auto& updateableComponent: this->updateableComponents) {
             updateableComponent->update(dt);
         }
     }
 
-    void addComponent(const shared_ptr<Component>& component) {
+    virtual void addComponent(const shared_ptr<Component>& component) {
         this->updateableComponents.push_back(component);
     }
 
-private:
+	virtual ~GameObject() {}
+
+protected:
     vector<shared_ptr<Component>> updateableComponents;
 };
 

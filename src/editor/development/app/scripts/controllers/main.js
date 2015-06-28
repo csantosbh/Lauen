@@ -10,7 +10,7 @@ function setupIOEvents($scope, $timeout) {
         // TODO create gameObject class
         var comps = sceneData[i].components;
         for(var c = 0; c < comps.length; ++c) {
-          var comp = LAU.Components.componentFactory(comps[c].type, comps[c], $scope, $timeout);
+          var comp = LAU.Components.componentFactory(comps[c].type, comps[c]);
           if(comp == null)
             continue;
           goComps.push(comp);
@@ -74,6 +74,16 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
   $scope.reloadProject = function() {
     $window.location.reload();
   };
+
+  var _realGameObjects; // Backup for the real gameobjects in the edit mode
+  $event.listen('togglePreviewMode', function(isPreviewing) {
+    if(isPreviewing) {
+      _realGameObjects = $scope.gameObjects;
+      $scope.gameObjects = [];
+    } else {
+      $scope.gameObjects = _realGameObjects;
+    }
+  });
 
   setupIOEvents($scope, $timeout);
   setupConsole($scope, $timeout);

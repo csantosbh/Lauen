@@ -14,14 +14,12 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($ti
       scope.projectPanel = {
         projectFiles: [],
         onDrop: function() {
-          console.log(scope);
           scope.gameObjectEditor.addComponent(scope.projectPanel.dropBucket);
         }
       };
 
       $rpc.call('getAssetList', null, function(fileList) {
         $timeout(function() {
-          console.log(fileList[0]);
           for(var i=0; i < fileList.length; ++i) {
             scope.projectPanel.projectFiles.push({
               menu_label: LAU.IO.getFileNameFromPath(fileList[i].path),

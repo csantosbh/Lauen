@@ -2,4 +2,4 @@
 bin/
 build/
 *.swp
-Factories.hpp
+Factories\.cpp
