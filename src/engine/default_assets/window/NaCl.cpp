@@ -12,6 +12,8 @@ using namespace std;
 namespace lau {
 
 std::stringstream lout;
+std::stringstream lerr;
+
 NaCl* GlobalInstance = NULL; // TODO think of something better. Having to pass this guy around sucks.
 
 NaCl::NaCl(PP_Instance instance) :
@@ -24,6 +26,7 @@ NaCl::NaCl(PP_Instance instance) :
 
 bool NaCl::init(int32_t new_width, int32_t new_height) {
     lout << "init opengl" << endl;
+    lerr << "Testing lerr" << endl;
     if (!glInitializePPAPI(pp::Module::Get()->get_browser_interface())) {
         return false;
     }
@@ -55,12 +58,8 @@ void NaCl::loop(int32_t) {
     context_.SwapBuffers(callback_factory_.NewCallback(&NaCl::loop));
 
     // Flush log
-    string loutStr = lout.str();
-    if(loutStr.length() != 0) {
-		accumulatedEvents.Set("messages", loutStr);
-        lout.str(string());
-        lout.clear();
-    }
+    flushLogs();
+
     // Flush messages
     if(accumulatedEvents.Get("isDirty").AsBool()) {
         PostMessage(accumulatedEvents);
@@ -68,10 +67,28 @@ void NaCl::loop(int32_t) {
     }
 }
 
+void NaCl::flushLogs() {
+    string loutStr = lout.str();
+    if(loutStr.length() != 0) {
+        accumulatedEvents.Set("isDirty", true);
+		accumulatedEvents.Set("messages", loutStr);
+        lout.str(string());
+        lout.clear();
+    }
+    string lerrStr = lerr.str();
+    if(lerrStr.length() != 0) {
+        accumulatedEvents.Set("isDirty", true);
+		accumulatedEvents.Set("errors", lerrStr);
+        lerr.str(string());
+        lerr.clear();
+    }
+}
+
 void NaCl::resetAccumulatedEvents() {
 	accumulatedEvents = pp::VarDictionary();
 	accumulatedEvents.Set("isDirty", false);
 	accumulatedEvents.Set("messages", "");
+	accumulatedEvents.Set("errors", "");
 	accumulatedEvents.Set("newComponents", pp::VarArray());
 	accumulatedEvents.Set("newGameObjects", pp::VarArray());
 	accumulatedEvents.Set("deletedGameObjects", pp::VarArray());

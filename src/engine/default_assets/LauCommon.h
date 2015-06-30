@@ -6,10 +6,10 @@
 #include "ppapi/cpp/var_dictionary.h"
 #include "ppapi/cpp/var_array.h"
 #include "GLES2/gl2.h"
-// TODO implement custom cout/cerr that uses PostMessage
+
 namespace lau {
 extern std::stringstream lout;
-#define lerr cerr // TODO implement lerr as well
+extern std::stringstream lerr;
 }
 #define GL_ES
 #else

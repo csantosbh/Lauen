@@ -37,6 +37,7 @@ private:
 	pp::VarDictionary accumulatedEvents;
 
 	void resetAccumulatedEvents();
+    void flushLogs();
 };
 
 extern NaCl* GlobalInstance; // TODO think of something better. Having to pass this guy around sucks.

@@ -37,6 +37,9 @@ angular.module('lauEditor')
           if(msg.messages.length > 0) {
             console.log(msg.messages);
           }
+          if(msg.errors.length > 0) {
+            console.log('%c[error] '+msg.errors, "color: DarkViolet; font-weight: bold;");
+          }
           // Add new game objects
           if(msg.newGameObjects.length > 0) {
             for(var i = 0; i < msg.newGameObjects.length; ++i) {
