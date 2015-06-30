@@ -36,6 +36,7 @@ protected:
 	int instanceId;
 
 	static int generateInstanceId() {
+		// TODO this is not thread safe
 		return lastComponentId++;
 	}
 	static int lastComponentId;
@@ -79,10 +80,7 @@ private:
 
 class GameObjectPeeker : public GameObject {
 public:
-	GameObjectPeeker() {
-		// TODO properly set gameObjectId
-		gameObjectId = 0;
-
+	GameObjectPeeker() : gameObjectId(generateInstanceId()) {
 		pp::VarDictionary gameObjectInfo;
 		gameObjectInfo.Set("instanceId", gameObjectId);
 		GlobalInstance->createGameObject(gameObjectInfo);
@@ -124,8 +122,14 @@ public:
 	}
 
 private:
+	static int generateInstanceId() {
+		// TODO this is not thread safe
+		return lastGameObjectId++;
+	}
+	static int lastGameObjectId;
 	int gameObjectId;
 };
+int GameObjectPeeker::lastGameObjectId = 0;
 
 ///// Transform
 template<>
