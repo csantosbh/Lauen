@@ -1,20 +1,10 @@
 events={}
-pendingBroadcasts={}
 def listen(eventName, callback):
     if not events.has_key(eventName):
         events[eventName] = []
         pass
 
     events[eventName].append(callback)
-
-    if pendingBroadcasts.has_key(eventName):
-        for i in pendingBroadcasts[eventName]:
-            callback(i)
-            pass
-
-        # We don't need to store this event anymore
-        pendingBroadcasts.pop(eventName)
-        pass
     pass
 
 def broadcast(eventName, eventData):
@@ -23,13 +13,8 @@ def broadcast(eventName, eventData):
             listener(eventData)
         pass
     else:
-        # Store the event so the first subscriber will receive it
-        # TODO: Discard too old entries
-        if not pendingBroadcasts.has_key(eventName):
-            pendingBroadcasts[eventName] = []
-            pass
-        pendingBroadcasts[eventName].append(eventData)
-        pass
+        # TODO properly log this problem
+        print '[warning] Event "' + eventName + '" reached no listeners!'
     pass
 
 if __name__ == '__main__':
@@ -37,12 +22,12 @@ if __name__ == '__main__':
         from pprint import pprint
         pprint(data)
         pass
-    broadcast('before', dict(beforeMessage='Congrats, you received posthumously (1)!'))
-    broadcast('before', dict(beforeMessage='Congrats, you received posthumously (2)!'))
+    broadcast('test', dict(afterMessage='This should trigger a warning'))
     listen('before', tstListener)
+    broadcast('before', dict(beforeMessage='Congrats, you received the before after listening!'))
     listen('after', tstListener)
     broadcast('after', dict(afterMessage='Congrats, you received right on time!'))
     broadcast('after', dict(afterMessage='Congrats, you received right on time!!!'))
-    broadcast('before', dict(beforeMessage='Congrats, you received the before after listening!'))
+    broadcast('before', dict(beforeMessage='Congrats, you received the before after listening (2)!'))
     pass
 
