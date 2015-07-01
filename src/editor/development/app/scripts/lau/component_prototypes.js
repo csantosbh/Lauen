@@ -143,7 +143,6 @@ LAU.Components = (function() {
     // Search for component flyweight.
     var component = getFlyweightById(scope.gameObjectEditor.componentMenu, id);
     return componentFactory(component.type, component.flyweight);
-    return res;
   }
 
   return {

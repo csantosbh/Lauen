@@ -2,8 +2,8 @@ Inside the Engine
 *****************
 
 .. toctree::
-   :hidden:
 
    editor
+   server
 
 This section documents the internals of the engine.
