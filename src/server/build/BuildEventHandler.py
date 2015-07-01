@@ -2,16 +2,7 @@ from server import RPC, WSServer, io, Config
 from server.project import Project
 from server.components import DefaultComponentManager
 
-link_flags={
-    'linux': '-rdynamic -lglfw3 -lrt -lXrandr -lXinerama -lXi -lXcursor -lGL -lm -ldl -lXrender -ldrm -lXdamage -lX11-xcb -lxcb-glx -lxcb-dri2 -lxcb-dri3 -lxcb-present -lxcb-sync -lxshmfence -lXxf86vm -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lGLEW',
-    # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
-    'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/lib/ -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/build/src/',
-    # TODO the -L depends on the cxx_mode flag (RELEASE/DEBUG)
-    # TODO Add the Native Client target to the export menu on the editor
-    'nacl': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/Debug -lppapi_cpp -lppapi -lppapi_gles2 -lm',
-    'preview': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/Debug -lppapi_cpp -lppapi -lppapi_gles2 -lm',
-}
-cxx_preprocessors={
+platform_preprocessors={
     'linux': '-DLINUX -DDESKTOP',
     'windows': '-DLINUX -DDESKTOP',
     'nacl': '-DNACL',
@@ -24,26 +15,40 @@ cxx_compiler={
     'preview': Config.get('export', 'nacl')['pepper_folder']+'/'+Config.get('export', 'nacl')['compiler'],
 }
 
-def _cxx_flags(compilationMode):
-    cxx_mode_flags={
-            'DEBUG': ' -g',
-            'RELEASE': ' -O3'
+def _getFlags(compilationMode):
+    cxxModeFlags={
+        'DEBUG': ' -g -DDEBUG',
+        'RELEASE': ' -O3 -DRELEASE'
+    }
+    modeFolder = {
+        'DEBUG': 'Debug',
+        'RELEASE': 'Release'
     }
     return {
-        'linux': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxx_mode_flags[compilationMode],
-        'windows': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
-        'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxx_mode_flags[compilationMode],
-        'preview': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxx_mode_flags[compilationMode],
+        'link_flags': {
+            'linux': '-rdynamic -lglfw3 -lrt -lXrandr -lXinerama -lXi -lXcursor -lGL -lm -ldl -lXrender -ldrm -lXdamage -lX11-xcb -lxcb-glx -lxcb-dri2 -lxcb-dri3 -lxcb-present -lxcb-sync -lxshmfence -lXxf86vm -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lGLEW',
+            # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
+            'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/lib/ -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/build/src/',
+            # TODO Add the Native Client target to the export menu on the editor
+            'nacl': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
+            'preview': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
+        },
+        'cxx_flags': {
+            'linux': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxxModeFlags[compilationMode],
+            'windows': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
+            'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxxModeFlags[compilationMode],
+            'preview': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxxModeFlags[compilationMode],
+        }
     }
 
 # TODO only re-call this when we change the number of scripts available
 def renderTemplateSources(componentFiles):
     from mako.template import Template
 
-    project_folder = Project.getProjectFolder()
+    projectFolder = Project.getProjectFolder()
 
-    componentFactoryTemplate = open(project_folder+'/default_assets/Factories.cpy').read()
-    with open(project_folder+'/default_assets/Factories.cpp', 'w') as outputHandle:
+    componentFactoryTemplate = open(projectFolder+'/default_assets/Factories.cpy').read()
+    with open(projectFolder+'/default_assets/Factories.cpp', 'w') as outputHandle:
         outputHandle.write(Template(componentFactoryTemplate).render(components=componentFiles, default_components=DefaultComponentManager.getDefaultComponents()))
         pass
     pass
@@ -65,18 +70,18 @@ def run_game(path, workFolder):
 def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess
     # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
-    cxx_flags=_cxx_flags(compilationMode)
+    compilationFlags=_getFlags(compilationMode)
 
-    project_folder = Project.getProjectFolder()
+    projectFolder = Project.getProjectFolder()
 
     if outputFolder == None:
-        outputFolder = project_folder
+        outputFolder = projectFolder
 
     compilationStatus = dict(returncode=0, message='')
     try:
         # TODO use threads
         # TODO incremental build will solve this, but I need to perform dependency checking besides modification time comparison
-        componentScripts = io.Utils.ParseHPPFilesFromFolder(project_folder+'/assets')
+        componentScripts = io.Utils.ParseHPPFilesFromFolder(projectFolder+'/assets')
 
         # Generate component factory
         renderTemplateSources(componentScripts)
@@ -90,7 +95,7 @@ def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DE
             pass
         """
         # Append default assets to the list of build files
-        for defaultAsset in io.Utils.ListFilesFromFolder(project_folder+'/default_assets', ['cpp', 'cxx']):
+        for defaultAsset in io.Utils.ListFilesFromFolder(projectFolder+'/default_assets', ['cpp', 'cxx']):
             sourceFiles.append(defaultAsset)
             pass
 
@@ -99,12 +104,12 @@ def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DE
         precompiledFiles = ''
         for sourceFile in sourceFiles:
             precompiledFile = outputFolder+'/build/'+io.Utils.GetFileNameFromPath(sourceFile)+'.o '
-            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+precompiledFile + compilationModeFlags + ' ' + cxx_preprocessors[platform] + ' ' + cxx_flags[platform], shell=True, stderr=subprocess.STDOUT)
+            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+precompiledFile + compilationModeFlags + ' ' + platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
             precompiledFiles += precompiledFile
             pass
 
         # Link
-        compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + link_flags[platform], shell=True, stderr=subprocess.STDOUT)
+        compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
 
     except subprocess.CalledProcessError as e:
         # TODO show compilation error messages on console
@@ -148,11 +153,11 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder):
         return False
     else:
         # Copy scenes to destination folder
-        project_folder = Project.getProjectFolder()
-        dir_util.copy_tree(project_folder + '/scenes', outputFolder+'/scenes')
+        projectFolder = Project.getProjectFolder()
+        dir_util.copy_tree(projectFolder + '/scenes', outputFolder+'/scenes')
         # Copy assets to destination folder
-        io.Utils.CopyFilesOfTypes(project_folder+'/assets', outputFolder, Config.env('asset_extensions'), project_folder)
-        io.Utils.CopyFilesOfTypes(project_folder+'/default_assets', outputFolder, Config.env('asset_extensions'), project_folder)
+        io.Utils.CopyFilesOfTypes(projectFolder+'/assets', outputFolder, Config.env('asset_extensions'), projectFolder)
+        io.Utils.CopyFilesOfTypes(projectFolder+'/default_assets', outputFolder, Config.env('asset_extensions'), projectFolder)
         # Platform specific post-build steps
         _PostExportStep(platform, outputFolder)
         # Remove temporary build folder
