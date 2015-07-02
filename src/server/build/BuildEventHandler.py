@@ -16,7 +16,7 @@ cxx_compiler={
 }
 
 def _getFlags(compilationMode):
-    cxxModeFlags={
+    cxxModeFlags = {
         'DEBUG': ' -g -DDEBUG',
         'RELEASE': ' -O3 -DRELEASE'
     }
@@ -24,20 +24,22 @@ def _getFlags(compilationMode):
         'DEBUG': 'Debug',
         'RELEASE': 'Release'
     }
+    thirdPartyFolder = Config.get('export', 'third_party_folder')
+    naclFolder = Config.get('export', 'nacl')['pepper_folder']
     return {
         'link_flags': {
             'linux': '-rdynamic -lglfw3 -lrt -lXrandr -lXinerama -lXi -lXcursor -lGL -lm -ldl -lXrender -ldrm -lXdamage -lX11-xcb -lxcb-glx -lxcb-dri2 -lxcb-dri3 -lxcb-present -lxcb-sync -lxshmfence -lXxf86vm -lXfixes -lXext -lX11 -lpthread -lxcb -lXau -lXdmcp -lGLEW',
-            # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
-            'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/lib/ -L /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/build/src/',
+            # TODO check licenses of libraries so I can determine if I can install their binaries with the engine (which means these folders could be specified as relatives to the instalation folder instead of having to set them in the config)
+            'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/lib/ -L '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/build/src/',
             # TODO Add the Native Client target to the export menu on the editor
-            'nacl': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
-            'preview': '-L/home/csantos/workspace/nacl_sdk/pepper_41/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
+            'nacl': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
+            'preview': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
         },
         'cxx_flags': {
-            'linux': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxxModeFlags[compilationMode],
-            'windows': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glfw-3.1.1/include/ -I /home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
-            'nacl': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxxModeFlags[compilationMode],
-            'preview': ' -I/home/csantos/workspace/LauEngine/third_party/Eigen -I/home/csantos/workspace/LauEngine/third_party/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + Config.get('export', 'nacl')['pepper_folder']+'/include' + cxxModeFlags[compilationMode],
+            'linux': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxxModeFlags[compilationMode],
+            'windows': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -I '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/include/ -I '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
+            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include' + cxxModeFlags[compilationMode],
+            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include' + cxxModeFlags[compilationMode],
         }
     }
 
@@ -69,7 +71,6 @@ def run_game(path, workFolder):
 
 def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess
-    # TODO get third_party folder from config (not saved, maybe detect at runtime or installation time)
     compilationFlags=_getFlags(compilationMode)
 
     projectFolder = Project.getProjectFolder()
@@ -135,12 +136,12 @@ def AutoBuild():
 def _PostExportStep(platform, outputFolder):
     import subprocess
     if platform == 'windows':
-        # TODO third_party folder must come from config
-        io.Utils.CopyFilesOfTypes('/home/csantos/workspace/LauEngine/third_party/cross_compiling/windows/redist', outputFolder, ['.dll'])
+        thirdPartyFolder = Config.get('export', 'third_party_folder')
+        io.Utils.CopyFilesOfTypes(thirdPartyFolder+'/cross_compiling/windows/redist', outputFolder, ['.dll'])
         pass
     elif platform == 'nacl' or platform == 'preview':
-        # TODO finalize build
-        subprocess.check_output('/home/csantos/workspace/nacl_sdk/pepper_41/toolchain/linux_pnacl/bin/pnacl-finalize '+outputFolder+'/game -o '+outputFolder+'/lau_canvas.pexe', shell=True)
+        naclFolder = Config.get('export', 'nacl')['pepper_folder']
+        subprocess.check_output(naclFolder+'/toolchain/linux_pnacl/bin/pnacl-finalize '+outputFolder+'/game -o '+outputFolder+'/lau_canvas.pexe', shell=True)
         pass
     pass
 
