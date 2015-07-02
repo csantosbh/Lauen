@@ -23,6 +23,7 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
       mesh: new THREE.Mesh( geometry, material ),
     };
     // Bind transform to UI
+    // For my hack to work, inside: "THREE.Object3D = function () {", make the positional properties writable.
     transformComponent.rotation = gameObjectData.mesh.rotation;
     transformComponent.position = gameObjectData.mesh.position;
     transformComponent.scale = gameObjectData.mesh.scale;
@@ -147,6 +148,7 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
         if(scope.canvas.editMode) {
           registerGameObject(evData);
         } else {
+          // TODO here be gambs
           evData.rotation = new THREE.Vector3();
           evData.position = new THREE.Vector3();
           evData.scale = new THREE.Vector3();

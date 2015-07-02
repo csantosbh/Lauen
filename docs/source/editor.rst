@@ -421,8 +421,16 @@ changes must be implemented:
 ====
 Creating component widgets
 ====
-Every component type (Number, Color, String, etc) that can be potentially used
-by scripts must have their initialization rule defined in
+Every component field (Number, Color, String, etc) that can be potentially used
+by scripts can be created by following these steps:
+
+* In the ``development/app/`` folder, run the directive creation tool: ``yo angular:directive <field_name>``
+* Move the created script from ``app/scripts/directives/<field_name>.js`` to ``app/scripts/directives/component_widgets/<field_name>.js``. Make sure to update the ``app/index.html`` file with the new location of the directive file.
+
+-----
+Initialization rules
+-----
+Component widgets must have their initialization rule defined in
 ``scripts/lau/component_prototypes.js``, in the function
 ``getDefaultScriptFieldValue(type)``. This function receives the unique string
 identifier of that field, and returns the default value associated with it.
