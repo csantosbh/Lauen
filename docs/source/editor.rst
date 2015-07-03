@@ -338,7 +338,7 @@ looks up to the required ID in order to decide which class to instantiate.
 
 User script IDs are determined by the server in the file
 ``server/project/Project.py``, by the function ``getScriptId()``. Normal
-components (default components) must be manually specified in
+components (standard components) must be manually specified in
 ``server/components/DefaultComponentManager.py``, in the ``_defaultComponents``
 dictionary. The format of this dictionary is:
 
