@@ -83,12 +83,12 @@ public:
 	GameObjectPeeker() : gameObjectId(generateInstanceId()) {
 		pp::VarDictionary gameObjectInfo;
 		gameObjectInfo.Set("instanceId", gameObjectId);
-		GlobalInstance->createGameObject(gameObjectInfo);
+		NaCl::getInstance()->createGameObject(gameObjectInfo);
 	}
 	~GameObjectPeeker() {
 		pp::VarDictionary gameObjectInfo;
 		gameObjectInfo.Set("instanceId", gameObjectId);
-		GlobalInstance->deleteGameObject(gameObjectInfo);
+		NaCl::getInstance()->deleteGameObject(gameObjectInfo);
 	}
 
 	void update(float dt) {
@@ -105,7 +105,7 @@ public:
 			componentStates.Set(componentStates.GetLength(), componentState);
         }
 		currentState.Set("components", componentStates);
-		GlobalInstance->publishState(currentState);
+		NaCl::getInstance()->publishState(currentState);
 	}
 
 	void addComponent(const shared_ptr<Component>& actualComp) {
@@ -118,7 +118,7 @@ public:
 		componentInfo.Set("componentId", compWrapper->getComponentId());
 		componentInfo.Set("instanceId", compWrapper->getInstanceId());
 		gameObjectInfo.Set("component", componentInfo);
-		GlobalInstance->addComponent(gameObjectInfo);
+		NaCl::getInstance()->addComponent(gameObjectInfo);
 	}
 
 private:

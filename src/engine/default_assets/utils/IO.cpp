@@ -57,7 +57,7 @@ private:
         auto tst = vector<uint8_t>(data.begin(), data.end());
         if(!pendingRequests.front().empty()) {
             // We still have files to load
-            handler = URLLoaderHandler::Create(GlobalInstance, pendingRequests.front().front());
+            handler = URLLoaderHandler::Create(NaCl::getInstance(), pendingRequests.front().front());
             pendingRequests.front().pop();
             handler->onFinishCallback = onLoadDone;
             handler->Start();
@@ -72,7 +72,7 @@ private:
             pendingCallbacks.pop();
             if(!pendingRequests.empty()) {
                 // Proceed to next request
-                handler = URLLoaderHandler::Create(GlobalInstance, pendingRequests.front().front());
+                handler = URLLoaderHandler::Create(NaCl::getInstance(), pendingRequests.front().front());
                 pendingRequests.front().pop();
                 handler->onFinishCallback = onLoadDone;
                 handler->Start();
@@ -98,7 +98,7 @@ private:
         }
 
         if(handler == NULL) {
-            handler = URLLoaderHandler::Create(GlobalInstance, pendingRequests.front().front());
+            handler = URLLoaderHandler::Create(NaCl::getInstance(), pendingRequests.front().front());
             pendingRequests.front().pop();
             // TODO investigate if this is going to be called from a different thread
             handler->onFinishCallback = onLoadDone;

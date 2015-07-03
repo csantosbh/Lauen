@@ -30,17 +30,20 @@ public:
 	void deleteGameObject(const pp::VarDictionary& gameObj);
 	void publishState(const pp::VarDictionary& state);
 
+    inline static NaCl* getInstance() {
+        return windowInstance;
+    }
+
 private:
     Game game;
-    pp::CompletionCallbackFactory<NaCl> callback_factory_;
-    pp::Graphics3D context_;
+    pp::CompletionCallbackFactory<NaCl> callback_factory;
+    pp::Graphics3D context;
 	pp::VarDictionary accumulatedEvents;
 
 	void resetAccumulatedEvents();
     void flushLogs();
+    static NaCl* windowInstance;
 };
-
-extern NaCl* GlobalInstance; // TODO think of something better. Having to pass this guy around sucks.
 
 class NaClCanvasModule : public pp::Module {
     public:

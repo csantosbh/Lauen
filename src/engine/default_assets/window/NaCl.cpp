@@ -14,13 +14,13 @@ namespace lau {
 std::stringstream lout;
 std::stringstream lerr;
 
-NaCl* GlobalInstance = NULL; // TODO think of something better. Having to pass this guy around sucks.
+NaCl* NaCl::windowInstance;
 
 NaCl::NaCl(PP_Instance instance) :
     pp::Instance(instance),
-    callback_factory_(this)
+    callback_factory(this)
 {
-    GlobalInstance = this;
+    windowInstance = this;
 	this->resetAccumulatedEvents();
 }
 
@@ -39,14 +39,14 @@ bool NaCl::init(int32_t new_width, int32_t new_height) {
         PP_GRAPHICS3DATTRIB_NONE
     };
 
-    context_ = pp::Graphics3D(this, attrib_list);
-    if (!BindGraphics(context_)) {
-        context_ = pp::Graphics3D();
+    context = pp::Graphics3D(this, attrib_list);
+    if (!BindGraphics(context)) {
+        context = pp::Graphics3D();
         glSetCurrentContextPPAPI(0);
         return false;
     }
 
-    glSetCurrentContextPPAPI(context_.pp_resource());
+    glSetCurrentContextPPAPI(context.pp_resource());
     game.init(new_width, new_height);
     return true;
 }
@@ -55,7 +55,7 @@ void NaCl::loop(int32_t) {
     const double MS_PER_FRAME = 1.0/60.0;
     game.update(MS_PER_FRAME);
     game.draw(0.0);
-    context_.SwapBuffers(callback_factory_.NewCallback(&NaCl::loop));
+    context.SwapBuffers(callback_factory.NewCallback(&NaCl::loop));
 
     // Flush log
     flushLogs();
@@ -99,7 +99,7 @@ void NaCl::DidChangeView(const pp::View& view) {
     int32_t new_width = view.GetRect().width() * view.GetDeviceScale();
     int32_t new_height = view.GetRect().height() * view.GetDeviceScale();
 
-    if(context_.is_null()) {
+    if(context.is_null()) {
         if(!init(new_width,new_height)) {
             lout << "Failed to init opengl" << endl;
             return;
@@ -108,7 +108,7 @@ void NaCl::DidChangeView(const pp::View& view) {
         lout << "Success on opengl" << endl;
         loop(0);
     } else {
-        int32_t result = context_.ResizeBuffers(new_width, new_height);
+        int32_t result = context.ResizeBuffers(new_width, new_height);
         if(result < 0) {
             lout << "Unsuccesful view change" << endl;
         }
