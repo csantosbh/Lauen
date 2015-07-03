@@ -345,6 +345,7 @@ dictionary. The format of this dictionary is:
 .. code-block:: python
 
    '<unique_string_identifier>': {
+       'type': '<unique_string_identifier>',
        'id': <unique_numeric_id>,
        'path': '<path to component file.hpp>',
        'full_class_name': 'lau::ComponentClassNameWithNamespace'
@@ -382,9 +383,9 @@ information.
 This is performed in ``scripts/lau/component_prototypes.js`` file. The following
 changes must be implemented:
 
-* Adapt the function ``componentFactory``. This function creates javascript
-  instances of components, which are usually added to a game object (either by the
-  editor, or as requested by the previewer).
+* Adapt the function ``createComponentFromFlyWeight``. This function creates
+  javascript instances of components, which are usually added to a game object
+  (either by the editor, or as requested by the previewer).
 * Implement the following prototype:
 
 .. code-block:: javascript
@@ -392,7 +393,8 @@ changes must be implemented:
   // The parameter "flyweight" is either the value you
   // defined as flyweight in the componentTypes variable (game_object_editor.js)
   // or a serialized data, which may have been loaded from disk or
-  // received from the previewer.
+  // received from the previewer. Either way, it will always have
+  // the same format.
   function ComponentPrototype(flyweight) {
     // Initialize internal fields.
   }
@@ -457,6 +459,9 @@ the ``initialAssetList`` event.
 .. code-block:: javascript
 
    {
+     type: 'script', // This field is literally "script". The type field is 
+                     // a standard string field in flyweights used to
+                     // identify them.
      fields: {
         "fieldName0": {
             name: "variableName",
