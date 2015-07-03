@@ -7,10 +7,9 @@ function setupIOEvents($scope, $timeout) {
       // Setup game objects
       for(var i = 0; i < sceneData.length; ++i) {
         var goComps = [];
-        // TODO create gameObject class
         var comps = sceneData[i].components;
         for(var c = 0; c < comps.length; ++c) {
-          var comp = LAU.Components.componentFactory(comps[c].type, comps[c]);
+          var comp = LAU.Components.createComponentFromFlyWeight(comps[c]);
           if(comp == null)
             continue;
           goComps.push(comp);

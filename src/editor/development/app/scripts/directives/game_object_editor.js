@@ -16,7 +16,6 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
       for(var i in dcs) {
         if(dcs.hasOwnProperty(i)) {
           componentTypes[i].flyweight = dcs[i];
-          componentTypes[i].type = i;
         }
       }
     });
@@ -42,7 +41,7 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
       addComponent: function(eventData) {
         if($scope.currentGameObjectId < 0) return;
 
-        var componentData = LAU.Components.componentFactory(eventData.type, eventData.flyweight);
+        var componentData = LAU.Components.createComponentFromFlyWeight(eventData.flyweight);
         $scope.gameObjects[$scope.currentGameObjectId].components.push(componentData);
       }
     };

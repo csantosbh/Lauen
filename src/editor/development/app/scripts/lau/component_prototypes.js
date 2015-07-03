@@ -115,14 +115,13 @@ LAU.Components = (function() {
   };
 
   // Instantiate new components (component factory)
-  // TODO rename this to createComponentFromFlyWeight and only pass the flyweight (the componenttype lies within it -- maybe we can even get rid of the componentType as a string and only use a numeric id)
-  function componentFactory(componentType, componentFlyWeight) {
+  function createComponentFromFlyWeight(component) {
     // The switch rules match the component menu label
-    switch(componentType) {
+    switch(component.type) {
       case 'transform':
-        return new TransformComponent(componentFlyWeight);
+        return new TransformComponent(component);
       case 'script':
-        return new ScriptComponent(componentFlyWeight);
+        return new ScriptComponent(component);
     }
   }
 
@@ -142,12 +141,12 @@ LAU.Components = (function() {
   function createComponentFromId(id, scope) {
     // Search for component flyweight.
     var component = getFlyweightById(scope.gameObjectEditor.componentMenu, id);
-    return componentFactory(component.type, component.flyweight);
+    return createComponentFromFlyWeight(component);
   }
 
   return {
     TransformComponent: TransformComponent,
-    componentFactory: componentFactory,
+    createComponentFromFlyWeight: createComponentFromFlyWeight,
     createComponentFromId: createComponentFromId
   };
 })();

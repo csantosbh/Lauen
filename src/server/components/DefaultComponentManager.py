@@ -4,6 +4,7 @@ from server import RPC
 _defaultComponents = {
     'transform': {
         'id': 0,
+        'type': 'transform', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
         'path': 'default_components/Transform.hpp',
         'full_class_name': 'lau::Transform'
     }

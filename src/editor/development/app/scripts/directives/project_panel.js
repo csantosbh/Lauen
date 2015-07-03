@@ -21,9 +21,9 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($ti
       $rpc.call('getAssetList', null, function(fileList) {
         $timeout(function() {
           for(var i=0; i < fileList.length; ++i) {
+            fileList[i].type = 'script';
             scope.projectPanel.projectFiles.push({
               menu_label: LAU.IO.getFileNameFromPath(fileList[i].path),
-              type: 'script',
               flyweight: fileList[i]
             });
           }
