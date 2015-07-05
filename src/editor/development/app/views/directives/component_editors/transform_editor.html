@@ -1,13 +1,9 @@
 <div>
   Transform<br/>
-  <vector3 ng-model="component.position"></vector3>
-  <number-input label="x" ng-model="component.position.x"></number-input><br/>
-  <number-input label="y" ng-model="component.position.y"></number-input><br/>
-  <number-input label="z" ng-model="component.position.z"></number-input><br/>
-  <number-input label="rx" ng-model="component.rotation.x"></number-input><br/>
-  <number-input label="ry" ng-model="component.rotation.y"></number-input><br/>
-  <number-input label="rz" ng-model="component.rotation.z"></number-input><br/>
-  <number-input label="sx" ng-model="component.scale.x"></number-input><br/>
-  <number-input label="sy" ng-model="component.scale.y"></number-input><br/>
-  <number-input label="sz" ng-model="component.scale.z"></number-input><br/>
+  position
+  <v3f ng-model="component.position"></v3f>
+  rotation
+  <v3f ng-model="component.rotation"></v3f>
+  scale
+  <v3f ng-model="component.scale"></v3f>
 </div>

@@ -14,7 +14,7 @@ angular.module('lauEditor')
       link: function postLink(scope, element, attrs) {
         scope.gameObjectHierarchy = {
           createGameObject: function() {
-            scope.gameObjects.push(new LAU.GameObject());
+            scope.gameObjects.push(new LAU.GameObject(scope));
           },
           selectGameObject: function(i) {
             scope.currentGameObjectId = i;

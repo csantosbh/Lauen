@@ -16,6 +16,18 @@
 #include "window/NaCl.hpp"
 #endif
 
+<%
+	#///
+	#// Python helper functions
+	#///
+
+	def isVecType(type):
+		return type == 'v4f' or type == 'v3f' or type == 'v2f'
+		pass
+
+	vec_iterations=dict(v4f=4, v3f=3, v2f=2)
+%>
+
 namespace lau {
 ////
 // Component Peekers
@@ -62,8 +74,17 @@ public:
 	const pp::VarDictionary& getCurrentState() {
 		// Peek class fields
 		% for f in component['fields']:
-		//cout << impl->${f} << endl;
+			% if isVecType(component['types'][f]):
+		{
+		pp::VarArray vec;
+		for(int i = 0; i < ${vec_iterations[component['types'][f]]}; ++i) {
+			vec.Set(i, impl->${f}[i]);
+		}
+		currentState.Set("${f}", vec);
+		}
+			% else: # all remaining components
 		currentState.Set("${f}", impl->${f});
+			% endif
 		% endfor
 
 		return currentState;
@@ -101,7 +122,7 @@ public:
             compPeeker->update(dt);
 			pp::VarDictionary componentState;
 			componentState.Set("instanceId", compPeeker->getInstanceId());
-			componentState.Set("state", compPeeker->getCurrentState());
+			componentState.Set("fields", compPeeker->getCurrentState());
 			componentStates.Set(componentStates.GetLength(), componentState);
         }
 		currentState.Set("components", componentStates);
@@ -144,13 +165,23 @@ public:
 	}
 
 	const pp::VarDictionary& getCurrentState() {
-		// TODO set my currentState for all fields
-		// TODO implement the vector type so I don't have to do this nasty hack
+		// TODO make standard components have their stuff initialized with python scripting, just like user scripts
 		// TODO figure out how the eulerangles are being returned (in which order?), and make sure it is consistent with the order in the Editor
 		Eigen::Vector3f rotation = impl->rotation.toRotationMatrix().eulerAngles(0, 1, 2);
-		currentState.Set("rx", rotation[0]);
-		currentState.Set("ry", rotation[1]);
-		currentState.Set("rz", rotation[2]);
+
+		pp::VarArray pos;
+		pp::VarArray rot;
+		pp::VarArray scale;
+		for(int i = 0; i < 3; ++i) {
+			pos.Set(i, impl->position[i]);
+			rot.Set(i, rotation[i]);
+			scale.Set(i, impl->scale[i]);
+		}
+
+		currentState.Set("position", pos);
+		currentState.Set("scale", scale);
+		currentState.Set("rotation", rot);
+
 		return currentState;
 	}
 
@@ -175,7 +206,9 @@ shared_ptr<Component> Factories::componentFactory(const rapidjson::Value& serial
 			// Default components
 			% for type, default_component in default_components.iteritems():
 			case ${default_component['id']}: {
-				${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(serializedComponent);
+				const rapidjson::Value& fields = serializedComponent["fields"];
+
+				${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(fields);
 #ifndef PREVIEW_MODE
 				result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
 #else
@@ -193,8 +226,15 @@ shared_ptr<Component> Factories::componentFactory(const rapidjson::Value& serial
 				${component['namespace']}::${component['class']}* ptr = new ${component['namespace']}::${component['class']}();
 
 				% for f in component['fields']:
-					% if component['fields'][f]['type']=='float':
-				ptr->${f} = fields["${f}"]["value"].GetDouble();
+					% if component['types'][f] == 'float' or component['types'][f] == 'double':
+				ptr->${f} = fields["${f}"].GetDouble();
+					% elif isVecType(component['types'][f]):
+				{
+				const auto& vec = fields["${f}"];
+				for(int i = 0; i < ${vec_iterations[component['types'][f]]}; ++i) {
+					ptr->${f}[i] = vec[i].GetDouble();
+				}
+				}
 					% endif
 				% endfor
 

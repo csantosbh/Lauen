@@ -11,36 +11,9 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
   var scene, camera, renderer, planeMesh = null;
   var geometry, material;
 
-  var gameObjects = [];
-
   function animate() {
     renderer.render(scene, camera);
     requestAnimationFrame(animate);
-  }
-
-  function registerGameObject(transformComponent) {
-    var gameObjectData = {
-      mesh: new THREE.Mesh( geometry, material ),
-    };
-    // Bind transform to UI
-    // For my hack to work, inside: "THREE.Object3D = function () {", make the positional properties writable.
-    transformComponent.rotation = gameObjectData.mesh.rotation;
-    transformComponent.position = gameObjectData.mesh.position;
-    transformComponent.scale = gameObjectData.mesh.scale;
-
-    scene.add( gameObjectData.mesh );
-    gameObjects.push(gameObjectData);
-  }
-
-  function addGameObject($scope, gameObjectId) {
-    var components = $scope.gameObjects[gameObjectId].components;
-    for(var i = 0; i < components.length; ++i) {
-      // Only visualize the current game object IF it has a transform component
-      if(components[i].type === 'transform') {
-        registerGameObject(components[i]);
-        break;
-      }
-    }
   }
 
   function initHorizontalGrid() {
@@ -141,6 +114,81 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
       geometry = new THREE.BoxGeometry( 200, 200, 200 );
       material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
 
+      var trackedGameObjects = [];
+
+      function trackPositionalComponent(gameObjectData) {
+        var gameObj = gameObjectData.obj;
+
+        // TODO maybe have a namespace that converts from a friendly string name to component id?
+        var transformComponent = gameObj.getComponentById(0);
+        if(transformComponent != null) {
+          gameObjectData.mesh = new THREE.Mesh( geometry, material );
+
+          // Initialize positional component
+          gameObjectData.mesh.position.fromArray(transformComponent.position);
+          gameObjectData.mesh.rotation.fromArray(transformComponent.rotation);
+          gameObjectData.mesh.scale.fromArray(transformComponent.scale);
+
+          scene.add( gameObjectData.mesh );
+
+          // Watch for transform updates
+          scope.$watch(function() {
+            return transformComponent;
+          }, function(after, before) {
+            gameObjectData.mesh.position.fromArray(transformComponent.position);
+            gameObjectData.mesh.rotation.fromArray(transformComponent.rotation);
+            gameObjectData.mesh.scale.fromArray(transformComponent.scale);
+          }, true);
+        }
+      }
+
+      function trackGameObject(gameObj) {
+        if(!scope.canvas.editMode) // Ignore gameobjects created
+          return;                  // during preview mode
+
+        var gameObjectData = {
+          mesh: null,
+          obj: gameObj
+        };
+
+        trackPositionalComponent(gameObjectData);
+        // TODO track mesh/color/material/etc components
+
+        // @@ Watch for changes in the component list
+        scope.$watchCollection(function() {
+          return gameObj.components;
+        }, function() {
+          // TODO handle case when the positional component was removed
+          if(gameObjectData.mesh == null) {
+            // Positional component may have been added
+            trackPositionalComponent(gameObjectData);
+          }
+          // TODO watch for mesh/color/material/etc updates
+        });
+
+        trackedGameObjects.push(gameObjectData);
+      }
+
+      function forgetGameObject(gameObj) {
+        if(!scope.canvas.editMode) // Ignore gameobjects created
+          return;                  // during preview mode
+
+        // Find removed game object
+        for(var i = 0; i < trackedGameObjects.length; ++i) {
+          if(trackedGameObjects[i].obj == gameObj) {
+            scene.remove(trackedGameObjects[i].mesh);
+            trackedGameObjects.splice(i, 1);
+            return;
+          }
+        }
+      }
+
+      scope.EditCanvas = {
+        trackGameObject: trackGameObject,
+        forgetGameObject: forgetGameObject
+      };
+
+      /*
       $event.listen('transformComponentAdded', function(evData) {
         // TODO figure out a better way to attatch gameobjects
         // to the edit_canvas, something that allows for easy
@@ -154,6 +202,7 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
           evData.scale = new THREE.Vector3();
         }
       });
+     */
 
       animate();
     }

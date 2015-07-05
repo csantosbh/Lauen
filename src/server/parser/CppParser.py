@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 import sys
 from server.project import Project
+from server.components import DefaultComponentManager
+
+def translateFieldType(typeDeclaration):
+    if typeDeclaration == 'c:Matrix.h@N@Eigen@T@Vector3f':
+        return 'v3f'
+    elif typeDeclaration == 'c:Matrix.h@N@Eigen@T@Vector2f':
+        return 'v2f'
+    else:
+        return typeDeclaration
+    pass
 
 # Iterate over the source file, retrieving all classes and their
 # public fields and methods
@@ -15,7 +25,7 @@ def parseCPPFileChildren(output, node, pragmaList, context):
     pass
 
 def parseCPPFileRec(node, pragmaList, context=dict()):
-    from clang.cindex import CursorKind, AccessSpecifier
+    from clang.cindex import Cursor, CursorKind, AccessSpecifier
     output=[]
 
     # TODO: Get class namespace as well!
@@ -58,12 +68,17 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
             while len(pragmaList) > 0 and pragmaList[0]['line'] < node.extent.start.line:
                 childPragmas.append(pragmaList.pop(0)['identifier'])
 
+        nodeType = node.type.get_declaration().get_usr()
+        if nodeType == '':
+            nodeType = node.type.spelling
+            pass
+
         dictNode = {
             'kind': node.kind.name,
             'name': node.spelling,
             'visibility': 0,
             'pragmas': childPragmas,
-            'type': node.type.spelling,
+            'type': translateFieldType(nodeType),
         }
         if node.access_specifier == AccessSpecifier.PROTECTED:
             dictNode['visibility'] = 1
@@ -91,8 +106,8 @@ def parseCPPFile(fileName):
     # but clang will take forever to parse the files if they
     # have headers, and it doesn't have an option for disabling
     # recursive parsing.
-    fileContent = re.sub(r'^.*#include.*$', '', fileContent, 0, re.MULTILINE)
-    tu = index.parse(fileName, ['-std=c++11'], unsaved_files=[(fileName,fileContent)], options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+    #fileContent = re.sub(r'^.*#include.*$', '', fileContent, 0, re.MULTILINE)
+    tu = index.parse(fileName, ['-std=c++11', '-fsyntax-only', '-I','/home/csantos/workspace/LauEngine/third_party/Eigen'], unsaved_files=[(fileName,fileContent)], options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
 
     # Get list of pragmas
     prevToken = None
@@ -125,10 +140,17 @@ def GetSimpleClass(fileName):
         simpleClass['class'] = parsedFile[0]['name']
         simpleClass['id'] = Project.getScriptId(fileName)
         simpleClass['namespace']  = parsedFile[0]['namespace']
+
         simpleClass['fields'] = {}
+        simpleClass['types'] = {}
+        simpleClass['pragmas'] = {}
+        simpleClass['visibilities'] = {}
         for child in parsedFile[0]['children']:
             if child['kind'] == 'FIELD_DECL' and child['visibility']==0:
-                simpleClass['fields'][child['name']] = dict(type=child['type'], pragmas=child['pragmas'], visibility=child['visibility'])
+                simpleClass['fields'][child['name']] = DefaultComponentManager.DefaultFieldValue(child['type'])
+                simpleClass['types'][child['name']] = child['type']
+                simpleClass['pragmas'][child['name']] = child['pragmas']
+                simpleClass['visibilities'][child['name']] = child['visibility']
                 pass
             pass
         pass

@@ -88,6 +88,7 @@ fields:
 
 .. code-block:: javascript
 
+    /// Game Object Prototype
     {
       components: Array[], // Array of components
       name: "string", // Component name
@@ -95,7 +96,15 @@ fields:
                          // id of that game object instance, used for
                          // linking the editor game object with its NaCl
                          // equivalent.
-      constructor: function(name='unnamed', components=[], instanceId=undefined)
+      constructor: function(scope, name='unnamed', components=[], instanceId=undefined),
+      getComponentById: function(id), // Returns the first component whose id equals the
+                                      // parameter id
+      getComponentByInstanceId: function(id), // Returns the first component whose instance
+                                              // id equals id
+      updateStates: function(currentStates), // Updates all components within the provided
+                                             // state array
+      destroy: function(scope) // Game Object destructor. Must be manually called whenever
+                               // a game object is permanently removed from scope.
     }
 
 -----------------------
@@ -272,6 +281,11 @@ all of the following items are required:
   back into something that the editor can use. This is done in the file
   ``lau/component_prototypes.js``, and is explained :ref:`down below
   <persistent-components>`.
+* **Make the component visualizable** If the component should be displayed in
+  the edit canvas (for instance, the preview is highly dependent on the
+  Transform component; and the Mesh component is expected to be displayed on
+  the edit canvas), there :ref:`are some steps <canvas-consistency>` to make this component always
+  consistent with the edit canvas.
 
 .. _add-component-to-menu:
 
@@ -348,7 +362,11 @@ dictionary. The format of this dictionary is:
        'type': '<unique_string_identifier>',
        'id': <unique_numeric_id>,
        'path': '<path to component file.hpp>',
-       'full_class_name': 'lau::ComponentClassNameWithNamespace'
+       'full_class_name': 'lau::ComponentClassNameWithNamespace',
+       'fields': {
+           'field_name': <default_value>,
+           ...
+       }
    }
 
 If you setup your component on this file (which you'll do whenever creating a
@@ -396,7 +414,9 @@ changes must be implemented:
   // received from the previewer. Either way, it will always have
   // the same format.
   function ComponentPrototype(flyweight) {
-    // Initialize internal fields.
+    // Initialize internal fields. Do not copy all values from the flyweight;
+    // instead, keep a reference to it. Only copy values that vary across
+    // instances.
   }
   ComponentPrototype.prototype = {
     export: function(), // Exports a serializable object with data
@@ -404,8 +424,12 @@ changes must be implemented:
                         // and loaded later (in which case, it will
                         // be passed as the "flyweight" parameter to
                         // the constructor)
-    setField: function(name, value) // Set the public field of name "name"
-                                    // to the value given by "value".
+    setValues: function(flyweight), // Set its internal data from the equivalent 
+                                    // fields in the flyweight. Used both for
+                                    // initialization and during preview updates.
+    destroy: function() // Component destructor. Called when the component is
+                        // removed from the game object, or when the gameo bject
+                        // itself is destroyed.
    };
 
 * If you need to access the component from somewhere else, then make it public
@@ -419,6 +443,21 @@ changes must be implemented:
     NewComponent: ComponentPrototype
    };
 
+.. _canvas-consistency:
+--------
+Making the new component Canvas-Consistent
+--------
+In order to make the new component interact with the edit canvas, follow these
+steps:
+
+* In the file ``scripts/directives/edit_canvas.js``, create a trackComponent
+  function that initializes its graphical representation and watches for
+  changes in the component fields. Consult ``trackPositionalComponent`` for how
+  this can be done.
+* A few lines below, close to the `@@ Watch for changes in the component list` comment, add all the necessary logic to deal with the following two cases:
+
+  * Your component was just **added** to the game object
+  * Your component was just **removed** from the game object
 
 ====
 Creating component widgets
@@ -426,15 +465,34 @@ Creating component widgets
 Every component field (Number, Color, String, etc) that can be potentially used
 by scripts can be created by following these steps:
 
-* In the ``development/app/`` folder, run the directive creation tool: ``yo angular:directive <field_name>``
-* Move the created script from ``app/scripts/directives/<field_name>.js`` to ``app/scripts/directives/component_widgets/<field_name>.js``. Make sure to update the ``app/index.html`` file with the new location of the directive file.
+* In the ``development/app/`` folder, run the directive creation tool: ``yo
+  angular:directive <field_name>``
+* Move the created script from ``app/scripts/directives/<field_name>.js`` to
+  ``app/scripts/directives/component_widgets/<field_name>.js``. Make sure to
+  update the ``app/index.html`` file with the new location of the directive
+  file.
+* Create an alias for the type that will be handled by the new widget: In the
+  server file ``parser/CppParser.py``, add an ``elif`` in the function
+  ``translateFieldType(typeDeclaration)`` to convert the USR typename symbol as
+  it is returned by clang into something that will be used everywhere else in
+  the lib.
+* Create a view under ``views/directives/component_editors/script_fields/``
+  specifying how the widget will be used by scripts. The following variables
+  are available:
+
+  * ``{{fieldName}}`` Name of the field as defined by the users in their scripts.
+  * ``component.fields[fieldName]`` Reference to the field data. Bind this to
+    the widget input value.
+
+* Add a reference to this view on ``scripts/directives/script_field.js``, under
+  ``getTemplateName``, by using the alias name defined previously.
 
 -----
 Initialization rules
 -----
-Component widgets must have their initialization rule defined in
-``scripts/lau/component_prototypes.js``, in the function
-``getDefaultScriptFieldValue(type)``. This function receives the unique string
+Component widgets must have their initialization rules defined in the server
+file ``server/components/DefaultComponentManager.py``, in the function
+``DefaultFieldValue(typename)``. This function receives the unique string
 identifier of that field, and returns the default value associated with it.
 
 .. _asset-types:
@@ -463,15 +521,25 @@ the ``initialAssetList`` event.
                      // a standard string field in flyweights used to
                      // identify them.
      fields: {
-        "fieldName0": {
-            name: "variableName",
-            pragmas: ["defined", "pragmas"],
-            type: "fieldType",
-            visibility: visibilityLevel
-        },
-        "fieldName1": { ... },
+       "fieldName0": <initialValue>,
+       "fieldName1": <initialValue>,
         ...
-    }
+     },
+     types: {
+       "fieldName0": "fieldType",
+       "fieldName1": "fieldType",
+        ...
+     },
+     pragmas: {
+       "fieldName0": ["user", "defined", "pragmas"],
+       "fieldName1": [...],
+        ...
+     },
+     visibilities: {
+       "fieldName0": visibilityLevel,
+       "fieldName1": visibilityLevel,
+        ...
+     },
      path: "/full/path/to/script/File.hpp",
      namespace: "sample::inner",
      class: "CPPClassName",

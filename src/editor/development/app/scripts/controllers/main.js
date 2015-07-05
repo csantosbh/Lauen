@@ -1,33 +1,5 @@
 'use strict';
 
-// Handle IO events
-function setupIOEvents($scope, $timeout) {
-  function handleIOEvents(sceneData) {
-    $timeout(function() {
-      // Setup game objects
-      for(var i = 0; i < sceneData.length; ++i) {
-        var goComps = [];
-        var comps = sceneData[i].components;
-        for(var c = 0; c < comps.length; ++c) {
-          var comp = LAU.Components.createComponentFromFlyWeight(comps[c]);
-          if(comp == null)
-            continue;
-          goComps.push(comp);
-        }
-
-        $scope.gameObjects.push(new LAU.GameObject(sceneData[i].name, goComps));
-
-        $event.broadcast('gameObjectCreated', i);
-      }
-
-      // TODO remove line below when the hierarchy panel is correctly created (with blur events to un-select game objects)
-      $scope.currentGameObjectId = $scope.gameObjects.length-1;
-    });
-  }
-
-  $rpc.call('loadCurrentScene', null, handleIOEvents);
-}
-
 // Display errors/warnings/etc
 function setupConsole($scope, $timeout) {
   $event.listen('compilationStatus', function(eMsg) {
@@ -84,7 +56,6 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
     }
   });
 
-  setupIOEvents($scope, $timeout);
   setupConsole($scope, $timeout);
 });
 var lau;

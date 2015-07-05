@@ -1,5 +1,15 @@
 from server import RPC
 
+# Auxiliary functions
+def DefaultFieldValue(typename):
+    if typename == 'int' or typename == 'float':
+        return 0
+    elif typename == 'v3f':
+        return [0,0,0]
+    elif typename == 'v2f':
+        return [0,0]
+    pass
+
 # TODO investigate the possibility of generating this dict automatically
 # TODO if the "type" field is to be kept, then transform this into an array to avoid repeating it in the dict key
 _defaultComponents = {
@@ -7,7 +17,12 @@ _defaultComponents = {
         'id': 0,
         'type': 'transform', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
         'path': 'default_components/Transform.hpp',
-        'full_class_name': 'lau::Transform'
+        'full_class_name': 'lau::Transform',
+        'fields': {
+            'position': [0,0,0],
+            'scale': [1,1,1],
+            'rotation': [0,0,0]
+        }
     }
 }
 

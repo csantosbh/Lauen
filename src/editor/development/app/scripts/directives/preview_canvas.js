@@ -21,16 +21,6 @@ angular.module('lauEditor')
         return null;
       }
 
-      function getComponentByInstanceId(gameObj, id) {
-        for(var i = 0; i < gameObj.components.length; ++i) {
-          var comp = gameObj.components[i];
-          if(comp.instanceId == id)
-            return comp;
-        }
-        // TODO assert that this line will never be achieved
-        return null;
-      }
-
       function handleNaClMessage(message) {
         function processMessage() {
           var msg = message.data;
@@ -44,7 +34,7 @@ angular.module('lauEditor')
           if(msg.newGameObjects.length > 0) {
             for(var i = 0; i < msg.newGameObjects.length; ++i) {
               // TODO refactor this to somewhere else (a game object creation center)
-              var newGameObject = new LAU.GameObject(null, null, msg.newGameObjects[i].instanceId);
+              var newGameObject = new LAU.GameObject(scope, null, null, msg.newGameObjects[i].instanceId);
               scope.gameObjects.push(newGameObject);
             }
           }
@@ -78,15 +68,7 @@ angular.module('lauEditor')
               var state = msg.currentStates[i];
               var gameObj = getGameObjectByInstanceId(state.instanceId);
               // Update its components
-              for(var j = 0; j < state.components.length; ++j) {
-                var srcComponent = state.components[j];
-                var dstComponent = getComponentByInstanceId(gameObj, srcComponent.instanceId);
-                for(var k in srcComponent.state) {
-                  if(srcComponent.state.hasOwnProperty(k)) {
-                    dstComponent.setField(k, srcComponent.state[k]);
-                  }
-                }
-              }
+              gameObj.updateStates(state);
             }
           }
         }
