@@ -44,7 +44,7 @@ def _getFlags(compilationMode):
     }
 
 # TODO only re-call this when we change the number of scripts available
-def renderTemplateSources(componentFiles):
+def _renderTemplateSources(componentFiles):
     from mako.template import Template
 
     projectFolder = Project.getProjectFolder()
@@ -55,7 +55,7 @@ def renderTemplateSources(componentFiles):
         pass
     pass
 
-def run_game(path, workFolder):
+def _runGame(path, workFolder):
     from subprocess import Popen, PIPE
     from time import sleep
 
@@ -69,7 +69,7 @@ def run_game(path, workFolder):
         pass
     pass
 
-def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
+def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess
     compilationFlags=_getFlags(compilationMode)
 
@@ -85,7 +85,7 @@ def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DE
         componentScripts = io.Utils.ParseHPPFilesFromFolder(projectFolder+'/assets')
 
         # Generate component factory
-        renderTemplateSources(componentScripts)
+        _renderTemplateSources(componentScripts)
         
         # Generate build list
         sourceFiles = []
@@ -123,11 +123,14 @@ def buildGame(event_msg, platform = 'linux', runGame = True, compilationMode='DE
 
     if compilationStatus['returncode'] == 0 and runGame:
         # TODO use threads
-        run_game(outputFolder+'/game', outputFolder)
+        _runGame(outputFolder+'/game', outputFolder)
         pass
 
     return compilationStatus
     pass
+
+def buildGame(event_msg):
+    BuildProject()
 
 def AutoBuild():
     # TODO: Watch for file modifications and re-generate .o's
@@ -150,7 +153,7 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder):
     import shutil, os
     # Create folder for temporary .o files
     dir_util.mkpath(outputFolder + '/build')
-    if buildGame(None, platform, buildAndRun, compilationMode, outputFolder)['returncode'] != 0:
+    if BuildProject(platform, buildAndRun, compilationMode, outputFolder)['returncode'] != 0:
         return False
     else:
         # Copy scenes to destination folder
