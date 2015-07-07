@@ -58,9 +58,45 @@ The file ``build/BuildEventHandler.py`` exposes the following functions:
 CPY templates
 -----
 
+CPY files are `Mako templates <http://www.makotemplates.org/>`_ of C++ files.
+Theywere created to overcome the lack of compile time reflection in C++. They
+are rendered by the function ``_renderTemplateSources``, which is called by the
+``build/BuildEventHandler.py`` module. The currently implemented CPY files are
+the following:
+
+* **Factories.cpy** Contains factories for game objects, components and peekers
+  (wrapper classes that handle serialization of components and game objects).
+
 -----
 Adding support to new targets
 -----
+
+In order to make games compilable to new platforms, follow these steps:
+
+* In the directory ``LauEngine/third_party/cross_compiling``, create a new
+  folder with the target name and, inside it, put the object files for all the
+  dependency libraries (check out :ref:`dependencies <dependencies>` for a list
+  of standard, dynamically linked dependencies).
+* Add the new target to the ``build/BuildEventHandler.py`` module:
+
+  * **Create a preprocessor directive** Create a preprocessor directive by
+    adding a new key to the dictionary ``platform_preprocessors``.
+  * **Setup the required compiler** Cross compilation oftenly requires
+    different compilers. Whether the new platform requires a special compiler
+    or not, you must add an entry to the ``cxx_compiler`` dictionary specifying
+    the required compiler (if it is a non-standard compiler, create a
+    :ref:`Config <configpy>` entry to allow users to specify the location for
+    their local installation of the required compiler).
+  * **Compilation and link flags** Edit the ``_getFlags`` function and add both
+    compilation and link flags for the new platform.
+  * `(optional)` **Setup the post compilation actions** If the new target
+    requires any post compilation steps, like copying dependency libs to the
+    build folder, these steps must be specified in the ``_PostExportStep``
+    function.
+* **Make the new target available on the editor** In the editor, open up the
+  view ``views/dialogs/build.html`` and add the new target to the export
+  menu. Make sure to use the same alias you used previously to define the new
+  target.
 
 ======
 C++ Parser
@@ -81,6 +117,8 @@ documentar funcoes do utils
 =====
 Project module
 =====
+
+.. _configpy:
 
 =====
 Project settings and Runtime settings

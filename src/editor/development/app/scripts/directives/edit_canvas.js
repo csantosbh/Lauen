@@ -132,6 +132,7 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
           scene.add( gameObjectData.mesh );
 
           // Watch for transform updates
+          // TODO use Object.observe instead of scope.$watch! VERY IMPORTANT!
           scope.$watch(function() {
             return transformComponent;
           }, function(after, before) {
