@@ -194,11 +194,13 @@ Available events
                            **Parameter:** A boolean variable. If true,
                            then the preview mode has just started;
                            otherwise, the edit mode was just turned on.
- transformComponentAdded   Whenever the Transform component is added
-                           to the currently selected game object.
-                           **Parameter:** The transform component
-                           flyweight. For more information on flyweights,
-                           refer to :ref:`Asset Types <asset-types>`.
+ paneResized               A layout panel has been resized. Fired for
+                           all panels individually when they resize.
+                           **Parameter:** The following object:
+                           ``{
+                           pane:"pane_id", size: {width: <new_width>
+                           height: <new_height>}
+                           }``
 ========================= ========================================
 
 =============

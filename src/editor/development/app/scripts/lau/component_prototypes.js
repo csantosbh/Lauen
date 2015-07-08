@@ -12,9 +12,6 @@ LAU.Components = (function() {
     this.type = 'transform';
     this.position = this.rotation = this.scale = null; // Will be set by the threejs canvas
     this.flyweight = componentFlyWeight;
-
-    // This will make THREE.js bind this object to a visual entity
-    $event.broadcast('transformComponentAdded', this);
   }
   TransformComponent.prototype = {
     export: function() {

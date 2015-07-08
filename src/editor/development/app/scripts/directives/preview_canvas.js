@@ -9,9 +9,10 @@
 angular.module('lauEditor')
 .directive('previewCanvas', ['$timeout', function ($timeout) {
   return {
-    template: '<embed class="main-canvas" src="lau_canvas.nmf" type="application/x-pnacl" />',
+    template: '<embed class="inner-canvas" src="lau_canvas.nmf" type="application/x-pnacl" />',
     restrict: 'E',
     link: function postLink(scope, element, attrs) {
+
       function getGameObjectByInstanceId(id) {
         for(var i = 0; i < scope.gameObjects.length; ++i) {
           if(scope.gameObjects[i].instanceId == id)

@@ -28,6 +28,10 @@ public:
         });
     }
 
+    void resize(int windowWidth, int windowHeight) {
+        glViewport(0, 0, windowWidth, windowHeight);
+    }
+
     void draw(double temporalAlpha) {
         glClear(GL_COLOR_BUFFER_BIT);
 

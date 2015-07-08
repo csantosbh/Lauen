@@ -31,10 +31,22 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
     north__spacing_open: 0,
     north__size: 70,
     east__size: 300,
+    onresize: function(paneName, paneElement, paneState, paneOptions, layoutName) {
+      $event.broadcast('paneResized', {
+        pane: paneElement[0].id,
+        size: {width: paneState.innerWidth, height: paneState.innerHeight},
+      });
+    }
   });
   $('#center-container').layout({
     resizeWhileDragging: true,
     south__size: 200,
+    onresize: function(paneName, paneElement, paneState, paneOptions, layoutName) {
+      $event.broadcast('paneResized', {
+        pane: paneElement[0].id,
+        size: {width: paneState.innerWidth, height: paneState.innerHeight},
+      });
+    }
   });
 
   // Inject the LAU namespace into the global scope

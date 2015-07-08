@@ -1,18 +1,18 @@
-<div class="ui-layout-east dropzone scroll-y" ng-model="projectPanel.dropBucket" data-drop="true" data-jqyoui-options jqyoui-droppable="{multiple:true, onDrop:'projectPanel.onDrop()'}">
+<div class="ui-layout-east dropzone scroll-y" ng-model="projectPanel.dropBucket" data-drop="true" data-jqyoui-options jqyoui-droppable="{multiple:true, onDrop:'projectPanel.onDrop()'}" id="game-object-editor-container">
   <game-object-editor></game-object-editor>
 </div>
 <div class="ui-layout-center" id="center-container">
-  <div class="ui-layout-west">
+  <div class="ui-layout-west" id="hierarchy-container">
     <game-object-hierarchy></game-object-hierarchy>
   </div>
-  <div class="ui-layout-center">
+  <div class="ui-layout-center" id="canvas-container">
     <edit-canvas class="main-canvas" ng-show="canvas.editMode" game-objects="{{gameObjects}}"></edit-canvas>
     <preview-canvas class="main-canvas" ng-show="!canvas.editMode" /></preview-canvas>
   </div>
-  <div class="ui-layout-south scroll-y" id="project-panel">
+  <div class="ui-layout-south scroll-y" id="project-panel-container">
     <project-panel></project-panel>
   </div>
 </div>
-<div class="ui-layout-north">
+<div class="ui-layout-north" id="menu-bar-container">
   <menu-bar></menu-bar>
 </div>

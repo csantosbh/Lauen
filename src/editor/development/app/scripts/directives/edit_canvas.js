@@ -84,6 +84,14 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
     };
   }
 
+  $event.listen('paneResized', function(resizeEvent) {
+    if(resizeEvent.pane == 'canvas-container') {
+      renderer.setSize( resizeEvent.size.width, resizeEvent.size.height );
+      camera.aspect = resizeEvent.size.width/resizeEvent.size.height;
+      camera.updateProjectionMatrix();
+    }
+  });
+
   function initCanvas(containerElement) {
       scene = new THREE.Scene();
 
@@ -94,6 +102,8 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
       renderer = new THREE.WebGLRenderer();
       renderer.setSize( width, height );
       renderer.setClearColor(0x393939, 1.0);
+      renderer.domElement.setAttribute('class', 'inner-canvas');
+
       containerElement.append(renderer.domElement);
       $canvas = renderer.domElement;
 
@@ -188,22 +198,6 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
         trackGameObject: trackGameObject,
         forgetGameObject: forgetGameObject
       };
-
-      /*
-      $event.listen('transformComponentAdded', function(evData) {
-        // TODO figure out a better way to attatch gameobjects
-        // to the edit_canvas, something that allows for easy
-        // removal.
-        if(scope.canvas.editMode) {
-          registerGameObject(evData);
-        } else {
-          // TODO here be gambs
-          evData.rotation = new THREE.Vector3();
-          evData.position = new THREE.Vector3();
-          evData.scale = new THREE.Vector3();
-        }
-      });
-     */
 
       animate();
     }

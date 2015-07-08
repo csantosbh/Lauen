@@ -26,7 +26,6 @@ NaCl::NaCl(PP_Instance instance) :
 
 bool NaCl::init(int32_t new_width, int32_t new_height) {
     lout << "init opengl" << endl;
-    lerr << "Testing lerr" << endl;
     if (!glInitializePPAPI(pp::Module::Get()->get_browser_interface())) {
         return false;
     }
@@ -99,9 +98,11 @@ void NaCl::DidChangeView(const pp::View& view) {
     int32_t new_width = view.GetRect().width() * view.GetDeviceScale();
     int32_t new_height = view.GetRect().height() * view.GetDeviceScale();
 
+    lout << "change view!" << endl;
+
     if(context.is_null()) {
         if(!init(new_width,new_height)) {
-            lout << "Failed to init opengl" << endl;
+            lerr << "Failed to init opengl" << endl;
             return;
         }
 
@@ -110,7 +111,9 @@ void NaCl::DidChangeView(const pp::View& view) {
     } else {
         int32_t result = context.ResizeBuffers(new_width, new_height);
         if(result < 0) {
-            lout << "Unsuccesful view change" << endl;
+            lerr << "Unsuccesful view change" << endl;
+        } else {
+            game.resize(new_width, new_height);
         }
     }
 }
