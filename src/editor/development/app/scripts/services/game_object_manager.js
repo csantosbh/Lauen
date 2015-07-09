@@ -42,6 +42,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     var gameObjs = gameObjectManager.gameObjects;
     for(var j = 0; j < gameObjs.length; ++j) {
       if(gameObjs[j].instanceId == instanceId) {
+        gameObjs[j].destroy();
         gameObjs.splice(j, 1);
         return;
       }

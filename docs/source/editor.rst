@@ -72,13 +72,14 @@ following files:
   ``scripts/directives/project_panel.js`` (logic).
 
 ==================
-Game Object Editor
+Game Object Manager
 ==================
 
-All game objects are stored in the array ``$scope.gameObjects``, defined in
-``scripts/controllers/main.js``. The boolean ``$scope.currentGameObjectId``
-contains the index of the currently selected game object (the one highlighted
-in the hierarchy).
+All game objects are stored in the array ``gameObjectManager.gameObjects``,
+defined in ``scripts/services/game_object_manager.js``. The variable
+``currentGameObjectId`` (defined in the same service) contains the index of the
+currently selected game object (the one highlighted in the hierarchy). If no
+game object is selected, then this variable is set to -1.
 
 Each game object is an instance of a prototype defined in
 ``scripts/lau/game_object.js``. It has an array of components, whose prototypes
@@ -106,6 +107,59 @@ fields:
       destroy: function(scope) // Game Object destructor. Must be manually called whenever
                                // a game object is permanently removed from scope.
     }
+
+The Game Object Manager service has provides the following interface:
+
+.. code-block:: javascript
+
+    {
+      gameObjects: [],
+      selectGameObject: function(index),
+      selectedGameObject: function(),
+      pushGameObject: function(go),
+      removeGameObjectByInstanceId: function(id),
+      addComponentToSelectedGameObject: function(component),
+      getGameObjectByInstanceId: function(go),
+      serializeGameObjects: function()
+    }
+
+The available functions are as follows:
+
+.. function:: selectGameObject(index)
+
+   Selects a game object for editing. This will show all of its components in
+   the Game Object Editor panel.
+
+   :param index: The position of the desired game object in the gameObjects array.
+
+.. function:: selectedGameObject() -> index
+
+   Returns the index of the currently selected game object, or -1 if none are
+   selected.
+
+.. function:: pushGameObject(go)
+
+   Pushes the requested game object to the array of game objects.
+
+   :param go: A game object instance.
+
+.. function:: removeGameObjectByInstanceId(id)
+
+   Destroys the game object whose instance id field equals ``id``. This will
+   call its destruct() method and remove it from the gameObjects array.
+
+   :param id: The game object instance id.
+
+.. function:: addComponentToSelectedGameObject(component)
+
+   Adds the component to the currently selected game object.
+
+   :param component: The component instance to be added.
+
+.. function:: serializeGameObjects() -> array
+
+   Returns an array of objects containing serializable data from each
+   instantiated game object.
 
 -----------------------
 Script Field directives
