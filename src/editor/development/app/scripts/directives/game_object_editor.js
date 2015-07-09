@@ -6,7 +6,7 @@
  * @description
  * # gameObjectEditor
  */
-angular.module('lauEditor').directive('gameObjectEditor', function () {
+angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', function ($gom) {
   function setupComponentMenu($scope) {
     var componentTypes = {
       'transform': {menu_label:'Transform', flyweight: null },
@@ -30,6 +30,8 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
         componentTypes.transform,
         {menu_label: 'Scripts', children: []}
       ],
+      gameObjects: $gom.gameObjects,
+      selectedGameObject: $gom.selectedGameObject,
       _menuPickup: function(item) {
         var componentType = $scope.gameObjectEditor.componentMenu;
         for(var i = 0; i < item.length; ++i) {
@@ -39,10 +41,10 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
         $scope.gameObjectEditor.addComponent(componentType);
       },
       addComponent: function(eventData) {
-        if($scope.currentGameObjectId < 0) return;
+        if($gom.selectedGameObject() < 0) return;
 
         var componentData = LAU.Components.createComponentFromFlyWeight(eventData.flyweight);
-        $scope.gameObjects[$scope.currentGameObjectId].components.push(componentData);
+        $gom.addComponentToSelectedGameObject(componentData);
       }
     };
 
@@ -59,4 +61,4 @@ angular.module('lauEditor').directive('gameObjectEditor', function () {
       setupComponentMenu(scope);
     },
   };
-});
+}]);

@@ -6,7 +6,7 @@
  * @description
  * # menuBar
  */
-angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', function ($timeout, $dialog) {
+angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', 'gameObjectManager', function ($timeout, $dialog, $gom) {
   return {
     templateUrl: 'views/directives/menu_bar.html',
     restrict: 'E',
@@ -27,19 +27,8 @@ angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', functi
           $rpc.call('buildGame', null, function(stat){});
         },
         requestSave: function() {
-          var exported = [];
-          for(var g = 0; g < scope.gameObjects.length; ++g) {
-            var gameObjComps = scope.gameObjects[g].components;
-            var exportedComps = [];
-            for(var c = 0; c < gameObjComps.length; ++c) {
-              exportedComps.push(gameObjComps[c].export());
-            }
-            exported.push({
-              name: scope.gameObjects[g].name,
-              components: exportedComps
-            });
-          }
-          $rpc.call('save', exported, function(saveRes) {
+          var scene = $gom.serializeGameObjects();
+          $rpc.call('save', scene, function(saveRes) {
             console.log('Save success: ' + saveRes);
           });
         },

@@ -3,14 +3,13 @@
 // Display errors/warnings/etc
 function setupConsole($scope, $timeout) {
   $event.listen('compilationStatus', function(eMsg) {
-    //console.clear();
+    console.clear();
     console.log(eMsg.message);
   });
   $event.listen('executionMessage', function(eMsg) {
     console.log(eMsg);
   });
   $event.listen('executionStatus', function(eMsg) {
-    //console.clear();
     console.log(eMsg.message);
   });
 }
@@ -49,24 +48,14 @@ angular.module('lauEditor').controller('MainCtrl', function ($scope, $timeout, $
     }
   });
 
-  // Inject the LAU namespace into the global scope
+  // Inject the LAU namespace into the scope so views can use
+  // helper functions as well
   $scope.LAU = LAU;
+
   // Initialize editor
-  $scope.gameObjects = [];
-  $scope.currentGameObjectId = -1;
   $scope.reloadProject = function() {
     $window.location.reload();
   };
-
-  var _realGameObjects; // Backup for the real gameobjects in the edit mode
-  $event.listen('togglePreviewMode', function(isPreviewing) {
-    if(isPreviewing) {
-      _realGameObjects = $scope.gameObjects;
-      $scope.gameObjects = [];
-    } else {
-      $scope.gameObjects = _realGameObjects;
-    }
-  });
 
   setupConsole($scope, $timeout);
 });

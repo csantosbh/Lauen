@@ -6,7 +6,7 @@
  * @description
  * # projectPanel
  */
-angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($timeout) {
+angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', function ($timeout, $gom) {
   // TODO this was moved here because the RPCs are not guaranteeded to obey any
   // particular call order. Implement some order-filtering to RPC calls. Maybe a
   // 'requires' parameter that specifies its dependencies.
@@ -26,13 +26,8 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', function ($ti
           gameObjComponents.push(component);
         }
 
-        $scope.gameObjects.push(new LAU.GameObject($scope, sceneData[i].name, gameObjComponents));
-
-        $event.broadcast('gameObjectCreated', i);
+        $gom.pushGameObject(new LAU.GameObject($scope, sceneData[i].name, gameObjComponents));
       }
-
-      // TODO remove line below when the hierarchy panel is correctly created (with blur events to un-select game objects)
-      $scope.currentGameObjectId = $scope.gameObjects.length-1;
     });
   }
 
