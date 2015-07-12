@@ -113,10 +113,11 @@ The Game Object Manager service has provides the following interface:
 .. code-block:: javascript
 
     {
-      gameObjects: [],
+      getGameObjects: function(),
       selectGameObject: function(index),
       selectedGameObject: function(),
       pushGameObject: function(go),
+      removeGameObjectByIndex: function(id),
       removeGameObjectByInstanceId: function(id),
       addComponentToSelectedGameObject: function(component),
       getGameObjectByInstanceId: function(go),
@@ -124,6 +125,13 @@ The Game Object Manager service has provides the following interface:
     }
 
 The available functions are as follows:
+
+.. function:: getGameObjects() -> array
+
+   Returns the list of game objects currently being displayed in the editor. If
+   in edit mode, the game objects are the ones created by the user; in preview
+   mode, they are the ones created by the NaCl previewer, and besides not being
+   necessarily the same, they are internally two different arrays.
 
 .. function:: selectGameObject(index)
 
@@ -143,10 +151,17 @@ The available functions are as follows:
 
    :param go: A game object instance.
 
+.. function:: removeGameObjectByIndex(idx)
+
+   Destroys the game object whose index in the gameObject array is ``idx``. This
+   will call its destroy() method before removing it from the gameObjects array.
+
+   :param idx: The position of the game object in the gameObjects array.
+
 .. function:: removeGameObjectByInstanceId(id)
 
    Destroys the game object whose instance id field equals ``id``. This will
-   call its destruct() method and remove it from the gameObjects array.
+   call its destroy() method and remove it from the gameObjects array.
 
    :param id: The game object instance id.
 

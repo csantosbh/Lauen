@@ -166,6 +166,7 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
         // TODO track mesh/color/material/etc components
 
         // @@ Watch for changes in the component list
+        // TODO use Object.watch in watchCollection as well?
         scope.$watchCollection(function() {
           return gameObj.components;
         }, function() {

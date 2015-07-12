@@ -2,12 +2,16 @@
 
 #ifdef DESKTOP
 
+#include <iostream>
 #include "utils/Time.h"
 #include "window/Window.hpp"
 
 #include <GLFW/glfw3.h>
 
 namespace lau {
+
+std::ostream& lout = std::cout;
+std::ostream& lerr = std::cerr;
 
 class Desktop : public Window {
 public:

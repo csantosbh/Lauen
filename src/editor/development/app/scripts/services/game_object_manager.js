@@ -17,6 +17,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     selectGameObject: selectGameObject,
     selectedGameObject: selectedGameObject,
     pushGameObject: pushGameObject,
+    removeGameObjectByIndex: removeGameObjectByIndex,
     removeGameObjectByInstanceId: removeGameObjectByInstanceId,
     addComponentToSelectedGameObject: addComponentToSelectedGameObject,
     getGameObjectByInstanceId: getGameObjectByInstanceId,
@@ -42,12 +43,18 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     currentGameObjectId = gameObjects.length-1;
   }
 
-  function removeGameObjectByInstanceId(instanceId) {
+  function removeGameObjectByIndex(scope, idx) {
+    // Look for deleted game object
+    gameObjects[idx].destroy(scope);
+    gameObjects.splice(idx, 1);
+  }
+
+  function removeGameObjectByInstanceId(scope, instanceId) {
     // Look for deleted game object
     var gameObjs = gameObjects;
     for(var j = 0; j < gameObjs.length; ++j) {
       if(gameObjs[j].instanceId == instanceId) {
-        gameObjs[j].destroy();
+        gameObjs[j].destroy(scope);
         gameObjs.splice(j, 1);
         return;
       }
@@ -87,7 +94,6 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     if(isPreviewing) {
       _editorGameObjects = gameObjects;
       gameObjects = [];
-      console.log('fodase');
     } else {
       gameObjects = _editorGameObjects;
     }

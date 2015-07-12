@@ -19,7 +19,7 @@ extern std::stringstream lerr;
 #include <GL/gl.h>
 #include <iostream>
 namespace lau {
-ostream& lout = cout;
-ostream& lerr = cerr;
+extern std::ostream& lout;
+extern std::ostream& lerr;
 }
 #endif

@@ -18,7 +18,10 @@ angular.module('lauEditor')
           },
           gameObjects: $gom.getGameObjects,
           selectGameObject: $gom.selectGameObject,
-          selectedGameObject: $gom.selectedGameObject
+          selectedGameObject: $gom.selectedGameObject,
+          removeGameObject: function(idx) {
+            $gom.removeGameObjectByIndex(scope, idx);
+          }
         };
       }
     };

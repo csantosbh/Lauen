@@ -26,9 +26,9 @@ LAU.Components = (function() {
       };
     },
     setValues: function(flyweight) {
-      this.position = flyweight.fields.position;
-      this.rotation = flyweight.fields.rotation;
-      this.scale = flyweight.fields.scale;
+      this.position = LAU.Utils.clone(flyweight.fields.position);
+      this.rotation = LAU.Utils.clone(flyweight.fields.rotation);
+      this.scale = LAU.Utils.clone(flyweight.fields.scale);
     },
     destroy: function() {
     }
@@ -62,7 +62,7 @@ LAU.Components = (function() {
       var givenFields = flyweight.fields;
       for(var f in givenFields) {
         if(givenFields.hasOwnProperty(f)) {
-          this.fields[f] = givenFields[f];
+          this.fields[f] = LAU.Utils.clone(givenFields[f]);
         }
       }
     }

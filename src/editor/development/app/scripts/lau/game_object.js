@@ -39,6 +39,8 @@ LAU.GameObject = (function() {
         dstComponent.setValues(srcComponent);
       }
     },
+    // TODO having to pass the scope around sucks. Maybe this can be solved by
+    // making everything as services.
     destroy: function(scope) {
       scope.EditCanvas.forgetGameObject(this);
     }
