@@ -22,6 +22,7 @@ Any source code related to the server is located inside
 * ``project`` Holds the current project state (component ids, scenes, etc), and sets up some project related :ref:`RPCs <server-rpc>`.
 
 .. _build-system:
+
 =====
 Build system
 =====
@@ -101,39 +102,363 @@ In order to make games compilable to new platforms, follow these steps:
 ======
 C++ Parser
 ======
+The ``parser/CppParser.py`` module is responsible for parsing C++ classes and
+extracting their public fields, including their preceding #pragmas.
+
+An important function in this file is the ``translateFieldType(typeName)``.
+This function converts a clang USR typename symbol into an internal identifier
+that is used across the whole engine. Every class type that's supported by the
+editor should be translated in this function, since that makes the typenames
+more clear and reduces the cost of adapting the engine in case clang changes
+its USR symbols.
+
+The ``CppParser.py`` module can be used as a command line tool to parse
+individual C++ files, which is useful for displaying the USR symbols of
+unsupported types: ``./CppParser <path/to/cppFile>``.
 
 
 ======
 HTTP and WebSocket servers
 ======
-The HTTP server provides the editor with both internal engine data (like HTML
-and JavaScript files) and project data (like user assets and NaCl files).
+The HTTP server, implemented in ``HTTPServer.py`` provides the editor with both
+internal engine data (like HTML and JavaScript files) and project data (like
+user assets and NaCl files). The compiled NaCl files used by the preview mode
+are saved in the folder ``$PROJ_ROOT$/build/nacl/``.
+
+The websocket server, implemented in ``WSServer.py``, handles asynchronous
+requests made by the editor, which are treated as events. Every websocket
+packet sent to the server must be a JSON in the following format:
+
+.. code-block:: javascript
+
+   {
+     event: "eventName",
+     msg: <eventData>
+   }
 
 ====
 IO Utilities
 ====
-documentar funcoes do utils
+The ``io/Utils.py`` module contains filesystem related utility functions.
+
+.. function:: GetFileNameFromPath(path) -> str
+
+   Given the path to a file ``path``, returns the name of the file.
+
+   :param path: Complete path to a file.
+
+.. function:: ParseHPPFilesFromFolder(path) -> list
+
+   Given the complete path to a folder, returns an array of objects containing
+   parsed information from all C++ header files in the root and all subfolders
+   inside ``path``. A file is assumed to be a C++ header file if it ends with
+   any of the following extensions: ``hpp``, ``hxx``.
+
+   :param path: Complete path to the root folder.
+
+.. function:: ListFilesFromFolder(path, extensions = None) -> list
+
+   Lists all files from a folder (and all its subfolders) whose extensions are
+   one of the extensions in the array ``extensions``. 
+
+   :param path: Complete path to the root folder.
+   :param extensions: Array of query extensions. If set to ``None``, all files in these folders will be returned.
+
+.. function:: CopyFilesOfTypes(src, dst, types, baseSrcFolder=None)
+
+  Copies all files of specified types to destination folder. The destination
+  folder will be created, so as to keep the directory structure of each original
+  file.
+
+  :param src: Complete path to source folder.
+  :param dst: Complete path to destination folder.
+  :param types: Array specifying the types of files to be copied.
+  :param baseSrcFolder: Complete path to the folder to be considered root of the hierarchy being copied. For instance, if ``src`` is ``/var/tmp/project/assets``, ``dst`` is ``/home/user/destination`` and ``baseSrcFolder`` is ``/var/tmp``, then a folder ``project/assets`` will be created inside ``/home/user/destination``, and all files of the requested types will be copied there.
 
 =====
 Project module
 =====
+The module ``project/Projecy.py`` contains a singleton of the class
+``_Project``, which holds the following metadata about the project being
+edited:
+
+=================  ===================================================
+``scripts``         Dictionary that maps a full path to a user script
+                    into a unique numeric id.
+``scenes``          List of all scenes associated with the current
+                    project. Contains the path to the scene .json file,
+                    relative to the ``$PROJ_ROOT$`` folder.
+``currentScene``    Numeric index of the scene currently being edited
+                    by the engine user.
+=================  ===================================================
+
+This module exposes the following functions:
+
+.. function:: getAssetList() -> list
+
+   Returns a list of dictionaries, each of them containing detailed information
+   about all assets currently available inside the ``assets/`` folder of the
+   project.
+
+.. function:: getProjectFolder() -> str
+
+   Returns the complete ``$PROJ_ROOT$`` path.
+
+.. function:: createNewProject(path)
+
+   Given the full path to a project file, this function creates a new project
+   in that ``path``, copying the :ref:`template project <template-project>` to
+   this folder. If the path contains a reference to an already existing project
+   file, it will be loaded instead (and will not be overwritten).
+
+   :params path: Full path to a target (preferrably non-existing) .json project file.
+
+.. function:: saveCurrentScene(sceneData)
+
+   Given a dictionary with :ref:`scene data <scene-format>`, saves this scene
+   in the current scene file (which is specified by the project
+   ``currentScene`` field).
+
+   :param sceneData: :ref:`Click here for more information about the scene data format. <scene-format>`
+
+.. function:: getScriptId(scriptPath) -> int
+
+   Given the full path to a script asset (which must be inside the ``assets``
+   project folder), returns the unique numeric identifier for the class
+   contained in that script.
+
+   :param scriptPath: Complete path to the script file. Must be inside the
+   ``assets`` folder.
+
+.. function:: loadCurrentScene() -> scene_data
+
+   Returns a :ref:`scene data object <scene-format>`. The scene data will be
+   the one identified by ``currentScene`` in the project singleton.
+
+.. function:: loadProject(path) -> bool
+
+   Given a path to a project.json file, loads it by updating the internal
+   project singleton. Currently, always returns True.
+
+   :param path: Complete path to a project.json file.
+
+
+.. _scene-format:
+=====
+Scenes
+=====
+The scene files contains a list of game objects in the serialized format, as
+can be seen below:
+
+.. code-block:: javascript
+
+    // List of game objects
+    [
+      {
+        "name": "gameObjectName",
+        "components": [
+          {
+            "fields": {
+              "fieldName": <fieldValue>,
+              // ... other fields ...
+            },
+            "type": "componentStringIdentifier",
+            "id": <uniqueNumericComponentId>,
+            // The fields below are only present in script components
+            "path": "/path/to/component/asset.hpp",
+            "namespace": "full::namespace",
+          },
+          // ... other components ...
+        ]
+      }
+    ]
 
 .. _configpy:
 
 =====
 Project settings and Runtime settings
 =====
-``Config.py``
+The module ``Config.py`` manages two types of configuration variables:
+
+* **User-editable configuration**, which is saved in json format in the file
+  ``~/.laurc``. Such variables can be retrieved with the function
+  ``Config.get(section, field)``, where ``section`` specifies the section where
+  the configuration is stored, and ``field`` is the configuration field name.
+  They can also be set with the function ``Config.set(section, field, value)``.
+  When the server sets a variable, the settings file is automatically updated.
+* **Runtime configuration**, like the engine installation folder. These
+  variables can be retrieved by the ``Config.env(section)`` function, where
+  ``section`` is the name of the variable to be fetched.
+
+.. _user-config-fields:
+
+-----
+User editable Configuration Fields
+-----
+
+.. code-block:: javascript
+
+    {
+      // Project section
+      "project": {
+        // Number of projects to be displayed in the "recent projects"
+        // menu (Project -> recent projects)
+        "recent_project_history": <number>
+      },
+      // Runtime section
+      "runtime": {
+        // Recently opened projects
+        "recent_projects": [
+        "/path/to/project.json"
+        ]
+      },
+      // Export section
+      "export": {
+        // Compilers for windows cross compilation
+        "win_compilers": {
+          "g++": "/path/to/x86_64-w64-mingw32-g++.exe"
+        },
+        // Native Client (NaCl) specific configuration
+        "nacl": {
+          // Absolute path to the pepper API folder
+          "pepper_folder": "/path/to/nacl_sdk/pepper_41",
+          // Relative path, from the pepper folder, to the NaCl C++ compiler
+          "compiler": "relative/path/to/toolchain/linux_pnacl/bin/pnacl-clang++"
+        },
+        // Path to third_party folder, where the engine keeps dependencies
+        "third_party_folder": "/path/to/LauEngine/third_party"
+      },
+      // Server section
+      "server": {
+        // Port where the server will run the HTTP server
+        "http_port": "9002",
+        // Port where the server will run the websocket server
+        "ws_port": "9001"
+      }
+    }
+
+
+.. _runtime-config-fields:
+-----
+Runtime Configuration Fields
+-----
+
+.. code-block:: javascript
+
+    {
+      // Absolute path to the engine installation folder
+      "install_location": "/path/to/LauEngine/",
+      // List of asset types that must be copied to the final game folder
+      // whenever a game is exported. The defaults are highlighted below.
+      "exportable_asset_extensions": ['.vs', '.fs']
+    }
+
+.. _server-events:
+
+=============
+WebSocket Events
+=============
+The server listens to the following events (which may be broadcast by the
+editor):
+
+=================  ===================================================
+RPCCall             A wrapper event that is translated into RPC calls.
+=================  ===================================================
+
+The server broadcasts the following events to the editor:
+
+=================  ===================================================
+executionMessage    Contains the output from the executed game when it
+                    is previewed in a separate window. TODO make this the result of a build RPC
+compilationStatus   Contains the result from a build command, including
+                    warnings and errors. TODO make this the result of a build RPC
+=================  ===================================================
 
 .. _server-rpc:
 
 ====
 RPCs
 ====
+RPCs are Socket Events with an event of name ``RPCCall``. The server provides
+the following RPC calls:
 
-.. _server-events:
+-----
+Defined in `build/BuildEventHandler.py`
+-----
+.. function:: buildGame()
 
-======
-Socket events
-======
+  Builds the game in debug mode, and launches the built game if compilation is
+  successful.
 
+.. function:: previewGame() -> bool
+
+   Exports the game in `preview` mode, by compiling the NaCl executables and
+   copying the required assets to the ``$PROJ_ROOT$/build/nacl`` folder. TODO make return type return false if it fails
+
+-----
+Defined in `components/DefaultComponentManager.py`
+-----
+.. function:: getDefaultComponents() -> dict
+
+  Returns the ``_defaultComponents`` dictionary, which contains information
+  about standard components.
+
+-----
+Defined in `io/IOEventHandler.py`
+-----
+.. function:: save(sceneData) -> bool
+
+   Saves the scene specified in ``sceneData``. Returns True in case of success,
+   and False otherwise.
+
+   :param sceneData: :ref:`Click here for more information about the scene data format. <scene-format>`
+
+.. function:: loadCurrentScene() -> sceneData
+
+   Returns the current :ref:`scene <scene-format>` if the project was loaded
+   correctly, and null otherwise.
+
+.. function:: getAssetList() -> array
+
+   Returns a list of assets in the current project, or null in case of a
+   failure (e.g. there's no project currently loaded).
+
+-----
+Defined in `project/ProjectEventHandler.py`
+-----
+
+.. function:: createNewProject() -> string
+
+   Creates a new, empty project. The project destination will be asked to the
+   user via a file dialog, and will be returned to the caller.
+
+.. function:: getRecentProjects() -> array
+
+   Returns the ``recent_projects`` :ref:`runtime configuration
+   <runtime-config-fields>` to the caller.
+
+.. function:: loadProject(projectPath) -> bool
+
+   Loads a project given the full path to its project.json file,
+   ``projectPath``. Returns ``True`` in case of success, and ``False``
+   otherwise.
+
+.. function:: exportGame(params) -> bool
+
+   Exports the game to any of the supported platforms, copying all required
+   assets to the export folder. The destination folder will be asked to the
+   user via a folder picker dialog.
+
+   :param params: A dictionary in the format ``{"platform" : "platformName", "buildAndRun": bool, "compilationMode": "mode"}``. The possible values for ``platformName`` and ``compilationMode`` are explained in :ref:`Build system <build-system>`.
+
+.. _template-project:
+
+=====
+Template Project
+=====
+
+The template project is the default set of files that correspond to an empty
+project. It is located inside the folder ``$REPO_ROOT$/src/template_project``.
+
+It contains a ``project.json`` file with a single, empty scene (called
+scene0.json).

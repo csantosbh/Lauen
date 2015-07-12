@@ -11,9 +11,11 @@ Naming conventions
 For the purposes of this manual, some concepts will be abstracted by variables shown as ``$VARIABLE_NAME$``. The meaning of such variables is explained in the table [GlobalVars]_.
 
 .. [GlobalVars]
-    ===============  ================================================
-    Variable name    Variable meaning
-    ===============  ================================================
-    ``$REPO_ROOT$``  Path to the root folder of the engine repository.
-    ===============  ================================================
+    ==================  ================================================
+    Variable name       Variable meaning
+    ==================  ================================================
+    ``$REPO_ROOT$``     Path to the root folder of the engine repository.
+    ``$INSTALL_ROOT$``  Engine installation path.
+    ``$PROJ_ROOT$``     Path to the root folder of an arbitrary project.
+    ==================  ================================================
 

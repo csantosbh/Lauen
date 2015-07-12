@@ -21,8 +21,6 @@ class _LAUWebSocketHandler(EchoWebSocket):
     def opened(self):
         global clientManager
         clientManager.clients.append(self)
-        # TODO: Move this to somewhere else (Files?) and broadcast a connected event
-        Event.broadcast('clientConnected', None)
         pass
 
     def received_message(self, m):

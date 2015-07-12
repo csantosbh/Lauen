@@ -160,8 +160,8 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder):
         projectFolder = Project.getProjectFolder()
         dir_util.copy_tree(projectFolder + '/scenes', outputFolder+'/scenes')
         # Copy assets to destination folder
-        io.Utils.CopyFilesOfTypes(projectFolder+'/assets', outputFolder, Config.env('asset_extensions'), projectFolder)
-        io.Utils.CopyFilesOfTypes(projectFolder+'/default_assets', outputFolder, Config.env('asset_extensions'), projectFolder)
+        io.Utils.CopyFilesOfTypes(projectFolder+'/assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
+        io.Utils.CopyFilesOfTypes(projectFolder+'/default_assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
         # Platform specific post-build steps
         _PostExportStep(platform, outputFolder)
         # Remove temporary build folder

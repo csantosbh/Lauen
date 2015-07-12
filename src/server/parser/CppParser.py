@@ -1,15 +1,13 @@
 #!/usr/bin/env python
 import sys
-from server.project import Project
-from server.components import DefaultComponentManager
 
-def translateFieldType(typeDeclaration):
-    if typeDeclaration == 'c:Matrix.h@N@Eigen@T@Vector3f':
+def translateFieldType(typeName):
+    if typeName == 'c:Matrix.h@N@Eigen@T@Vector3f':
         return 'v3f'
-    elif typeDeclaration == 'c:Matrix.h@N@Eigen@T@Vector2f':
+    elif typeName == 'c:Matrix.h@N@Eigen@T@Vector2f':
         return 'v2f'
     else:
-        return typeDeclaration
+        return typeName
     pass
 
 # Iterate over the source file, retrieving all classes and their
@@ -131,6 +129,8 @@ def parseCPPFile(fileName):
 
 # Get only what matters from the parseCPPFile function
 def GetSimpleClass(fileName):
+    from server.project import Project
+    from server.components import DefaultComponentManager
     parsedFile = parseCPPFile(fileName)
     if len(parsedFile) == 0:
         return dict()
@@ -157,3 +157,10 @@ def GetSimpleClass(fileName):
 
     return simpleClass
 
+if __name__ == '__main__':
+    from pprint import pprint
+    if len(sys.argv) != 2:
+        print 'Usage: '+sys.argv[0]+' <cppFile>'
+        exit()
+        pass
+    pprint(parseCPPFile(sys.argv[1]))

@@ -2,37 +2,33 @@ def GetFileNameFromPath(path):
     import ntpath
     return ntpath.basename(path)
 
-def GetFilesFromFolder(mypath):
+def _ListFilesFromFolder(mypath):
     from os import walk
     files = []
     for (dirpath, dirnames, filenames) in walk(mypath):
         for filename in filenames:
             files.append(dirpath + '/' + filename)
         pass
-    return [dict(name=f) for f in files]
+    return files
 
 def ParseHPPFilesFromFolder(mypath):
     from server.parser import CppParser
-    files = GetFilesFromFolder(mypath)
+    files = ListFilesFromFolder(mypath, ['.hpp', '.hxx'])
     cppFiles = []
-    for fileInfo in files:
-        fname = fileInfo['name']
-        if fname.endswith('.hpp') or fname.endswith('.hxx'):
-            # TODO: cache results from cpp parser
-            cppFileInfo = CppParser.GetSimpleClass(fname)
-            cppFileInfo['path'] = fname
-            cppFiles.append(cppFileInfo)
-            pass
+    for fname in files:
+        # TODO: cache results from cpp parser
+        cppFileInfo = CppParser.GetSimpleClass(fname)
+        cppFileInfo['path'] = fname
+        cppFiles.append(cppFileInfo)
         pass
 
     return cppFiles
 
 def ListFilesFromFolder(mypath, extensions = None):
     from server.parser import CppParser
-    files = GetFilesFromFolder(mypath)
+    files = _ListFilesFromFolder(mypath)
     filesFound = []
-    for fileInfo in files:
-        fname = fileInfo['name']
+    for fname in files:
         if extensions == None:
             filesFound.append(fname)
             pass
