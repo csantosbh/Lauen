@@ -620,3 +620,15 @@ the ``initialAssetList`` event.
 The ``visibilityLevel`` can be 0 (public), 1 (protected) or 2 (private). Only
 public fields are given to the editor by the server.
 
+======
+LAU Utils
+======
+
+The LAU Utils namespace concentrate several utility functions used by the
+javascript frontend. They are documented below:
+
+.. function:: LAU.Utils.clone(variable) -> var
+
+   Performs a deep clone of the input variable.
+
+   :param variable: Any variable type (numbers, strings, objects, arrays), with the exception of functions and objects that contain functions.
