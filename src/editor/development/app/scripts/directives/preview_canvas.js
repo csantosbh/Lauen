@@ -33,9 +33,15 @@ angular.module('lauEditor')
           if(msg.newComponents.length > 0) {
             for(var i = 0; i < msg.newComponents.length; ++i) {
               var gameObj = $gom.getGameObjectByInstanceId(msg.newComponents[i].instanceId);
-              var componentData = LAU.Components.createComponentFromId(msg.newComponents[i].component.componentId, scope);
-              // TODO refactor this below: it is a terrible thing to edit this guy like this
-              componentData.instanceId = msg.newComponents[i].component.instanceId;
+              var componentData = LAU.Components.createComponentFromId(
+                msg.newComponents[i].component.componentId,
+                scope,
+                msg.newComponents[i].component.instanceId);
+                // TODO use the game object manager to add this component
+                /*
+              console.log('added comp:');
+              console.log(componentData);
+             */
               gameObj.components.push(componentData);
             }
           }
@@ -52,6 +58,10 @@ angular.module('lauEditor')
               var state = msg.currentStates[i];
               var gameObj = $gom.getGameObjectByInstanceId(state.instanceId);
               // Update its components
+              /*
+              console.log('up state');
+              console.log(state);
+             */
               gameObj.updateStates(state);
             }
           }
@@ -65,6 +75,7 @@ angular.module('lauEditor')
       }
 
       element.find('embed')[0].addEventListener('message', handleNaClMessage, true);
+      lau = $gom;
       var _editRequested = false;
       scope.previewCanvas = {
         toggleEditMode: function() {

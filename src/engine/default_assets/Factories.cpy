@@ -12,7 +12,7 @@
 #include "${component['path']}"
 % endfor
 
-#ifdef PREVIEW_MODE
+#ifdef NACL
 #include "window/NaCl.hpp"
 #endif
 

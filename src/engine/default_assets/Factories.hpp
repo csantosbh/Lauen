@@ -5,6 +5,7 @@
 
 #include <rapidjson/document.h>
 
+#include "LauCommon.h"
 #include "Component.hpp"
 #include "GameObject.hpp"
 

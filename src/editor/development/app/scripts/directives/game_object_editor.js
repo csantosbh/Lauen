@@ -30,7 +30,7 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
         componentTypes.transform,
         {menu_label: 'Scripts', children: []}
       ],
-      gameObjects: $gom.gameObjects,
+      gameObjects: $gom.getGameObjects,
       selectedGameObject: $gom.selectedGameObject,
       _menuPickup: function(item) {
         var componentType = $scope.gameObjectEditor.componentMenu;

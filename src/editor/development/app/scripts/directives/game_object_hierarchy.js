@@ -16,7 +16,7 @@ angular.module('lauEditor')
           createGameObject: function() {
             $gom.pushGameObject(new LAU.GameObject(scope));
           },
-          gameObjects: $gom.gameObjects,
+          gameObjects: $gom.getGameObjects,
           selectGameObject: $gom.selectGameObject,
           selectedGameObject: $gom.selectedGameObject
         };

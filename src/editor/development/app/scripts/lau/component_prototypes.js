@@ -69,7 +69,7 @@ LAU.Components = (function() {
   };
 
   // Instantiate new components (component factory)
-  function createComponentFromFlyWeight(componentFlyWeight) {
+  function createComponentFromFlyWeight(componentFlyWeight, instanceId) {
     // The switch rules match the component menu label
     var result;
     switch(componentFlyWeight.type) {
@@ -83,6 +83,9 @@ LAU.Components = (function() {
 
     // Set initial values from flyweight defaults
     result.setValues(componentFlyWeight);
+    if(typeof instanceId !== 'undefined')
+      result.instanceId = instanceId;
+
     return result;
   }
 
@@ -100,10 +103,10 @@ LAU.Components = (function() {
   }
 
   // TODO maybe make this an injectable module so I can have the scope for free?
-  function createComponentFromId(id, scope) {
+  function createComponentFromId(id, scope, instanceId) {
     // Search for component flyweight.
     var component = getFlyweightById(scope.gameObjectEditor.componentMenu, id);
-    return createComponentFromFlyWeight(component);
+    return createComponentFromFlyWeight(component, instanceId);
   }
 
   return {

@@ -1,3 +1,5 @@
+#pragma once
+
 #ifdef NACL
 #include "ppapi/gles2/gl2ext_ppapi.h"
 #include "ppapi/cpp/module.h"
@@ -16,6 +18,8 @@ extern std::stringstream lerr;
 #include <GL/glew.h>
 #include <GL/gl.h>
 #include <iostream>
-#define lout std::cout
-#define lerr std::cerr
+namespace lau {
+ostream& lout = cout;
+ostream& lerr = cerr;
+}
 #endif

@@ -11,8 +11,9 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   // AngularJS will instantiate a singleton by calling "new" on this function
 
   var currentGameObjectId = -1;
+  var gameObjects = [];
   var gameObjectManager = {
-    gameObjects: [],
+    getGameObjects: getGameObjects,
     selectGameObject: selectGameObject,
     selectedGameObject: selectedGameObject,
     pushGameObject: pushGameObject,
@@ -24,6 +25,10 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
   var _editorGameObjects; // Backup for the real gameobjects from the edit mode
 
+  function getGameObjects() {
+    return gameObjects;
+  }
+
   function selectGameObject(i) {
     currentGameObjectId = i;
   }
@@ -31,15 +36,15 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     return currentGameObjectId;
   }
   function pushGameObject(go) {
-    gameObjectManager.gameObjects.push(go);
+    gameObjects.push(go);
 
     // TODO remove line below when the hierarchy panel is correctly created (with blur events to un-select game objects)
-    currentGameObjectId = gameObjectManager.gameObjects.length-1;
+    currentGameObjectId = gameObjects.length-1;
   }
 
   function removeGameObjectByInstanceId(instanceId) {
     // Look for deleted game object
-    var gameObjs = gameObjectManager.gameObjects;
+    var gameObjs = gameObjects;
     for(var j = 0; j < gameObjs.length; ++j) {
       if(gameObjs[j].instanceId == instanceId) {
         gameObjs[j].destroy();
@@ -50,13 +55,13 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   }
 
   function addComponentToSelectedGameObject(component) {
-    gameObjectManager.gameObjects[currentGameObjectId].components.push(component);
+    gameObjects[currentGameObjectId].components.push(component);
   }
 
   function getGameObjectByInstanceId(id) {
-    for(var i = 0; i < gameObjectManager.gameObjects.length; ++i) {
-      if(gameObjectManager.gameObjects[i].instanceId == id)
-        return gameObjectManager.gameObjects[i];
+    for(var i = 0; i < gameObjects.length; ++i) {
+      if(gameObjects[i].instanceId == id)
+        return gameObjects[i];
     }
     // TODO assert that this line will never be achieved
     return null;
@@ -64,14 +69,14 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
   function serializeGameObjects() {
     var exportedObjs = [];
-    for(var g = 0; g < gameObjectManager.gameObjects.length; ++g) {
-      var gameObjComps = gameObjectManager.gameObjects[g].components;
+    for(var g = 0; g < gameObjects.length; ++g) {
+      var gameObjComps = gameObjects[g].components;
       var exportedComps = [];
       for(var c = 0; c < gameObjComps.length; ++c) {
         exportedComps.push(gameObjComps[c].export());
       }
       exportedObjs.push({
-        name: gameObjectManager.gameObjects[g].name,
+        name: gameObjects[g].name,
         components: exportedComps
       });
     }
@@ -80,10 +85,11 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
   $event.listen('togglePreviewMode', function(isPreviewing) {
     if(isPreviewing) {
-      _editorGameObjects = gameObjectManager.gameObjects;
-      gameObjectManager.gameObjects = [];
+      _editorGameObjects = gameObjects;
+      gameObjects = [];
+      console.log('fodase');
     } else {
-      gameObjectManager.gameObjects = _editorGameObjects;
+      gameObjects = _editorGameObjects;
     }
   });
 
