@@ -37,11 +37,7 @@ angular.module('lauEditor')
                 msg.newComponents[i].component.componentId,
                 scope,
                 msg.newComponents[i].component.instanceId);
-                // TODO use the game object manager to add this component
-                /*
-              console.log('added comp:');
-              console.log(componentData);
-             */
+                // TODO create an addComponent function to the gameObject prototype
               gameObj.components.push(componentData);
             }
           }

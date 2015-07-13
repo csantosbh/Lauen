@@ -118,7 +118,6 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
         editMode: true,
       };
 
-      // TODO: Auto resize when window resizes
       initCanvas(element);
 
       geometry = new THREE.BoxGeometry( 200, 200, 200 );

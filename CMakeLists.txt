@@ -20,6 +20,7 @@ INCLUDE_DIRECTORIES("src/")
 ##
 # Configure main target
 FILE(GLOB py_server_files "src/server")
+FILE(GLOB template_project "src/template_project")
 
 ##
 # Add subprojects
@@ -29,4 +30,4 @@ ADD_SUBDIRECTORY("src/engine")
 ##
 # Configure installation
 INSTALL(PROGRAMS src/main.py DESTINATION .)
-INSTALL(DIRECTORY ${py_server_files} DESTINATION ./)
+INSTALL(DIRECTORY ${template_project} DESTINATION ./)

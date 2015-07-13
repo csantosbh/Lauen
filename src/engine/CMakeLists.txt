@@ -21,4 +21,4 @@ ENDIF()
 
 ##
 # Installation
-INSTALL(DIRECTORY "default_assets" DESTINATION ./)
+INSTALL(DIRECTORY "default_assets" DESTINATION ./engine/)

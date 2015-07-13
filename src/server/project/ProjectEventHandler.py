@@ -43,7 +43,7 @@ def loadProject(evData):
     return False
 
 def createNewProject(evData):
-    in_path = tkFileDialog.askopenfilename(initialfile='project.json')
+    in_path = tkFileDialog.asksaveasfilename(initialfile='project.json')
 
     if len(in_path)!=0:
         _pushProjectToRecentList(in_path)

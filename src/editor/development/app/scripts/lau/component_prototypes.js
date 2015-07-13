@@ -102,7 +102,7 @@ LAU.Components = (function() {
     return null;
   }
 
-  // TODO maybe make this an injectable module so I can have the scope for free?
+  // TODO maybe make the componentMenu an injectable module so I can have it for free?
   function createComponentFromId(id, scope, instanceId) {
     // Search for component flyweight.
     var component = getFlyweightById(scope.gameObjectEditor.componentMenu, id);

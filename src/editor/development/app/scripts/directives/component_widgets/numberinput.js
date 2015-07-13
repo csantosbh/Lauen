@@ -7,7 +7,6 @@
  * # numberInput
  */
 angular.module('lauEditor').directive('numberInput', function () {
-  // TODO: document these attributes
   var defaultAttrs = {
     'lblClass': 'number-input',
     'lblId': '',

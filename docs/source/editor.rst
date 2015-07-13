@@ -182,7 +182,9 @@ Script Field directives
 
 .. function:: <number-input lbl-class lbl-id label inp-class inp-id sensitivity/>
 
-   This directive creates a number input whose value can be changed by dragging the mouse. A label can be specified via the ``label`` attribute.
+   This directive creates a number input whose value can be changed by dragging
+   the mouse after clicking on the label. A label can be specified via the
+   ``label`` attribute.
 
    :param lblClass: CSS class for the input label. Default: ``number-input``.
    :param lblId: ID for the label wrapper.

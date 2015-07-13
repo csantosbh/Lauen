@@ -19,7 +19,6 @@ angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', 'gameO
         });
       });
 
-      // TODO load list of recent projects
       var isRequestingProject = false; // Multi-click lock
       scope.menuBar = {
         recentProjects: [],
