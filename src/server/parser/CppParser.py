@@ -26,7 +26,6 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
     from clang.cindex import Cursor, CursorKind, AccessSpecifier
     output=[]
 
-    # TODO: Get class namespace as well!
     if node.kind != CursorKind.TRANSLATION_UNIT and str(node.location.file) != context['requestedFileName']:
         return output
 

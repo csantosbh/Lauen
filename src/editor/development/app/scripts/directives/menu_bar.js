@@ -52,7 +52,6 @@ angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', 'gameO
               isRequestingProject = false;
             });
           }
-          // TODO clear current project
         },
         requestBuildDialog: function() {
           $dialog.open({
