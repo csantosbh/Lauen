@@ -3,8 +3,9 @@ Inside the Engine
 
 .. toctree::
 
+   internal_engine
    editor
    server
-   internal_engine
+   default_assets
 
 This section documents the internals of the engine.

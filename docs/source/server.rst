@@ -55,6 +55,7 @@ The file ``build/BuildEventHandler.py`` exposes the following functions:
     :param compilationMode:  ``DEBUG`` or ``RELEASE``. Affects compilation flags and linked libraries.
     :param outputFolder: Complete path to output folder.
 
+.. _cpy-templates:
 -----
 CPY templates
 -----
