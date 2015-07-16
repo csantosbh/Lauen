@@ -11,6 +11,30 @@ def _ListFilesFromFolder(mypath):
         pass
     return files
 
+def PathHasExtension(path, extensions):
+    for extension in extensions:
+        if path.endswith(extension):
+            return True
+        pass
+    return False
+
+def ParseAsset(assetPath):
+    if PathHasExtension(assetPath, ['.hpp', '.cpp', '.cxx']):
+        from server.parser import CppParser
+        fileInfo = CppParser.GetSimpleClass(assetPath)
+        fileInfo['path'] = assetPath
+        return fileInfo
+
+    return None # Untrackable file format
+
+def IsTrackableAsset(filePath):
+    trackableFormats = ['.hpp', '.cpp', '.cxx']
+    for f in trackableFormats:
+        if filePath.endswith(f):
+            return True
+        pass
+    return False
+
 def ParseHPPFilesFromFolder(mypath):
     from server.parser import CppParser
     files = ListFilesFromFolder(mypath, ['.hpp', '.hxx'])
@@ -33,10 +57,8 @@ def ListFilesFromFolder(mypath, extensions = None):
             filesFound.append(fname)
             pass
         else:
-            for extension in extensions:
-                if fname.endswith(extension):
-                    filesFound.append(fname)
-                    break
+            if PathHasExtension(fname, extensions):
+                filesFound.append(fname)
                 pass
             pass
         pass

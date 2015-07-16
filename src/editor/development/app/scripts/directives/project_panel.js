@@ -42,6 +42,17 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
         }
       };
 
+      $event.listen('AssetWatch', function(data) {
+        console.log(data);
+        $timeout(function() {
+          if(data.event == 'delete') {
+            // TODO implement
+          } else if(data.event == 'update') {
+            // TODO implement
+          }
+        });
+      });
+
       $rpc.call('getAssetList', null, function(fileList) {
         $timeout(function() {
           for(var i=0; i < fileList.length; ++i) {

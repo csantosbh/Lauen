@@ -1,4 +1,6 @@
-from gevent import monkey; monkey.patch_all()
+# I don't know what gevent does; but I know it's damn good at breaking
+# everything.
+from gevent import monkey; monkey.patch_select(aggressive=False)
 
 import gevent
 import gevent.pywsgi

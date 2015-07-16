@@ -147,6 +147,29 @@ The ``io/Utils.py`` module contains filesystem related utility functions.
 
    :param path: Complete path to a file.
 
+.. function:: PathHasExtension(path, extensions) -> bool
+
+   Returns ``True`` if path has one of the extensions from the array
+   ``extensions``.
+
+   :param path: Path to a file or folder.
+   :param extensions: Array of extensions to be checked for.
+
+.. function:: ParseAsset(assetPath) -> flyweightObject
+
+   Returns a flyweight object if ``assetPath`` refers to a valid asset file;
+   returns ``None`` otherwise.
+
+   :param assetPath: Complete path to the asset file.
+
+.. function:: IsTrackableAsset(assetPath) -> bool
+
+   Returns ``True`` if ``assetPath`` refers to a trackable asset file, which is
+   determined by its extension. A trackable asset file is any type of file that
+   should be displayed in the editor project panel.
+
+   :param path: Path to the asset file.
+
 .. function:: ParseHPPFilesFromFolder(path) -> list
 
    Given the complete path to a folder, returns an array of objects containing
@@ -242,6 +265,15 @@ This module exposes the following functions:
 
    :param path: Complete path to a project.json file.
 
+---------
+Asset Folder Watcher
+---------
+This submodule is responsible for watching the assets folder within the project
+root. Whenever a new file is created, updated or deleted, it broadcasts an
+:ref:`AssetWatch socket event <server-events>`.
+
+It exposes the function ``stopWatcher()``, which must be called prior to
+shutting down the server, as it will stop the folder watcher thread.
 
 .. _scene-format:
 =====
@@ -363,6 +395,8 @@ editor):
 
 =================  ===================================================
 RPCCall             A wrapper event that is translated into RPC calls.
+                    Do not broadcast this event manually; it is used
+                    by the RPC module only.
 =================  ===================================================
 
 The server broadcasts the following events to the editor:
@@ -372,6 +406,12 @@ executionMessage    Contains the output from the executed game when it
                     is previewed in a separate window. TODO make this the result of a build RPC
 compilationStatus   Contains the result from a build command, including
                     warnings and errors. TODO make this the result of a build RPC
+AssetWatch          Broadcast everytime an asset file is created/updated
+                    (``event`` = ``update``) or deleted (``event`` = ``delete``).
+                    When ``event`` = ``update``, it has the format
+                    ``{event="update", asset=<assetFlyweight>}``. When
+                    ``event`` = ``delete``, it has the format
+                    ``{event="delete", path="/path/to/deleted/asset"}``.
 =================  ===================================================
 
 .. _server-rpc:
