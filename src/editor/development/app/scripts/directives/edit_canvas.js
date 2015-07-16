@@ -129,8 +129,9 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
         var gameObj = gameObjectData.obj;
 
         // TODO maybe have a namespace that converts from a friendly string name to component id?
-        var transformComponent = gameObj.getComponentById(0);
-        if(transformComponent != null) {
+        var transformComponent = gameObj.getComponentsById(0);
+        if(transformComponent.length == 1) {
+          transformComponent = transformComponent[0];
           gameObjectData.mesh = new THREE.Mesh( geometry, material );
 
           // Initialize positional component

@@ -12,15 +12,15 @@ LAU.GameObject = (function() {
   }
 
   GameObject.prototype = {
-    // TODO I might have many equal components. Return them all. This is URGENT.
-    getComponentById: function(id) {
+    getComponentsById: function(id) {
+      var components = [];
       for(var i = 0; i < this.components.length; ++i) {
         var comp = this.components[i];
         if(comp.flyweight.id == id)
-          return comp;
+          components.push(comp);
       }
 
-      return null;
+      return components;
     },
     getComponentByInstanceId: function getComponentByInstanceId(id) {
       for(var i = 0; i < this.components.length; ++i) {
