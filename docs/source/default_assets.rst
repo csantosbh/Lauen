@@ -33,6 +33,8 @@ The ``Factories`` class contains factory methods for Components and GameObjects:
     Factories::componentFactory).
 
     :param objects: Serialized array of gameobjects, containing their components as well.
+
+TODO explicar (desenhar) o fluxo de execucao ateh que objetos sejam instanciados (inkscape? salvar o svg original!)
 ====
 Peekers
 ====

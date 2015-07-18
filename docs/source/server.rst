@@ -66,8 +66,27 @@ are rendered by the function ``_renderTemplateSources``, which is called by the
 ``build/BuildEventHandler.py`` module. The currently implemented CPY files are
 the following:
 
-* **Factories.cpy** Contains factories for game objects, components and peekers
-  (wrapper classes that handle serialization of components and game objects).
+* **Factories.cpy** Contains factories for game objects and components.
+* **Peekers.cpy** Wrapper classes that handle serialization of components and game objects.
+
+When parsed, CPY templates have access to the following variables:
+
+.. code-block:: javascript
+
+   {
+     components: [
+     // collection of user asset flyweights
+     ],
+     default_components: [
+     // collection of standard component flyweights
+     ],
+     isVecType: function(typename), // Function that returns True if typename is a vector,
+                                    // and False otherwise. Useful for checking the need
+                                    // for iterating through vector components.
+     vecIterations: { // Maps to the number of elements in each type of vector.
+       v4f: 4, v3f: 3, v2f: 2
+     }
+   }
 
 -----
 Adding support to new targets

@@ -43,15 +43,28 @@ def _getFlags(compilationMode):
         }
     }
 
-# TODO only re-call this when we change the number of scripts available
+# TODO only re-call this when we change the number of scripts available, or when a script flyweight changes
+def _isVecType(type):
+    return type == 'v4f' or type == 'v3f' or type == 'v2f'
+
 def _renderTemplateSources(componentFiles):
     from mako.template import Template
 
     projectFolder = Project.getProjectFolder()
 
-    componentFactoryTemplate = open(projectFolder+'/default_assets/Factories.cpy').read()
-    with open(projectFolder+'/default_assets/Factories.cpp', 'w') as outputHandle:
-        outputHandle.write(Template(componentFactoryTemplate).render(components=componentFiles, default_components=DefaultComponentManager.getDefaultComponents()))
+    templateFiles = ['Factories.cpy', 'Peekers.cpy']
+
+    renderParameters = dict(components=componentFiles,
+                            default_components=DefaultComponentManager.getDefaultComponents(),
+                            isVecType=_isVecType,
+                            vecIterations=dict(v4f=4, v3f=3, v2f=2))
+
+    for templateFile in templateFiles:
+        componentFactoryTemplate = open(projectFolder+'/default_assets/'+templateFile).read()
+        outputName = templateFile[:templateFile.rfind('.')] + '.cpp'
+        with open(projectFolder+'/default_assets/'+outputName, 'w') as outputHandle:
+            outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
+            pass
         pass
     pass
 

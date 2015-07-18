@@ -9,6 +9,8 @@
 #include "Component.hpp"
 #include "GameObject.hpp"
 
+#include "Peekers.hpp"
+
 // TODO figure out a way to move all the preview related code elsewhere
 namespace lau {
 

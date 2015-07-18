@@ -30,4 +30,5 @@ ADD_SUBDIRECTORY("src/engine")
 ##
 # Configure installation
 INSTALL(PROGRAMS src/main.py DESTINATION .)
+INSTALL(DIRECTORY ${py_server_files} DESTINATION ./)
 INSTALL(DIRECTORY ${template_project} DESTINATION ./)
