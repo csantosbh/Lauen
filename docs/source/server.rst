@@ -132,6 +132,17 @@ editor should be translated in this function, since that makes the typenames
 more clear and reduces the cost of adapting the engine in case clang changes
 its USR symbols.
 
+Another important function is ``GetSimpleClass(filePath)``, which parses the
+given file and, assuming that it defines one class, returns a dictionary
+containing the following information about that class:
+
+* Class name
+* Full Namespace
+* Fields, with their names, types, visibilities and preceeding pragmas
+* Dependencies (a list of all files directly or indirectly included by that
+  file)
+
+
 The ``CppParser.py`` module can be used as a command line tool to parse
 individual C++ files, which is useful for displaying the USR symbols of
 unsupported types: ``./CppParser <path/to/cppFile>``.
@@ -175,12 +186,12 @@ The ``io/Utils.py`` module contains filesystem related utility functions.
    :param path: Path to a file or folder.
    :param extensions: Array of extensions to be checked for.
 
-.. function:: ParseAsset(assetPath) -> flyweightObject
+.. function:: IsScriptFileAsset(assetPath) -> bool
 
-   Returns a flyweight object if ``assetPath`` refers to a valid asset file;
-   returns ``None`` otherwise.
+   Returns ``True`` if ``assetPath`` refers to a script asset file (which is
+   determined by its extension  -- .hpp, .h, .cpp and .cxx), and ``False`` otherwise.
 
-   :param assetPath: Complete path to the asset file.
+   :param path: Path to the asset file.
 
 .. function:: IsTrackableAsset(assetPath) -> bool
 
@@ -198,6 +209,25 @@ The ``io/Utils.py`` module contains filesystem related utility functions.
    any of the following extensions: ``hpp``, ``hxx``.
 
    :param path: Complete path to the root folder.
+
+.. function:: OpenRec(path, mode) -> file_handle
+
+   Opens the file given by ``path``, returning the file handle. If the path
+   specifies a directory that doesn't exist, this function will create it
+   before opening the file.
+
+   :param path: Path to the requested file.
+   :param mode: File open mode. Same as the mode passed to python's default ``open()``.
+
+.. function:: IsSubdir(path, directory) -> bool
+
+   Returns ``True`` if the path ``path`` lies within the path given by
+   ``directory``. For instance, ``/var/tmp/sample/file.cpp`` lies within
+   ``/var/`` and ``/var/tmp/``, but not ``/home`` or
+   ``/var/tmp/sample/folder/``.
+
+   :param path: String representing the queried path (can be a reference to a file or a folder).
+   :param directory: String representing the reference directory.
 
 .. function:: ListFilesFromFolder(path, extensions = None) -> list
 
@@ -268,7 +298,8 @@ This module exposes the following functions:
 
    Given the full path to a script asset (which must be inside the ``assets``
    project folder), returns the unique numeric identifier for the class
-   contained in that script.
+   contained in that script. If the script was not previously detected by the
+   project, a new id will be created for the given path.
 
    :param scriptPath: Complete path to the script file. Must be inside the
    ``assets`` folder.
@@ -285,12 +316,24 @@ This module exposes the following functions:
 
    :param path: Complete path to a project.json file.
 
+.. function:: processAsset(path, saveProject) -> <assetFlyweight>
+
+   Loads the asset from disk, parses it and extracts its metadata (like
+   modification time for any regular asset and public fields for script assets)
+   and caches that metadata.
+
+   For user scripts, this function also determines the script id when it is
+   first detected.
+
+   :param path: Complete path to the asset file.
+   :param saveProject: If ``True``, the project will be saved after the asset is processed.
+
 ---------
 Asset Folder Watcher
 ---------
-This submodule is responsible for watching the assets folder within the project
-root. Whenever a new file is created, updated or deleted, it broadcasts an
-:ref:`AssetWatch socket event <server-events>`.
+This submodule is responsible for watching file changes in the project folder
+$PROJ_ROOT$. Whenever a new file is created, updated or deleted, it broadcasts
+an :ref:`AssetWatch socket event <server-events>`.
 
 It exposes the function ``stopWatcher()``, which must be called prior to
 shutting down the server, as it will stop the folder watcher thread.

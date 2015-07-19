@@ -10,7 +10,7 @@ class _Project:
         self.project_path = project_path
         # TODO support projects of arbitrary names (low priority)
         if self.project_path == None:
-            self.scripts = {}
+            self.assets = {}
             self.scenes = ['scenes/scene0.json']
             self.currentScene = 0
         else:
@@ -29,33 +29,58 @@ class _Project:
 
             projInfo = json.loads(open(self.project_path, 'r').read())
 
-            self.scripts = projInfo['scripts']
+            self.assets = projInfo['assets']
             self.scenes = projInfo['scenes']
             self.currentScene = projInfo['currentScene']
-            # TODO start watchdog at the assets folder
             pass
-        self._scriptId2Path = dict()
+
+        self._assetId2Path = dict()
+        for asset in self.assets:
+            if 'id' in self.assets[asset]:
+                self._assetId2Path[self.assets[asset]['id']] = asset
+                pass
+            pass
         pass
 
-    def getScriptId(self, scriptPath):
-        from random import randint
-        if not scriptPath in self.scripts:
-            candidateId = randint(0,1e9)
-            while candidateId in self._scriptId2Path:
-                candidateId = randint(0,1e9)
-                pass
-            self.scripts[scriptPath] = candidateId
-            self._scriptId2Path[candidateId] = scriptPath
-            self.saveProject()
-            pass
+    def isUserAsset(self, assetPath):
+        return Utils.IsSubdir(assetPath, getProjectFolder()+'/assets/')
 
-        return self.scripts[scriptPath]
+    def initializeAsset(self, assetPath):
+        if not assetPath in self.assets:
+            if Utils.IsScriptFile(assetPath):
+                if self.isUserAsset(assetPath):
+                    self.assets[assetPath] = {
+                    'id': self.getUniqueId(),
+                    'dependencies': [],
+                    'mtime': 0
+                    }
+                else:
+                    self.assets[assetPath] = {
+                    'dependencies': [],
+                    'mtime': 0
+                    }
+                pass
+            pass
+        pass
+
+    def getUniqueId(self):
+        from random import randint
+        candidateId = randint(0,1e9)
+        while candidateId in self._assetId2Path:
+            candidateId = randint(0,1e9)
+            pass
+        return candidateId
+
+    def getScriptId(self, scriptPath):
+        self.initializeAsset(scriptPath)
+        print scriptPath
+        return self.assets[scriptPath]['id']
 
     def saveProject(self):
         import json
         with open(self.project_path, 'w') as fhandle:
             fhandle.write(json.dumps(dict(
-                scripts=self.scripts,
+                assets=self.assets,
                 scenes=self.scenes,
                 currentScene=self.currentScene
             )))
@@ -100,9 +125,89 @@ class _Project:
         if self.project_path == None:
             return []
 
-        # TODO return other asset types as well
         project_folder = os.path.dirname(self.project_path)
-        return Utils.ParseHPPFilesFromFolder(project_folder+'/assets')
+        files = Utils.ListFilesFromFolder(project_folder)
+        assetFiles = []
+        for fname in files:
+            processedAsset = self.processAsset(fname, False)
+            if processedAsset != None and self.isUserAsset(fname):
+                assetFiles.append(processedAsset)
+                pass
+            pass
+        # Automatically save project
+        self.saveProject()
+        return assetFiles
+    
+    # dependencies is a set
+    def updateAsset(self, filePath, dependencies, saveProject):
+        # Normalize path to avoid ambiguities
+        filePath = os.path.abspath(filePath)
+
+        # Update the dependencies of all files that depend on filePath
+        for script in self.assets:
+            if filePath in self.assets[script]['dependencies']:
+                depSet = set(self.assets[script]['dependencies'])
+                depSet.update(dependencies)
+                self.assets[script]['dependencies'] = list(depSet)
+                pass
+            pass
+
+        # Update dependencies list for current script
+        self.assets[filePath]['dependencies'] = list(dependencies)
+        self.assets[filePath]['mtime'] = os.path.getmtime(filePath)
+
+        # Save project, if requested
+        if saveProject:
+            self.saveProject()
+        pass
+
+    def getAssetInfoCachePath(self, assetPath):
+        relative = os.path.relpath(assetPath, getProjectFolder())
+        return getProjectFolder()+'/cache/'+relative+'.json'
+
+    def saveAssetInfoCache(self, assetPath, assetSymbols):
+        import json
+        content=json.dumps(assetSymbols)
+        with Utils.OpenRec(self.getAssetInfoCachePath(assetPath), 'w') as f:
+            f.write(content)
+            pass
+        pass
+
+    def loadAssetInfoCache(self, assetPath):
+        import json
+        with open(self.getAssetInfoCachePath(assetPath), 'r') as f:
+            return json.loads(f.read())
+            pass
+        pass
+
+    def processAsset(self, assetPath, saveProject):
+        from server.parser import CppParser
+        from server.io import Utils
+        if Utils.IsScriptFile(assetPath):
+            # Initialize asset reference, if none exist
+            self.initializeAsset(assetPath)
+
+            # Check if the asset is up to date, so we dont need to process it
+            if self.assets[assetPath]['mtime'] >= os.path.getmtime(assetPath):
+                fileSymbols = self.loadAssetInfoCache(assetPath)
+            else:
+                # Parse asset
+                fileInfo = CppParser.GetSimpleClass(assetPath)
+                fileSymbols = fileInfo['symbols']
+                fileSymbols['path'] = assetPath
+
+                if self.isUserAsset(assetPath):
+                    fileSymbols['id'] = self.assets[assetPath]['id']
+                    pass
+
+                self.updateAsset(assetPath, fileInfo['dependencies'], saveProject=saveProject)
+                self.saveAssetInfoCache(assetPath, fileSymbols)
+                pass
+
+            return fileSymbols
+
+        return None # Untrackable file format
+
     pass
 
 def getAssetList():
@@ -135,6 +240,10 @@ def loadProject(path):
     global _currentProject
     _currentProject = _Project(path)
     return True
+
+def processAsset(assetPath, saveProject):
+    global _currentProject
+    return _currentProject.processAsset(assetPath, saveProject)
 
 # Load last opened project
 if len(Config.get('runtime', 'recent_projects')) > 0:

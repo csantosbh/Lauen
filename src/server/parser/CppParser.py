@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 import sys
+import os
 
 def translateFieldType(typeName):
     if typeName == 'c:Matrix.h@N@Eigen@T@Vector3f':
@@ -15,19 +16,26 @@ def translateFieldType(typeName):
 def parseCPPFileChildren(output, node, pragmaList, context):
     childNodes = []
     for child in node.get_children():
-        childNodes += parseCPPFileRec(child, pragmaList, context)
+        childNode = parseCPPFileRec(child, pragmaList, context)
+        childNodes += childNode['symbols']
+        output['dependencies'].update(childNode['dependencies'])
 
     if len(childNodes)>0:
-        output+=childNodes
+        output['symbols']+=childNodes
         pass
     pass
 
 def parseCPPFileRec(node, pragmaList, context=dict()):
     from clang.cindex import Cursor, CursorKind, AccessSpecifier
-    output=[]
+    output={'symbols': [], 'dependencies': set()}
 
-    if node.kind != CursorKind.TRANSLATION_UNIT and str(node.location.file) != context['requestedFileName']:
-        return output
+
+    if node.kind != CursorKind.TRANSLATION_UNIT:
+        fileNameStr = str(node.location.file)
+        output['dependencies'].add(os.path.abspath(fileNameStr))
+    
+        if fileNameStr != context['requestedFileName']:
+            return output
 
     if node.kind == CursorKind.NAMESPACE:
         subContext = context.copy()
@@ -49,7 +57,10 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
             subContext['depth'] = context['depth']+1
             subContext['withinClassContext'] = True
             for child in node.get_children():
-                childNodes += parseCPPFileRec(child, pragmaList, subContext)
+                childNode = parseCPPFileRec(child, pragmaList, subContext)
+                childNodes+=childNode['symbols']
+                output['dependencies'].update(childNode['dependencies'])
+                pass
 
             node = {
                 'kind': node.kind.name,
@@ -58,7 +69,7 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
                 'pragmas': childPragmas,
                 'namespace': context['currentNameSpace'],
             }
-            output.append(node)
+            output['symbols'].append(node)
     elif node.kind == CursorKind.FIELD_DECL or (node.kind == CursorKind.FUNCTION_DECL and context['withinClassContext']):
         childPragmas = []
         if len(pragmaList) > 0:
@@ -82,7 +93,7 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
         elif node.access_specifier == AccessSpecifier.PRIVATE:
             dictNode['visibility'] = 2
 
-        output.append(dictNode)
+        output['symbols'].append(dictNode)
     else:
         subContext = context.copy()
         subContext['depth'] = context['depth']+1
@@ -131,30 +142,31 @@ def GetSimpleClass(fileName):
     from server.project import Project
     from server.components import DefaultComponentManager
     parsedFile = parseCPPFile(fileName)
-    if len(parsedFile) == 0:
-        return dict()
-
+    fileSymbols = parsedFile['symbols']
     simpleClass = dict()
-    if parsedFile[0]['kind'] == 'CLASS_DECL':
-        simpleClass['class'] = parsedFile[0]['name']
-        simpleClass['id'] = Project.getScriptId(fileName)
-        simpleClass['namespace']  = parsedFile[0]['namespace']
 
-        simpleClass['fields'] = {}
-        simpleClass['types'] = {}
-        simpleClass['pragmas'] = {}
-        simpleClass['visibilities'] = {}
-        for child in parsedFile[0]['children']:
-            if child['kind'] == 'FIELD_DECL' and child['visibility']==0:
-                simpleClass['fields'][child['name']] = DefaultComponentManager.DefaultFieldValue(child['type'])
-                simpleClass['types'][child['name']] = child['type']
-                simpleClass['pragmas'][child['name']] = child['pragmas']
-                simpleClass['visibilities'][child['name']] = child['visibility']
+    if len(fileSymbols) > 0:
+        if fileSymbols[0]['kind'] == 'CLASS_DECL':
+            simpleClass['class'] = fileSymbols[0]['name']
+            #simpleClass['id'] = Project.getScriptId(fileName)
+            simpleClass['namespace']  = fileSymbols[0]['namespace']
+
+            simpleClass['fields'] = {}
+            simpleClass['types'] = {}
+            simpleClass['pragmas'] = {}
+            simpleClass['visibilities'] = {}
+            for child in fileSymbols[0]['children']:
+                if child['kind'] == 'FIELD_DECL' and child['visibility']==0:
+                    simpleClass['fields'][child['name']] = DefaultComponentManager.DefaultFieldValue(child['type'])
+                    simpleClass['types'][child['name']] = child['type']
+                    simpleClass['pragmas'][child['name']] = child['pragmas']
+                    simpleClass['visibilities'][child['name']] = child['visibility']
+                    pass
                 pass
             pass
         pass
 
-    return simpleClass
+    return dict(symbols=simpleClass, dependencies=parsedFile['dependencies'])
 
 if __name__ == '__main__':
     from pprint import pprint

@@ -6,7 +6,7 @@ from server.project import Project
 
 class _AssetFolderWatcher(pyinotify.ProcessEvent):
     def process_IN_CLOSE_WRITE(self, event):
-        asset = Utils.ParseAsset(event.pathname)
+        asset = Project.processAsset(event.pathname, saveProject=True)
         if asset != None:
             WSServer.send('AssetWatch', dict(event="update", asset=asset))
         pass
@@ -23,7 +23,7 @@ class _AssetFolderWatcherThread(threading.Thread):
         wm = pyinotify.WatchManager()  # Watch Manager
         mask = pyinotify.IN_DELETE | pyinotify.IN_CLOSE_WRITE  # watched events
         notifier = pyinotify.Notifier(wm, _AssetFolderWatcher(), timeout=10)
-        path = Project.getProjectFolder() + '/assets'
+        path = Project.getProjectFolder()
         wdd = wm.add_watch(path, mask, rec=True)
 
         self.isRunning = True

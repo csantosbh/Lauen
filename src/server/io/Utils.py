@@ -18,30 +18,21 @@ def PathHasExtension(path, extensions):
         pass
     return False
 
-def ParseAsset(assetPath):
-    if PathHasExtension(assetPath, ['.hpp', '.cpp', '.cxx']):
-        from server.parser import CppParser
-        fileInfo = CppParser.GetSimpleClass(assetPath)
-        fileInfo['path'] = assetPath
-        return fileInfo
-
-    return None # Untrackable file format
+def IsScriptFile(assetPath):
+    return PathHasExtension(assetPath, ['.hpp', '.h', '.cpp', '.cxx'])
 
 def IsTrackableAsset(filePath):
-    trackableFormats = ['.hpp', '.cpp', '.cxx']
-    for f in trackableFormats:
-        if filePath.endswith(f):
-            return True
-        pass
-    return False
+    # TODO also check for other supported file type
+    return IsScriptFile(filePath)
 
+# TODO drop this function, probably use ProcessAsset instead
 def ParseHPPFilesFromFolder(mypath):
     from server.parser import CppParser
     files = ListFilesFromFolder(mypath, ['.hpp', '.hxx'])
     cppFiles = []
     for fname in files:
         # TODO: cache results from cpp parser
-        cppFileInfo = CppParser.GetSimpleClass(fname)
+        cppFileInfo = CppParser.GetSimpleClass(fname)['symbols']
         cppFileInfo['path'] = fname
         cppFiles.append(cppFileInfo)
         pass
@@ -64,6 +55,25 @@ def ListFilesFromFolder(mypath, extensions = None):
         pass
 
     return filesFound
+
+def OpenRec(filename, mode):
+    import os
+    if not os.path.exists(os.path.dirname(filename)):
+        os.makedirs(os.path.dirname(filename))
+    return open(filename, mode)
+
+# Returns true if path is inside directory
+def IsSubdir(path, directory):
+    import os
+    path = os.path.realpath(path)
+    directory = os.path.realpath(directory)
+
+    relative = os.path.relpath(path, directory)
+
+    if relative.startswith(os.pardir):
+        return False
+    else:
+        return True
 
 # Copy all files of specified types to destination folder.
 # The destination folder will be created, so as to keep
