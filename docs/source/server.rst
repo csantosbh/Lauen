@@ -45,15 +45,30 @@ The file ``build/BuildEventHandler.py`` exposes the following functions:
     :param outputFolder: Complete path where the binaries will be generated.
 
 
-.. function:: ExportGame(platform, buildAndRun, compilationMode, outputFolder)
+.. function:: ExportGame(platform, buildAndRun, compilationMode, outputFolder, cleanObjects=True)
 
-    Builds and packages the final game, cleaning up temporary files and copying
-    assets to the output folder.
+    Builds and packages the final game, cleaning up temporary files if
+    ``cleanObjects`` is ``True`` and copying assets to the output folder.
 
     :param platform: Target platform. Currently supported values are ``linux``, ``windows``, ``nacl`` and ``preview`` (same as nacl, but with preview specific code enabled).
     :param buildAndRun: Runs the game after it is built. Only works with the ``linux`` target.
     :param compilationMode:  ``DEBUG`` or ``RELEASE``. Affects compilation flags and linked libraries.
     :param outputFolder: Complete path to output folder.
+    :param cleanObjects: If set to ``True``, the temporary object files generated in the build process will be removed after the compilation is done.
+
+.. function:: BuildPreviewObject(inputFile) -> dict
+
+   Compiles the input file, producing an object file for the preview target (Native Client). Returns the following dict:
+
+   .. code-block:: javascript
+
+        {
+        output: string, // Path of the output object file
+        message: string, // Compiler messages
+        success: bool
+        }
+
+   :param inputFile: Path to input file. Make sure it is not a header file.
 
 .. _cpy-templates:
 -----
@@ -186,7 +201,21 @@ The ``io/Utils.py`` module contains filesystem related utility functions.
    :param path: Path to a file or folder.
    :param extensions: Array of extensions to be checked for.
 
-.. function:: IsScriptFileAsset(assetPath) -> bool
+.. function:: IsHeaderFile(assetPath) -> bool
+   
+   Returns true if the path ``assetPath`` refers to a C++ header file (.h,
+   .hpp), and false otherwise.
+
+   :param assetPath: Path to the asset file.
+
+.. function:: IsImplementationFile(assetPath) -> bool
+   
+   Returns true if the path ``assetPath`` refers to a C++ source file (.cpp,
+   .cxx), and false otherwise.
+
+   :param assetPath: Path to the asset file.
+
+.. function:: IsScriptFile(assetPath) -> bool
 
    Returns ``True`` if ``assetPath`` refers to a script asset file (which is
    determined by its extension  -- .hpp, .h, .cpp and .cxx), and ``False`` otherwise.
@@ -200,15 +229,6 @@ The ``io/Utils.py`` module contains filesystem related utility functions.
    should be displayed in the editor project panel.
 
    :param path: Path to the asset file.
-
-.. function:: ParseHPPFilesFromFolder(path) -> list
-
-   Given the complete path to a folder, returns an array of objects containing
-   parsed information from all C++ header files in the root and all subfolders
-   inside ``path``. A file is assumed to be a C++ header file if it ends with
-   any of the following extensions: ``hpp``, ``hxx``.
-
-   :param path: Complete path to the root folder.
 
 .. function:: OpenRec(path, mode) -> file_handle
 
@@ -327,6 +347,32 @@ This module exposes the following functions:
 
    :param path: Complete path to the asset file.
    :param saveProject: If ``True``, the project will be saved after the asset is processed.
+
+.. function:: isFileOlderThanDependency(filePath, assetPath) -> bool
+
+   Given an asset path located in ``assetPath`` and any file path ``filePath``,
+   this function returns True if ``filePath`` is older than any of the asset's
+   dependencies. This is useful for detecting when an object file must be updated, e.g:
+
+   .. code-block:: python
+
+       if Project.isFileOlderThanDependency('/tmp/build/myfile.o',
+                  Project.getProjectFolder()+'/assets/myfile.cpp'):
+           print 'Object file is outdated!'
+
+   This function also returns ``True`` in the following cases:
+
+   * If ``filePath`` refers to a file that doesn't exist;
+   * If ``assetPath`` itself was modified after ``filePath``.
+
+.. function:: isCPYTemplateOutdated(cpyFilePath) -> bool
+
+    Given a path to a CPY template, returns ``True`` if the C++ file produced
+    from it is outdated, which is determined by the following rules:
+
+    * If the C++ file doesn't exist; or
+    * If the CPY file was modified after the C++ file was generated; or
+    * If any of the C++ dependencies were modified after the C++ file was generated.
 
 ---------
 Asset Folder Watcher

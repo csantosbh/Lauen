@@ -17,8 +17,8 @@ cxx_compiler={
 
 def _getFlags(compilationMode):
     cxxModeFlags = {
-        'DEBUG': ' -g -DDEBUG',
-        'RELEASE': ' -O3 -DRELEASE'
+        'DEBUG': '-g -DDEBUG',
+        'RELEASE': '-O3 -DRELEASE'
     }
     modeFolder = {
         'DEBUG': 'Debug',
@@ -36,14 +36,13 @@ def _getFlags(compilationMode):
             'preview': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
         },
         'cxx_flags': {
-            'linux': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/' + cxxModeFlags[compilationMode],
+            'linux': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/ ' + cxxModeFlags[compilationMode],
             'windows': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -I '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/include/ -I '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
-            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include' + cxxModeFlags[compilationMode],
-            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include' + cxxModeFlags[compilationMode],
+            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include ' + cxxModeFlags[compilationMode],
+            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include ' + cxxModeFlags[compilationMode],
         }
     }
 
-# TODO only re-call this when we change the number of scripts available, or when a script flyweight changes
 def _isVecType(type):
     return type == 'v4f' or type == 'v3f' or type == 'v2f'
 
@@ -60,10 +59,17 @@ def _renderTemplateSources(componentFiles):
                             vecIterations=dict(v4f=4, v3f=3, v2f=2))
 
     for templateFile in templateFiles:
-        componentFactoryTemplate = open(projectFolder+'/default_assets/'+templateFile).read()
-        outputName = templateFile[:templateFile.rfind('.')] + '.cpp'
-        with open(projectFolder+'/default_assets/'+outputName, 'w') as outputHandle:
-            outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
+        templatePath = projectFolder+'/default_assets/'+templateFile
+        outputPath = projectFolder+'/default_assets/'+templateFile[:templateFile.rfind('.')] + '.cpp'
+
+        # Only update the auto-generated files when their CPY sources have been
+        # updated, or when one of its dependencies have been updated.
+        if Project.isCPYTemplateOutdated(templatePath):
+            print 'Updating template '+templatePath
+            componentFactoryTemplate = open(templatePath).read()
+            with open(outputPath, 'w') as outputHandle:
+                outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
+                pass
             pass
         pass
     pass
@@ -82,6 +88,27 @@ def _runGame(path, workFolder):
         pass
     pass
 
+def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags):
+    import subprocess
+    outputFilePath = outputFolder+'/build/'+io.Utils.GetFileNameFromPath(sourceFile)+'.o'
+    success=True
+    compilationMessage = ''
+    returncode=0
+
+    try:
+        # Only build the object file if it is older than any of its dependencies
+        if Project.isFileOlderThanDepencency(outputFilePath, sourceFile):
+            print 'building '+outputFilePath
+            compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+            pass
+    except subprocess.CalledProcessError as e:
+        compilationMessage = e.output
+        returncode = e.returncode
+        success = False
+        pass
+
+    return dict(output=outputFilePath, message=compilationMessage, returncode=returncode)
+
 def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess
     compilationFlags=_getFlags(compilationMode)
@@ -93,43 +120,44 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
 
     compilationStatus = dict(returncode=0, message='')
     try:
-        # TODO use threads
-        # TODO incremental build will solve this, but I need to perform dependency checking besides modification time comparison
-        componentScripts = io.Utils.ParseHPPFilesFromFolder(projectFolder+'/assets')
-
         # Generate component factory
-        _renderTemplateSources(componentScripts)
+        _renderTemplateSources(Project.getAssetList())
         
         # Generate build list
         sourceFiles = []
+        componentScripts = io.Utils.ListFilesFromFolder(projectFolder)
         # Append component scripts to the list of build files
-        """
         for componentScript in componentScripts:
-            sourceFiles.append(componentScript['path'])
-            pass
-        """
-        # Append default assets to the list of build files
-        for defaultAsset in io.Utils.ListFilesFromFolder(projectFolder+'/default_assets', ['cpp', 'cxx']):
-            sourceFiles.append(defaultAsset)
+            if io.Utils.IsImplementationFile(componentScript):
+                sourceFiles.append(componentScript)
+                pass
             pass
 
         # Compile
-        compilationModeFlags = ' -D'+compilationMode
         precompiledFiles = ''
         for sourceFile in sourceFiles:
-            precompiledFile = outputFolder+'/build/'+io.Utils.GetFileNameFromPath(sourceFile)+'.o '
-            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+precompiledFile + compilationModeFlags + ' ' + platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
-            precompiledFiles += precompiledFile
+            buildStatus = _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags)
+            compilationStatus['returncode'] = buildStatus['returncode']
+            compilationStatus['message'] += buildStatus['message']
+
+            if compilationStatus['returncode'] != 0:
+                break
+
+            precompiledFiles += ' '+buildStatus['output']
+
             pass
 
         # Link
-        compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+        print 'linking...'
+        if compilationStatus['returncode'] == 0:
+            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+            pass
+        print 'linking done.'
 
     except subprocess.CalledProcessError as e:
         # TODO show compilation error messages on console
         compilationStatus['message'] = e.output
         compilationStatus['returncode'] = e.returncode
-        print 'Compilation error: ', e.returncode
         pass
 
     WSServer.send('compilationStatus', compilationStatus)
@@ -161,7 +189,7 @@ def _PostExportStep(platform, outputFolder):
         pass
     pass
 
-def ExportGame(platform, buildAndRun, compilationMode, outputFolder):
+def ExportGame(platform, buildAndRun, compilationMode, outputFolder, cleanObjects=True):
     from distutils import dir_util
     import shutil, os
     # Create folder for temporary .o files
@@ -178,13 +206,20 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder):
         # Platform specific post-build steps
         _PostExportStep(platform, outputFolder)
         # Remove temporary build folder
-        dir_util.remove_tree(outputFolder + '/build')
+        if cleanObjects:
+            dir_util.remove_tree(outputFolder + '/build')
+            pass
         return True
     pass
 
 def previewGame(event_msg):
-    ExportGame('preview', False, 'DEBUG', Project.getProjectFolder()+'/build/nacl/')
+    ExportGame('preview', False, 'DEBUG', Project.getProjectFolder()+'/build/nacl/', cleanObjects=False)
     return True
+
+def BuildPreviewObject(inputFile):
+    buildStatus = _buildObjectFile(inputFile, Project.getProjectFolder()+'/build/nacl/', 'preview', _getFlags('DEBUG'))
+    WSServer.send('compilationStatus', buildStatus)
+    return buildStatus
 
 RPC.listen(buildGame)
 RPC.listen(previewGame)

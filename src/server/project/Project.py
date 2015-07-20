@@ -48,7 +48,7 @@ class _Project:
     def initializeAsset(self, assetPath):
         if not assetPath in self.assets:
             if Utils.IsScriptFile(assetPath):
-                if self.isUserAsset(assetPath):
+                if self.isUserAsset(assetPath) and Utils.IsHeaderFile(assetPath):
                     self.assets[assetPath] = {
                     'id': self.getUniqueId(),
                     'dependencies': [],
@@ -130,7 +130,7 @@ class _Project:
         assetFiles = []
         for fname in files:
             processedAsset = self.processAsset(fname, False)
-            if processedAsset != None and self.isUserAsset(fname):
+            if processedAsset != None and self.isUserAsset(fname) and Utils.IsHeaderFile(fname):
                 assetFiles.append(processedAsset)
                 pass
             pass
@@ -143,16 +143,18 @@ class _Project:
         # Normalize path to avoid ambiguities
         filePath = os.path.abspath(filePath)
 
-        # Update the dependencies of all files that depend on filePath
-        for script in self.assets:
-            if filePath in self.assets[script]['dependencies']:
-                depSet = set(self.assets[script]['dependencies'])
+        # Update all files that depend on filePath
+        for asset in self.assets:
+            if filePath in self.assets[asset]['dependencies']:
+                print filePath,' is dependency of ', asset
+                depSet = set(self.assets[asset]['dependencies'])
                 depSet.update(dependencies)
-                self.assets[script]['dependencies'] = list(depSet)
+                self.assets[asset]['dependencies'] = list(depSet)
+                self.processAsset(asset, False)
                 pass
             pass
 
-        # Update dependencies list for current script
+        # Update dependencies list for current asset
         self.assets[filePath]['dependencies'] = list(dependencies)
         self.assets[filePath]['mtime'] = os.path.getmtime(filePath)
 
@@ -183,20 +185,34 @@ class _Project:
     def processAsset(self, assetPath, saveProject):
         from server.parser import CppParser
         from server.io import Utils
+        from server.build import BuildEventHandler
+
         if Utils.IsScriptFile(assetPath):
             # Initialize asset reference, if none exist
             self.initializeAsset(assetPath)
+
+            # Generate its .o object
+            # TODO investigate possibility of infinite loop due to generating a new file inside this callback (which would trigger a new END_WRITE callback to this function)
+            # Check if the path doesn't refer to a header file
+            if Utils.IsImplementationFile(assetPath):
+                buildStatus = BuildEventHandler.BuildPreviewObject(assetPath)
+
+                # TODO return the "success" flag on BuildPreviewObject and re-enable the code below
+                if buildStatus['returncode'] != 0:
+                    return None
+
+                pass
 
             # Check if the asset is up to date, so we dont need to process it
             if self.assets[assetPath]['mtime'] >= os.path.getmtime(assetPath):
                 fileSymbols = self.loadAssetInfoCache(assetPath)
             else:
+                print 'Reprocessing asset '+assetPath
                 # Parse asset
                 fileInfo = CppParser.GetSimpleClass(assetPath)
                 fileSymbols = fileInfo['symbols']
                 fileSymbols['path'] = assetPath
-
-                if self.isUserAsset(assetPath):
+                if 'id' in self.assets[assetPath]:
                     fileSymbols['id'] = self.assets[assetPath]['id']
                     pass
 
@@ -207,6 +223,42 @@ class _Project:
             return fileSymbols
 
         return None # Untrackable file format
+
+    def isFileOlderThanDepencency(self, filePath, assetPath):
+        # If file doesnt even exist, then it must be touched to begin with
+        if not os.path.exists(filePath):
+            return True
+        # If the asset itself is newer than the filePath, return true
+        queryFileMTime = os.path.getmtime(filePath)
+        if os.path.getmtime(assetPath) > queryFileMTime:
+            return True
+
+        # If any of the asset dependencies are newer than the filePath, return true
+        for dependency in self.assets[assetPath]['dependencies']:
+            if os.path.getmtime(dependency) > queryFileMTime:
+                return True
+            pass
+
+        return False
+
+    def isCPYTemplateOutdated(self, cpyFilePath):
+        cppFilePath = cpyFilePath[:cpyFilePath.rfind('.')] + '.cpp'
+        # If C++ file doesnt even exist, then it must be touched to begin with
+        if not os.path.exists(cppFilePath):
+            return True
+
+        # If the template itself is newer than the C++ file, return true
+        cppFileMTime = os.path.getmtime(cppFilePath)
+        if os.path.getmtime(cpyFilePath) > cppFileMTime:
+            return True
+
+        # If the C++ file is older than any of its dependencies, return true
+        for dependency in self.assets[cppFilePath]['dependencies']:
+            if os.path.getmtime(dependency) > cppFileMTime:
+                return True
+            pass
+
+        return False
 
     pass
 
@@ -244,6 +296,14 @@ def loadProject(path):
 def processAsset(assetPath, saveProject):
     global _currentProject
     return _currentProject.processAsset(assetPath, saveProject)
+
+def isFileOlderThanDepencency(filePath, assetPath):
+    global _currentProject
+    return _currentProject.isFileOlderThanDepencency(filePath, assetPath)
+
+def isCPYTemplateOutdated(cpyFilePath):
+    global _currentProject
+    return _currentProject.isCPYTemplateOutdated(cpyFilePath)
 
 # Load last opened project
 if len(Config.get('runtime', 'recent_projects')) > 0:

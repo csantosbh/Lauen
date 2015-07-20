@@ -12,6 +12,7 @@
 #include "${component['path']}"
 % endfor
 
+
 namespace lau {
 ////
 // Factories

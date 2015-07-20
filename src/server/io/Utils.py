@@ -5,7 +5,7 @@ def GetFileNameFromPath(path):
 def _ListFilesFromFolder(mypath):
     from os import walk
     files = []
-    for (dirpath, dirnames, filenames) in walk(mypath):
+    for (dirpath, dirnames, filenames) in walk(mypath, followlinks=True):
         for filename in filenames:
             files.append(dirpath + '/' + filename)
         pass
@@ -18,36 +18,27 @@ def PathHasExtension(path, extensions):
         pass
     return False
 
+def IsHeaderFile(assetPath):
+    return PathHasExtension(assetPath, ['.hpp', '.h'])
+
+def IsImplementationFile(assetPath):
+    return PathHasExtension(assetPath, ['.cpp', '.cxx'])
+
 def IsScriptFile(assetPath):
-    return PathHasExtension(assetPath, ['.hpp', '.h', '.cpp', '.cxx'])
+    return IsHeaderFile(assetPath) or IsImplementationFile(assetPath)
 
 def IsTrackableAsset(filePath):
     # TODO also check for other supported file type
     return IsScriptFile(filePath)
 
-# TODO drop this function, probably use ProcessAsset instead
-def ParseHPPFilesFromFolder(mypath):
-    from server.parser import CppParser
-    files = ListFilesFromFolder(mypath, ['.hpp', '.hxx'])
-    cppFiles = []
-    for fname in files:
-        # TODO: cache results from cpp parser
-        cppFileInfo = CppParser.GetSimpleClass(fname)['symbols']
-        cppFileInfo['path'] = fname
-        cppFiles.append(cppFileInfo)
-        pass
-
-    return cppFiles
-
 def ListFilesFromFolder(mypath, extensions = None):
     from server.parser import CppParser
     files = _ListFilesFromFolder(mypath)
     filesFound = []
-    for fname in files:
-        if extensions == None:
-            filesFound.append(fname)
-            pass
-        else:
+    if extensions == None:
+        filesFound = files
+    else:
+        for fname in files:
             if PathHasExtension(fname, extensions):
                 filesFound.append(fname)
                 pass

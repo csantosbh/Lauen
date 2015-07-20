@@ -106,11 +106,76 @@ as the sequence diagram below illustrates:
 Windows
 ====
 
+The window manager is responsible for creating windows, listening to resize
+events, capturing input data and managing the OpenGL context. There are
+currently two types of window classes: Desktop (implemented with `GLFW
+<http://www.glfw.org>`_ and compatible with Linux, Windows and Mac) and NaCl
+(native client window).
+
+All window management files are located in the ``window`` folder. Internally,
+every Window has a pointer to a Game object. In the Desktop window, the game
+loop is implemented with `fixed time step
+<http://gameprogrammingpatterns.com/game-loop.html>`_ calls to the
+``Game::update`` function, and is followed by a call to ``draw(alpha)`` with a
+floating point parameter :math:`\alpha \in [0,1)` that can be used to perform
+interpolation in the time dimension, avoiding stuttery associated with time
+aliasing.
+
+=====
+Game class
+=====
+
+The Game class is responsible for managing the collection of game objects from
+the current scene.
 
 ====
 Utils
 ====
 
+The ``utils`` folder contains a collection of utility functions detailed below.
+
+----
+IO
+----
+
+This module is responsible for performing asynchronous file loading. In order
+to use it, you must get the IO singleton with ``IO::getInstance()``, and then
+call ``OI::requestFiles()`` with a list of filenames and a callback function:
+
+.. code-block:: c++
+
+   auto& instance = lau::utils::IO::getInstance();
+   instance.requestFiles({
+     "file1.txt",
+     "file2.png",
+     "path/to/file3.bin"
+   }, [] (std::deque<std::pair<bool, std::vector<uint8_t>>>& input) {
+       for(auto& fileStatus: input) {
+          if(fileStatus.first) { // .first: true if the file was loaded; false otherwise
+              lau << "Buffer size: " << fileStatus.second.size() << endl;
+          } else {
+              lau << "Could not load this file!" << endl;
+          }
+       }
+   });
+
+
+The path given to ``getInstance()`` is relative to the folder where the game
+executable is located.
+
+.. warning::
+   
+   When loading text files, make sure to add a ``'\0'`` to the end of the loaded
+   buffer if you are going to pass that buffer to some function that assumes
+   its existence.
+
+-----
+Time
+-----
+
+The function ``double lau::utils::time::now()`` returns the number of seconds,
+down to microseconds precision, since the Epoch, and is used by the ``Game``
+class in the game loop.
 
 ====
 Default Components

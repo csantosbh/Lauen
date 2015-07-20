@@ -32,9 +32,9 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
 
     if node.kind != CursorKind.TRANSLATION_UNIT:
         fileNameStr = str(node.location.file)
-        output['dependencies'].add(os.path.abspath(fileNameStr))
     
         if fileNameStr != context['requestedFileName']:
+            output['dependencies'].add(os.path.abspath(fileNameStr))
             return output
 
     if node.kind == CursorKind.NAMESPACE:
@@ -106,6 +106,7 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
 def parseCPPFile(fileName):
     from clang.cindex import Index, TokenKind, TranslationUnit
     import re
+    from server import Config
 
     index = Index.create()
     fileContent = open(fileName,'r').read()
@@ -115,7 +116,7 @@ def parseCPPFile(fileName):
     # have headers, and it doesn't have an option for disabling
     # recursive parsing.
     #fileContent = re.sub(r'^.*#include.*$', '', fileContent, 0, re.MULTILINE)
-    tu = index.parse(fileName, ['-std=c++11', '-fsyntax-only', '-I','/home/csantos/workspace/LauEngine/third_party/Eigen'], unsaved_files=[(fileName,fileContent)], options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+    tu = index.parse(fileName, ['-std=c++11', '-fsyntax-only', '-I',Config.get('export', 'third_party_folder')+'/Eigen'], unsaved_files=[(fileName,fileContent)], options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
 
     # Get list of pragmas
     prevToken = None
