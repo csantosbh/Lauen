@@ -12,6 +12,7 @@ Contents:
    :maxdepth: 6
 
    introduction
+   scripting
    inside_the_engine
 
 
