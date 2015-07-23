@@ -1,6 +1,12 @@
 #!/usr/bin/env python
 import sys
 import os
+from clang.cindex import Index, TokenKind, TranslationUnit
+
+###
+# Globals
+_clangIndex = Index.create()
+_translationUnits = dict()
 
 def translateFieldType(typeName):
     if typeName == 'c:Matrix.h@N@Eigen@T@Vector3f':
@@ -104,19 +110,29 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
     pass
 
 def parseCPPFile(fileName):
-    from clang.cindex import Index, TokenKind, TranslationUnit
     import re
     from server import Config
 
-    index = Index.create()
-    fileContent = open(fileName,'r').read()
+    global _clangIndex
+    global _translationUnits
+
     # Remove #include's from source files, to prevent clang
     # from parsing them. I know this is a horrible solution,
     # but clang will take forever to parse the files if they
     # have headers, and it doesn't have an option for disabling
     # recursive parsing.
-    #fileContent = re.sub(r'^.*#include.*$', '', fileContent, 0, re.MULTILINE)
-    tu = index.parse(fileName, ['-std=c++11', '-fsyntax-only', '-I',Config.get('export', 'third_party_folder')+'/Eigen'], unsaved_files=[(fileName,fileContent)], options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+    if fileName in _translationUnits:
+        tu = _translationUnits[fileName]
+        tu.reparse([(fileName, open(fileName,'r'))])
+    else:
+        tu = _clangIndex.parse(fileName, ['-std=c++11',
+                                    '-Werror',
+                                    '-I',Config.get('export', 'third_party_folder')+'/Eigen',
+                                    '-include-pch',
+                                    Config.get('export', 'third_party_folder')+'/Eigen/Eigen.pch' ],
+                                    options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+        _translationUnits[fileName] = tu
+        pass
 
     # Get list of pragmas
     prevToken = None
@@ -132,11 +148,9 @@ def parseCPPFile(fileName):
         prevToken = token
 
     parseContext=dict(depth=0,withinClassContext=False,requestedFileName=fileName,currentNameSpace='')
-    rtrn=parseCPPFileRec(tu.cursor, pragmaList, parseContext)
+    parseResult=parseCPPFileRec(tu.cursor, pragmaList, parseContext)
 
-    del tu
-    del index
-    return rtrn
+    return parseResult
 
 # Get only what matters from the parseCPPFile function
 def GetSimpleClass(fileName):
@@ -168,11 +182,3 @@ def GetSimpleClass(fileName):
         pass
 
     return dict(symbols=simpleClass, dependencies=parsedFile['dependencies'])
-
-if __name__ == '__main__':
-    from pprint import pprint
-    if len(sys.argv) != 2:
-        print 'Usage: '+sys.argv[0]+' <cppFile>'
-        exit()
-        pass
-    pprint(parseCPPFile(sys.argv[1]))

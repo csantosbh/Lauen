@@ -1,134 +1,152 @@
-#include <memory>
-#include <Python.h>
 #include <iostream>
-#include <rapidjson/document.h>
-#include <rapidjson/writer.h>
-#include <rapidjson/stringbuffer.h>
-
-#include "Parser.h"
-#include "utils/IO.h"
+#include <clang-c/Index.h>
+#include <string>
+#include <ctime>
 
 using namespace std;
-using namespace rapidjson;
 
-class PythonParser : public Parser {
-private:
-    void parseFileRec(PyObject *currentNode, Value& jsonContainer, Document& document) const {
-        if(PyList_Check(currentNode)) {
-            // Iterate over list
-            jsonContainer.SetArray();
-            for(int i = 0; i < PyList_Size(currentNode); ++i) {
-                PyObject *nextElement = PyList_GetItem(currentNode, i);
-                Value jsonElement;
-                parseFileRec(nextElement, jsonElement, document);
-                jsonContainer.PushBack(jsonElement, document.GetAllocator());
-            }
-        } else if(PyDict_Check(currentNode)) {
-            // Iterate over dict
-            Py_ssize_t t = 0;
-            PyObject *dictKey, *dictValue;
-            jsonContainer.SetObject();
-            while(PyDict_Next(currentNode, &t, &dictKey, &dictValue)) {
-                Value jsonKey, jsonValue;
-                jsonKey.SetString(PyString_AS_STRING(dictKey),
-                        PyString_Size(dictKey),
-                        document.GetAllocator());
-                if(PyInt_Check(dictValue)) {
-                    jsonValue.SetInt(PyInt_AS_LONG(dictValue));
-                }
-                else if(PyString_Check(dictValue)) {
-                    jsonValue.SetString(PyString_AS_STRING(dictValue),
-                            PyString_Size(dictValue),
-                            document.GetAllocator());
-                }
-                else {
-                    parseFileRec(dictValue, jsonValue, document);
-                }
-
-                jsonContainer.AddMember(jsonKey, jsonValue, document.GetAllocator());
-            }
-        }
+bool hasEnding (std::string const &fullString, std::string const &ending) {
+    if (fullString.length() >= ending.length()) {
+        return (0 == fullString.compare (fullString.length() - ending.length(), ending.length(), ending));
+    } else {
+        return false;
     }
-
-public:
-    virtual void parseFile(const string& fileName) const {
-        // Prepare output
-        Document document;
-        document.SetArray();
-
-        // Set function arguments
-        PyObject *fName = PyString_FromString(fileName.c_str());
-        PyTuple_SetItem(pArgs, 0, fName);
-
-        // Call function
-        PyObject *parseResult = PyObject_CallObject(pFunc, pArgs);
-
-        // Grab returned values
-        if(parseResult != NULL) {
-            parseFileRec(parseResult, document, document);
-
-            Py_DECREF(parseResult);
-
-            // print
-            StringBuffer buff;
-            Writer<StringBuffer> writer(buff);
-            document.Accept(writer);
-            cout << buff.GetString() << endl;
-
-        } else {
-            PyErr_Print();
-        }
-    }
-
-    PythonParser() : pModule(NULL), pFunc(NULL), pArgs(NULL) {
-        char progName[] = "parser.py";
-        Py_SetProgramName(progName);
-        Py_Initialize();
-
-        // Add the scripts folder to the python path, so
-        // it can find the modules inside it
-        PyObject* sysPath = PySys_GetObject((char*)"path");
-        PyObject* scriptsPath = PyString_FromString("scripts");
-        PyList_Append(sysPath, scriptsPath);
-        Py_DECREF(scriptsPath);
-
-        // Load parser.py module
-        PyObject *pName = PyString_FromString("CppParser");
-        pModule = PyImport_Import(pName);
-        Py_DECREF(pName);
-
-        if(pModule != NULL) {
-            pFunc = PyObject_GetAttrString(pModule, "parseCPPFile");
-            if(pFunc == NULL) {
-                // TODO: exception: could not load parseCPPFile function
-                PyErr_Print();
-            }
-            else if (pFunc && PyCallable_Check(pFunc)) {
-                pArgs = PyTuple_New(1);
-            } else {
-                // TODO: exception: parseCPPFile is not a function!
-            }
-        } else {
-            PyErr_Print();
-            // TODO: exception: could not load python module
-        }
-    }
-    ~PythonParser() {
-        if(pModule != NULL) Py_DECREF(pModule);
-        if(pFunc != NULL) Py_XDECREF(pFunc);
-        if(pArgs != NULL) Py_DECREF(pArgs);
-
-        Py_Finalize();
-    }
-
-private:
-    string sourceCode;
-    PyObject *pModule, *pFunc, *pArgs;
-};
-
-shared_ptr<Parser> Parser::instance;
-const Parser* Parser::getInstance() {
-    if(instance==NULL) instance = shared_ptr<Parser>(new PythonParser());
-    return instance.get();
 }
 
+template<typename T, void destroyer(T)> struct manager {
+    T data;
+    manager() {}
+    manager(T t) : data(t) {}
+    operator T () {return data;}
+    ~manager() {destroyer(data);}
+};
+
+const char* FNAME;
+CXChildVisitResult visitar(CXCursor cursor, CXCursor parent, CXClientData client_data) {
+    CXSourceLocation symbolSrc = clang_getCursorLocation (cursor);
+    CXFile symbolFile;
+    clang_getSpellingLocation   (symbolSrc,
+            &symbolFile,
+            NULL,//unsigned *  line,
+            NULL,//unsigned *  column,
+            NULL//unsigned *  offset 
+            );
+
+    CXString fileName = clang_getFileName(symbolFile);
+    if(clang_getCString(fileName) != NULL && !hasEnding(std::string(clang_getCString(fileName)), FNAME)) {
+        // I only want to know about symbols in my parsing file
+        return CXChildVisit_Continue;
+    }
+
+    switch(cursor.kind) {
+        case CXCursor_ClassDecl: {
+            CXString name = clang_getCursorSpelling(cursor);
+            CXString usr = clang_getCursorUSR(cursor);
+            cout << "eh class: " << clang_getCString(name) << "("<< clang_getCString(usr) << ")"<< endl;
+            }
+            break;
+        case CXCursor_FieldDecl: {
+            CXString name = clang_getCursorSpelling(cursor);
+            CXString usr = clang_getCursorUSR(cursor);
+
+            CXType type = clang_getCursorType(cursor);
+            CXString typespelling = clang_getTypeSpelling(type);
+            cout << "\teh field: " << clang_getCString(name) << "("<< clang_getCString(usr) << ") type: " << clang_getCString(typespelling);
+            //cout << type.kind << endl;
+            switch(type.kind) {
+                case CXType_Unexposed: {
+                CXCursor typeClass = clang_getTypeDeclaration(type);
+                CXString className = clang_getCursorSpelling(typeClass);
+                CXString classUSR = clang_getCursorUSR(typeClass);
+                cout << "(" << clang_getCString(classUSR) << ")";
+                }
+                break;
+            }
+            cout << endl;
+            }
+            break;
+    }
+
+    //return CXChildVisit_Continue;
+    return CXChildVisit_Recurse;
+}
+
+int main(int argc, char* argv[])
+{
+    if(argc != 2) {
+        cout << argv[0] << " <filename>" << endl;
+        return 0;
+    }
+    manager<CXIndex, clang_disposeIndex> managed_index(clang_createIndex(1, 0));
+    CXIndex index = managed_index;
+    if (!index) {
+        cerr << "failed creating index" << std::endl;
+        return 1;
+    }
+
+    FNAME = argv[1];
+
+    // clang_parseTranslationUnit2 (CXIndex CIdx, const char *source_filename, const char *const *command_line_args, int num_command_line_args, struct CXUnsavedFile *unsaved_files, unsigned num_unsaved_files, unsigned options, CXTranslationUnit *out_TU)
+    manager<CXTranslationUnit, clang_disposeTranslationUnit> managed_translation_unit;
+    const char* params[] = {"-std=c++11","-Werror", "-I", "/home/csantos/workspace/LauEngine/third_party/Eigen", "-include-pch", "/home/csantos/workspace/LauEngine/third_party/Eigen/Eigen.pch"};
+    const int paramCount = 6;
+    clock_t begin = clock();
+    /*
+    CXErrorCode error = clang_parseTranslationUnit2 (index, argv[1], params, paramCount, nullptr, 0,
+            CXTranslationUnit_PrecompiledPreamble|CXTranslationUnit_Incomplete|CXTranslationUnit_SkipFunctionBodies|clang_defaultEditingTranslationUnitOptions(),///*CXTranslationUnit_PrecompiledPreamble
+            &managed_translation_unit.data);
+            */
+    //CXTranslationUnit tu = clang_createTranslationUnitFromSourceFile(index, argv[1], paramCount, params, 0, NULL);
+    CXTranslationUnit tu = clang_parseTranslationUnit(index,
+            argv[1], params, paramCount, nullptr, 0,
+            clang_defaultEditingTranslationUnitOptions());
+
+    if(tu) {
+        managed_translation_unit.data = tu;
+        CXTranslationUnit translation_unit = managed_translation_unit;
+        CXCursor cursor = clang_getTranslationUnitCursor(translation_unit);
+
+        while(clang_visitChildren(cursor, visitar, NULL) != 0) {
+        }
+        clock_t end = clock();
+        double elapsed_secs = double(end - begin) / CLOCKS_PER_SEC;
+        cout << "Elapsed " << elapsed_secs << "s"<<endl;
+
+        //////// Reparse
+        clang_reparseTranslationUnit(managed_translation_unit.data, 0, nullptr, clang_defaultReparseOptions(managed_translation_unit.data));
+        begin = clock();
+        elapsed_secs = double(begin - end) / CLOCKS_PER_SEC;
+        cout << "Reparse " << elapsed_secs << "s"<<endl;
+
+        //////// Reparse again
+        clang_reparseTranslationUnit(managed_translation_unit.data, 0, nullptr, clang_defaultReparseOptions(managed_translation_unit.data));
+        end = clock();
+        elapsed_secs = double(end-begin) / CLOCKS_PER_SEC;
+        cout << "Reparse2 " << elapsed_secs << "s"<<endl;
+
+        //////// Reparse
+        clang_reparseTranslationUnit(managed_translation_unit.data, 0, nullptr, clang_defaultReparseOptions(managed_translation_unit.data));
+        begin = clock();
+        elapsed_secs = double(begin - end) / CLOCKS_PER_SEC;
+        cout << "Reparse3 " << elapsed_secs << "s"<<endl;
+
+        //////// Reparse again
+        system("mv demo.cpp demo3.cpp");
+        system("mv demo2.cpp demo.cpp");
+        system("mv demo3.cpp demo2.cpp");
+
+        clang_reparseTranslationUnit(managed_translation_unit.data, 0, nullptr, clang_defaultReparseOptions(managed_translation_unit.data));
+        end = clock();
+        elapsed_secs = double(end-begin) / CLOCKS_PER_SEC;
+        cout << "Reparse4 " << elapsed_secs << "s"<<endl;
+
+        cursor = clang_getTranslationUnitCursor(managed_translation_unit.data);
+        while(clang_visitChildren(cursor, visitar, NULL) != 0) { }
+
+    } else {
+        cerr << "Could not create translation unit!" << endl;
+        return 1;
+    }
+
+    return 0;
+}

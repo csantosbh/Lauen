@@ -158,9 +158,9 @@ containing the following information about that class:
   file)
 
 
-The ``CppParser.py`` module can be used as a command line tool to parse
+The ``src/test_parser.py`` script can be used as a command line tool to parse
 individual C++ files, which is useful for displaying the USR symbols of
-unsupported types: ``./CppParser <path/to/cppFile>``.
+unsupported types: ``./test_parser.py <path/to/cppFile>``.
 
 
 ======
@@ -430,53 +430,6 @@ The module ``Config.py`` manages two types of configuration variables:
 * **Runtime configuration**, like the engine installation folder. These
   variables can be retrieved by the ``Config.env(section)`` function, where
   ``section`` is the name of the variable to be fetched.
-
-.. _user-config-fields:
-
------
-User editable Configuration Fields
------
-
-.. code-block:: javascript
-
-    {
-      // Project section
-      "project": {
-        // Number of projects to be displayed in the "recent projects"
-        // menu (Project -> recent projects)
-        "recent_project_history": <number>
-      },
-      // Runtime section
-      "runtime": {
-        // Recently opened projects
-        "recent_projects": [
-        "/path/to/project.json"
-        ]
-      },
-      // Export section
-      "export": {
-        // Compilers for windows cross compilation
-        "win_compilers": {
-          "g++": "/path/to/x86_64-w64-mingw32-g++.exe"
-        },
-        // Native Client (NaCl) specific configuration
-        "nacl": {
-          // Absolute path to the pepper API folder
-          "pepper_folder": "/path/to/nacl_sdk/pepper_41",
-          // Relative path, from the pepper folder, to the NaCl C++ compiler
-          "compiler": "relative/path/to/toolchain/linux_pnacl/bin/pnacl-clang++"
-        },
-        // Path to third_party folder, where the engine keeps dependencies
-        "third_party_folder": "/path/to/LauEngine/third_party"
-      },
-      // Server section
-      "server": {
-        // Port where the server will run the HTTP server
-        "http_port": "9002",
-        // Port where the server will run the websocket server
-        "ws_port": "9001"
-      }
-    }
 
 
 .. _runtime-config-fields:
