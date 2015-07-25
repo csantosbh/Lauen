@@ -43,12 +43,47 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
       };
 
       $event.listen('AssetWatch', function(data) {
-        console.log(data);
         $timeout(function() {
+          var projFiles = scope.projectPanel.projectFiles;
+          var currentInstanceIdx = -1;
           if(data.event == 'delete') {
-            // TODO implement
+            // Find asset index
+            for(var i = 0; i < projFiles.length; ++i) {
+              if(projFiles[i].flyweight.path == data.path) {
+                currentInstanceIdx = i;
+                break;
+              }
+            }
+
+            if(currentInstanceIdx != -1) {
+              $gom.removeScriptFromGameObjects(projFiles[currentInstanceIdx].flyweight);
+              projFiles.splice(currentInstanceIdx, 1);
+            } else {
+              // TODO assert that this will never happen!
+              console.error('Invalid deleted asset!');
+            }
           } else if(data.event == 'update') {
-            // TODO implement
+            // Find asset index
+            for(var i = 0; i < projFiles.length; ++i) {
+              if(projFiles[i].flyweight.path == data.asset.path) {
+                currentInstanceIdx = i;
+                break;
+              }
+            }
+
+            data.asset.type = 'script';
+            var assetFlyweight = {
+              menu_label: LAU.IO.getFileNameFromPath(data.asset.path),
+              flyweight: data.asset
+            };
+            if(currentInstanceIdx == -1) {
+              // New file created
+              projFiles.push(assetFlyweight);
+            } else {
+              // File updated
+              projFiles[currentInstanceIdx] = assetFlyweight;
+              $gom.updateScriptsFromFlyweight(assetFlyweight.flyweight);
+            }
           }
         });
       });

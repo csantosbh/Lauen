@@ -21,7 +21,9 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     removeGameObjectByInstanceId: removeGameObjectByInstanceId,
     addComponentToSelectedGameObject: addComponentToSelectedGameObject,
     getGameObjectByInstanceId: getGameObjectByInstanceId,
-    serializeGameObjects: serializeGameObjects
+    serializeGameObjects: serializeGameObjects,
+    removeScriptFromGameObjects: removeScriptFromGameObjects,
+    updateScriptsFromFlyweight: updateScriptsFromFlyweight,
   };
 
   var _editorGameObjects; // Backup for the real gameobjects from the edit mode
@@ -88,6 +90,36 @@ angular.module('lauEditor').service('gameObjectManager', function () {
       });
     }
     return exportedObjs;
+  }
+
+  function removeScriptFromGameObjects(scriptFlyweight) {
+    for(var g = 0; g < gameObjects.length; ++g) {
+      var gameObj = gameObjects[g];
+      // TODO implement component removal inside the GameObject class
+      for(var c = gameObj.components.length-1; c >= 0; --c) {
+        var comp = gameObj.components[c];
+        if(comp.type=='script' && comp.flyweight.path == scriptFlyweight.path) {
+          gameObj.components.splice(c, 1);
+        }
+      }
+    }
+  }
+
+  function updateScriptsFromFlyweight(scriptFlyweight) {
+    for(var g = 0; g < gameObjects.length; ++g) {
+      var gameObj = gameObjects[g];
+      for(var c = gameObj.components.length-1; c >= 0; --c) {
+        var comp = gameObj.components[c];
+        if(comp.type=='script' && comp.flyweight.path == scriptFlyweight.path) {
+          // Backup original data
+          var componentBackup = comp.export();
+          // Update flyweight
+          gameObj.components[c] = LAU.Components.createComponentFromFlyWeight(scriptFlyweight);
+          // Restore data
+          gameObj.components[c].setValues(componentBackup);
+        }
+      }
+    }
   }
 
   $event.listen('togglePreviewMode', function(isPreviewing) {

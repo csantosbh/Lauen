@@ -203,6 +203,7 @@ class _Project:
 
                 pass
 
+                # TODO if this is a user component class, then call a FactoryUpdater so it will generate the cpp file for this component (have one cpp per component, to speed up compilation)
             # Check if the asset is up to date, so we dont need to process it
             if self.assets[assetPath]['mtime'] >= os.path.getmtime(assetPath):
                 fileSymbols = self.loadAssetInfoCache(assetPath)

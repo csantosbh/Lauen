@@ -61,7 +61,7 @@ LAU.Components = (function() {
       // Initialize script fields
       var givenFields = flyweight.fields;
       for(var f in givenFields) {
-        if(givenFields.hasOwnProperty(f)) {
+        if(givenFields.hasOwnProperty(f) && this.flyweight.fields.hasOwnProperty(f)) {
           this.fields[f] = LAU.Utils.clone(givenFields[f]);
         }
       }

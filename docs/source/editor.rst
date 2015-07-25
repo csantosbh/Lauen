@@ -108,23 +108,7 @@ fields:
                                // a game object is permanently removed from scope.
     }
 
-The Game Object Manager service has provides the following interface:
-
-.. code-block:: javascript
-
-    {
-      getGameObjects: function(),
-      selectGameObject: function(index),
-      selectedGameObject: function(),
-      pushGameObject: function(go),
-      removeGameObjectByIndex: function(id),
-      removeGameObjectByInstanceId: function(id),
-      addComponentToSelectedGameObject: function(component),
-      getGameObjectByInstanceId: function(go),
-      serializeGameObjects: function()
-    }
-
-The available functions are as follows:
+The Game Object Manager service has provides the following functions:
 
 .. function:: getGameObjects() -> array
 
@@ -164,6 +148,22 @@ The available functions are as follows:
    call its destroy() method and remove it from the gameObjects array.
 
    :param id: The game object instance id.
+
+.. function:: removeScriptFromGameObjects(scriptFlyweight)
+
+   Remove script component from all game objects in the current scene. Internally, component comparison is made by checking if their paths are equal. TODO implement this for all scenes! VERY IMPORTANT!
+
+   :param scriptFlyweight: The flyweight of the component being removed from all game objects.
+
+
+.. function:: updateScriptsFromFlyweight(scriptFlyweight)
+
+   Iterates over all game objects in the current scene, updating their
+   instances of the script component specified by ``scripyFlyweight``, when
+   they possess it. Updating means that fields that are no longer present are
+   removed from the game object's component, and new fields are added.
+
+   :param scriptFlyweight: The flyweight of the component being updated. TODO implement this for all scenes! VERY IMPORTANT!
 
 .. function:: addComponentToSelectedGameObject(component)
 
