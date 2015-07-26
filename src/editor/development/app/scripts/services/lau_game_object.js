@@ -49,7 +49,9 @@ angular.module('lauEditor')
     // TODO having to pass the scope around sucks. Maybe this can be solved by
     // making everything as services.
     destroy: function() {
-      $editCanvas.forgetGameObject(this);
+      for(var i = 0; i < this.components.length; ++i) {
+        this.components[i].destroy();
+      }
     }
   };
 

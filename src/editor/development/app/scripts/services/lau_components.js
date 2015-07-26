@@ -25,6 +25,8 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
       ////
       // Bind to edit canvas
       var boundingBox = $editCanvas.getBoundingBox();
+      // TODO use Object.setProperty and add this as a private property
+      this.boundingBox = boundingBox;
       $editCanvas.scene.add(boundingBox);
       function updatePosition(newValue) {
         if(newValue != null)
@@ -89,6 +91,9 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
       this.scale = LAU.Utils.clone(flyweight.fields.scale);
     },
     destroy: function() {
+      if($editCanvas.isEditMode()) {
+        $editCanvas.scene.remove(this.boundingBox);
+      }
     }
   };
 
@@ -124,6 +129,8 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
           this.fields[f] = LAU.Utils.clone(givenFields[f]);
         }
       }
+    },
+    destroy: function() {
     }
   };
 
