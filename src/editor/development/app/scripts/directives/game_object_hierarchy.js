@@ -7,14 +7,14 @@
  * # gameObjectHierarchy
  */
 angular.module('lauEditor')
-  .directive('gameObjectHierarchy', ['gameObjectManager', function ($gom) {
+  .directive('gameObjectHierarchy', ['gameObjectManager', 'lauGameObject', function ($gom, $lauGameObj) {
     return {
       templateUrl: 'views/directives/game_object_hierarchy.html',
       restrict: 'E',
       link: function postLink(scope, element, attrs) {
         scope.gameObjectHierarchy = {
           createGameObject: function() {
-            $gom.pushGameObject(new LAU.GameObject(scope));
+            $gom.pushGameObject(new $lauGameObj.GameObject());
           },
           gameObjects: $gom.getGameObjects,
           selectGameObject: $gom.selectGameObject,

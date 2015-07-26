@@ -6,30 +6,15 @@
  * @description
  * # gameObjectEditor
  */
-angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', function ($gom) {
+angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', function ($gom, $cm, $lauComps) {
   function setupComponentMenu($scope) {
-    var componentTypes = {
-      'transform': {menu_label:'Transform', flyweight: null },
-    };
-
-    $rpc.call('getDefaultComponents', null, function(dcs) {
-      for(var i in dcs) {
-        if(dcs.hasOwnProperty(i)) {
-          componentTypes[i].flyweight = dcs[i];
-        }
-      }
-    });
-
     $scope.gameObjectEditor = {
       /*
        * Menu indices:
        * 0 transform component
        * 1 Scripts category
        */
-      componentMenu: [
-        componentTypes.transform,
-        {menu_label: 'Scripts', children: []}
-      ],
+      componentMenu: $cm.getComponentMenu(),
       gameObjects: $gom.getGameObjects,
       selectedGameObject: $gom.selectedGameObject,
       _menuPickup: function(item) {
@@ -43,14 +28,11 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
       addComponent: function(eventData) {
         if($gom.selectedGameObject() < 0) return;
 
-        var componentData = LAU.Components.createComponentFromFlyWeight(eventData.flyweight);
+        var currentGameObj = $gom.getGameObjects()[$gom.selectedGameObject()];
+        var componentData = $lauComps.createComponentFromFlyWeight(currentGameObj, eventData.flyweight);
         $gom.addComponentToSelectedGameObject(componentData);
       }
     };
-
-    $event.listen('initialAssetList', function(fileList) {
-      $scope.gameObjectEditor.componentMenu[1].children = fileList;
-    });
   }
 
   return {

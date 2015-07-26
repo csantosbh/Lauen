@@ -7,7 +7,7 @@
  * # gameObjectManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('gameObjectManager', function () {
+angular.module('lauEditor').service('gameObjectManager', ['lauComponents', function ($lauComps) {
   // AngularJS will instantiate a singleton by calling "new" on this function
 
   var currentGameObjectId = -1;
@@ -39,6 +39,9 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     return currentGameObjectId;
   }
   function pushGameObject(go) {
+    var goEditId = generateEditId();
+    // TODO add the editId to the GameObject constructor signature, and expose generateEditId.
+    go.editId = goEditId;
     gameObjects.push(go);
 
     // TODO remove line below when the hierarchy panel is correctly created (with blur events to un-select game objects)
@@ -114,12 +117,23 @@ angular.module('lauEditor').service('gameObjectManager', function () {
           // Backup original data
           var componentBackup = comp.export();
           // Update flyweight
-          gameObj.components[c] = LAU.Components.createComponentFromFlyWeight(scriptFlyweight);
+          gameObj.components[c] = $lauComps.createComponentFromFlyWeight(gameObj, scriptFlyweight);
           // Restore data
           gameObj.components[c].setValues(componentBackup);
         }
       }
     }
+  }
+
+  ////
+  // Internal functions
+  var _editIds = new Set();
+  function generateEditId() {
+    var rnd = Math.floor(Math.random()*100000000);
+    while(_editIds.has(rnd))
+      rnd = Math.floor(Math.random()*100000000);
+    _editIds.add(rnd);
+    return rnd;
   }
 
   $event.listen('togglePreviewMode', function(isPreviewing) {
@@ -132,4 +146,4 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   });
 
   return gameObjectManager;
-});
+}]);

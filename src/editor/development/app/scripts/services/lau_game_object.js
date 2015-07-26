@@ -1,14 +1,21 @@
 'use strict';
 
-LAU.GameObject = (function() {
-  function GameObject(scope, name, components, instanceId) {
+/**
+ * @ngdoc service
+ * @name lauEditor.lauGameObject
+ * @description
+ * # lauGameObject
+ * Service in the lauEditor.
+ */
+angular.module('lauEditor')
+.service('lauGameObject', ['editCanvasManager', function ($editCanvas) {
+  // AngularJS will instantiate a singleton by calling "new" on this function
+  function GameObject(name, instanceId) {
     this.name = name ? name : 'unnamed';
-    this.components = components ? components : [];
+    this.components = [];
 
     if(instanceId != undefined)
       this.instanceId = instanceId;
-
-    scope.EditCanvas.trackGameObject(this);
   }
 
   GameObject.prototype = {
@@ -41,10 +48,12 @@ LAU.GameObject = (function() {
     },
     // TODO having to pass the scope around sucks. Maybe this can be solved by
     // making everything as services.
-    destroy: function(scope) {
-      scope.EditCanvas.forgetGameObject(this);
+    destroy: function() {
+      $editCanvas.forgetGameObject(this);
     }
   };
 
-  return GameObject;
-})();
+  return {
+    GameObject: GameObject
+  };
+}]);

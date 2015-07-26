@@ -51,11 +51,13 @@ following files:
   ``scripts/directives/menu_bar.js`` (logic).
 * **Hierarchy** ``views/directives/game_object_hierarchy.html`` (view) and
   ``scripts/directives/game_object_hierarchy.js`` (logic).
-* **Canvas** ``scripts/directives/edit_canvas.js`` (edit logic) and
-  ``scripts/directives/preview_canvas.js`` (preview logic).
+* **Canvas** ``scripts/directives/edit_canvas.js`` (canvas initialization),
+  ``scripts/services/edit_canvas_manager.js`` (exposes the canvas internal to
+  other directives and services) and ``scripts/directives/preview_canvas.js``
+  (preview logic).
 * **Game Object Editor** ``views/directives/game_object_editor.html``
   (container view), ``scripts/directives/game_object_editor.js`` (GameObject
-  Panel management) and ``scripts/lau/component_prototypes.js`` (component
+  Panel management) and ``scripts/services/lau_components.js`` (component
   instantiation and persistency logic).
 
   * **Component Editor** Each component type (like Transform and Script) is
@@ -69,7 +71,8 @@ following files:
     determined and loaded from
     ``views/directives/component_editors/script_fields``.
 * **Project Panel** ``views/directives/project_panel.html`` (view) and
-  ``scripts/directives/project_panel.js`` (logic).
+  ``scripts/directives/project_panel.js`` (logic). All components shown there
+  are stored and managed by ``scripts/services/component_manager.js``.
 
 ==================
 Game Object Manager
@@ -82,8 +85,8 @@ currently selected game object (the one highlighted in the hierarchy). If no
 game object is selected, then this variable is set to -1.
 
 Each game object is an instance of a prototype defined in
-``scripts/lau/game_object.js``. It has an array of components, whose prototypes
-are defined in ``scripts/lau/component_prototypes.js``. It has the following
+``scripts/services/lau_game_object.js``. It has an array of components, whose prototypes
+are defined in ``scripts/services/lau_components.js``. It has the following
 fields:
 
 
@@ -252,13 +255,6 @@ Available events
                            referring to the position of the new
                            gameobject in the $scope.gameObjects
                            array.
- initialAssetList          Raised when the user asset list is
-                           received for the first time.
-                           **Parameter:** Array of asset objects with
-                           format {flyweight: AssetFlyweight, label:
-                           "file_name", type: "file_type"}. For more
-                           information on asset types and flyweights,
-                           refer to :ref:`Asset Types <asset-types>`.
  togglePreviewMode         Fired by the Preview Canvas to indicate
                            that the preview mode has either started
                            or stopped.
@@ -352,7 +348,7 @@ all of the following items are required:
   you must implement the code that will export it to a serializable
   format, and the code that will receive data in that format and transform it
   back into something that the editor can use. This is done in the file
-  ``lau/component_prototypes.js``, and is explained :ref:`down below
+  ``services/lau_components.js``, and is explained :ref:`down below
   <persistent-components>`.
 * **Make the component visualizable** If the component should be displayed in
   the edit canvas (for instance, the preview is highly dependent on the
@@ -365,9 +361,10 @@ all of the following items are required:
 ----
 Adding new components to the Component Menu
 ----
-The Component Menu displays all objects listed within
-``$scope.gameObjectEditor.componentMenu``, defined in
-``scripts/directives/game_object_editor.js``.
+The Component Menu, whose callbacks are managed in
+``scripts/directives/game_object_editor.js``, displays all objects listed in
+the array ``componentMenu``, defined in
+``scripts/services/component_manager.js``.
 
 This object is an array of dictionaries. Within this array, a component type is
 a dictionary in the format:
@@ -389,14 +386,6 @@ and a category has the format:
    }
 
 Notice that a category may contain both components and subcategories.
-
-.. warning::
-
-   Avoid adding components to random positions of the Component Menu, always
-   prefer to append them to the end of their sections. There is some code that
-   is sensitive to the order in which the elements were inserted in this array
-   (for instance, the Scripts section is assumed to be on index 1, so new
-   scripts detected by the backend are appended to this position).
 
 
 The **menu_label** field in the component object is the name that will be
@@ -471,7 +460,7 @@ the editor and its own instances, you need to define which fields need to be
 saved, and how these fields can be converted into instance-specific usable
 information.
 
-This is performed in ``scripts/lau/component_prototypes.js`` file. The following
+This is performed in ``scripts/services/lau_components.js`` file. The following
 changes must be implemented:
 
 * Adapt the function ``createComponentFromFlyWeight``. This function creates
@@ -568,6 +557,56 @@ file ``server/components/DefaultComponentManager.py``, in the function
 ``DefaultFieldValue(typename)``. This function receives the unique string
 identifier of that field, and returns the default value associated with it.
 
+
+=======
+Canvas Manager
+=======
+
+The canvas manager is a service that provides access to the internals of the
+edit canvas (WebGL). This is useful when developing standard components that
+have a visual representation that must be shown in the edit canvas.
+
+The exposed fields are the following:
+
+
+.. code-block:: javascript
+
+   isEditMode: function(), // Return true if the frontend is in editmode,
+                           // or false if it is in preview mode.
+   scene: THREE.Scene, // The ThreeJS scene object singleton.
+   getBoundingBox: function(), // Returns a new THREE.Mesh object containing a
+                               // wireframe rendered box.
+   disableEditMode: function(), // Disables edit mode, entering in preview mode
+   enableEditMode: function() // Enables edit mode, exiting preview mode
+
+
+=======
+Component Manager
+=======
+
+The component manager holds the list of all user defined assets, such as
+scripts and shader programs. It is implemented as a service of name
+``componentManager``, and provides the following functions:
+
+.. function:: pushComponent(comp)
+
+   Adds the asset ``comp`` to the list of all assets.
+
+.. function:: getComponent() -> list
+
+   Returns a list of all assets from the project. Each element from the list
+   has the format ``{menu_label: "Menu Label", flyweight: {...}}``
+
+.. function:: getComponentMenu() -> list
+
+   Returns the componentMenu array.
+
+.. function:: getFlyweightById(id)
+
+   Given the unique numeric id that identifies every component, returns the
+   flyweight of that component, or ``null`` if no component matching that id
+   was found.
+
 .. _asset-types:
 
 ======
@@ -576,7 +615,10 @@ Component Flyweights
 
 The flyweights of standard components are defined in the
 :ref:`DefaultComponentManager.py server file <define-unique-component-id>`.
-Non-standard components have different flyweights, as specified below.
+Non-standard components have different flyweights, as specified further below.
+
+The list of all flyweights can be queried with the function ``getComponents()``
+from the ``componentManager`` service.
 
 ------
 Script
@@ -584,8 +626,8 @@ Script
 The script flyweights contains both their unique numeric ID and implementation
 specific data parsed from their C++ files. They are created by the server in
 the file ``server/io/IOEventHandler.py``, and are loaded in the editor by
-``scripts/directives/project_panel.js``, being made public to other modules via
-the ``initialAssetList`` event.
+``scripts/directives/project_panel.js`` and inserted in the components
+collection managed by ``scripts/services/component_manager.js``.
 
 .. code-block:: javascript
 

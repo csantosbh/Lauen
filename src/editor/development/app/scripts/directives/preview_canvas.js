@@ -7,7 +7,7 @@
  * # previewCanvas
  */
 angular.module('lauEditor')
-.directive('previewCanvas', ['$timeout', 'gameObjectManager', function ($timeout, $gom) {
+.directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'lauComponents', 'editCanvasManager', function ($timeout, $gom, $lauGameObj, $lauComps, $editCanvas) {
   return {
     template: '<embed class="inner-canvas" src="lau_canvas.nmf" type="application/x-pnacl" />',
     restrict: 'E',
@@ -25,7 +25,8 @@ angular.module('lauEditor')
           // Add new game objects
           if(msg.newGameObjects.length > 0) {
             for(var i = 0; i < msg.newGameObjects.length; ++i) {
-              var newGameObject = new LAU.GameObject(scope, null, null, msg.newGameObjects[i].instanceId);
+              // TODO retrieve game object name
+              var newGameObject = new $lauGameObj.GameObject(null, msg.newGameObjects[i].instanceId);
               $gom.pushGameObject(newGameObject);
             }
           }
@@ -33,9 +34,9 @@ angular.module('lauEditor')
           if(msg.newComponents.length > 0) {
             for(var i = 0; i < msg.newComponents.length; ++i) {
               var gameObj = $gom.getGameObjectByInstanceId(msg.newComponents[i].instanceId);
-              var componentData = LAU.Components.createComponentFromId(
+              var componentData = $lauComps.createComponentFromId(
+                gameObj,
                 msg.newComponents[i].component.componentId,
-                scope,
                 msg.newComponents[i].component.instanceId);
                 // TODO create an addComponent function to the gameObject prototype
               gameObj.components.push(componentData);
@@ -54,10 +55,6 @@ angular.module('lauEditor')
               var state = msg.currentStates[i];
               var gameObj = $gom.getGameObjectByInstanceId(state.instanceId);
               // Update its components
-              /*
-              console.log('up state');
-              console.log(state);
-             */
               gameObj.updateStates(state);
             }
           }
@@ -65,9 +62,11 @@ angular.module('lauEditor')
 
         // Check if the edit mode is still enabled,
         // to avoid race conditions.
-        if(!scope.canvas.editMode) {
-          $timeout(processMessage);
-        }
+        $timeout(function() {
+          if(!$editCanvas.isEditMode()) {
+            processMessage();
+          }
+        });
       }
 
       element.find('embed')[0].addEventListener('message', handleNaClMessage, true);
@@ -76,13 +75,13 @@ angular.module('lauEditor')
       scope.previewCanvas = {
         toggleEditMode: function() {
           if(!_editRequested) {
-            if(scope.canvas.editMode == true) {
+            if($editCanvas.isEditMode() == true) {
               _editRequested = true;
               $rpc.call('previewGame', null, function(status) {
                 $timeout(function() {
                   $event.broadcast('togglePreviewMode', true);
                   console.log('build status: ' + status);
-                  scope.canvas.editMode = false;
+                  $editCanvas.disableEditMode();
                   _editRequested = false;
                 });
               });
@@ -91,7 +90,7 @@ angular.module('lauEditor')
               $timeout(function() {
                 $event.broadcast('togglePreviewMode', false);
                 _editRequested = false;
-                scope.canvas.editMode = true;
+                $editCanvas.enableEditMode();
               });
             }
           }

@@ -7,19 +7,18 @@ var $canvas;
  * @description
  * # editCanvas
  */
-angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($timeout) {
-  var scene, camera, renderer, planeMesh = null;
-  var geometry, material;
+angular.module('lauEditor').directive('editCanvas', ['$timeout', 'editCanvasManager', function ($timeout, $editCanvas) {
+  var camera, renderer, planeMesh = null;
 
   function animate() {
-    renderer.render(scene, camera);
+    renderer.render($editCanvas.scene, camera);
     requestAnimationFrame(animate);
   }
 
   function initHorizontalGrid() {
       planeMesh = new THREE.GridHelper(1000.0, 100);
       planeMesh.setColors(0x4a4a4a, 0x4a4a4a);
-      scene.add( planeMesh );
+      $editCanvas.scene.add( planeMesh );
   }
   function initCamera() {
     // TODO: Handle scroll (maybe change pivot and sensitivities)
@@ -93,8 +92,6 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
   });
 
   function initCanvas(containerElement) {
-      scene = new THREE.Scene();
-
       var width = containerElement.width(), height = containerElement.height();
       camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
       camera.position.z = 1000;
@@ -115,90 +112,10 @@ angular.module('lauEditor').directive('editCanvas', ['$timeout', function ($time
     restrict: 'E',
     link: function postLink(scope, element) {
       scope.canvas = {
-        editMode: true,
+        editMode: $editCanvas.isEditMode
       };
 
       initCanvas(element);
-
-      geometry = new THREE.BoxGeometry( 200, 200, 200 );
-      material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
-
-      var trackedGameObjects = [];
-
-      function trackPositionalComponent(gameObjectData) {
-        var gameObj = gameObjectData.obj;
-
-        // TODO maybe have a namespace that converts from a friendly string name to component id?
-        var transformComponent = gameObj.getComponentsById(0);
-        if(transformComponent.length == 1) {
-          transformComponent = transformComponent[0];
-          gameObjectData.mesh = new THREE.Mesh( geometry, material );
-
-          // Initialize positional component
-          gameObjectData.mesh.position.fromArray(transformComponent.position);
-          gameObjectData.mesh.rotation.fromArray(transformComponent.rotation);
-          gameObjectData.mesh.scale.fromArray(transformComponent.scale);
-
-          scene.add( gameObjectData.mesh );
-
-          // Watch for transform updates
-          // TODO use Object.observe instead of scope.$watch! VERY IMPORTANT!
-          scope.$watch(function() {
-            return transformComponent;
-          }, function(after, before) {
-            gameObjectData.mesh.position.fromArray(transformComponent.position);
-            gameObjectData.mesh.rotation.fromArray(transformComponent.rotation);
-            gameObjectData.mesh.scale.fromArray(transformComponent.scale);
-          }, true);
-        }
-      }
-
-      function trackGameObject(gameObj) {
-        if(!scope.canvas.editMode) // Ignore gameobjects created
-          return;                  // during preview mode
-
-        var gameObjectData = {
-          mesh: null,
-          obj: gameObj
-        };
-
-        trackPositionalComponent(gameObjectData);
-        // TODO track mesh/color/material/etc components
-
-        // @@ Watch for changes in the component list
-        // TODO use Object.watch in watchCollection as well?
-        scope.$watchCollection(function() {
-          return gameObj.components;
-        }, function() {
-          // TODO handle case when the positional component was removed
-          if(gameObjectData.mesh == null) {
-            // Positional component may have been added
-            trackPositionalComponent(gameObjectData);
-          }
-          // TODO watch for mesh/color/material/etc updates
-        });
-
-        trackedGameObjects.push(gameObjectData);
-      }
-
-      function forgetGameObject(gameObj) {
-        if(!scope.canvas.editMode) // Ignore gameobjects created
-          return;                  // during preview mode
-
-        // Find removed game object
-        for(var i = 0; i < trackedGameObjects.length; ++i) {
-          if(trackedGameObjects[i].obj == gameObj) {
-            scene.remove(trackedGameObjects[i].mesh);
-            trackedGameObjects.splice(i, 1);
-            return;
-          }
-        }
-      }
-
-      scope.EditCanvas = {
-        trackGameObject: trackGameObject,
-        forgetGameObject: forgetGameObject
-      };
 
       animate();
     }
