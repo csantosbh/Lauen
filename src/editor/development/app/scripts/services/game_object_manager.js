@@ -39,9 +39,6 @@ angular.module('lauEditor').service('gameObjectManager', ['lauComponents', funct
     return currentGameObjectId;
   }
   function pushGameObject(go) {
-    var goEditId = generateEditId();
-    // TODO add the editId to the GameObject constructor signature, and expose generateEditId.
-    go.editId = goEditId;
     gameObjects.push(go);
 
     // TODO remove line below when the hierarchy panel is correctly created (with blur events to un-select game objects)
@@ -75,7 +72,7 @@ angular.module('lauEditor').service('gameObjectManager', ['lauComponents', funct
       if(gameObjects[i].instanceId == id)
         return gameObjects[i];
     }
-    // TODO assert that this line will never be achieved
+    console.error("No game object of instance id ["+id+"] was found.");
     return null;
   }
 

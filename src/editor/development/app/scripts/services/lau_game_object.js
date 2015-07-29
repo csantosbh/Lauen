@@ -36,7 +36,7 @@ angular.module('lauEditor')
           return comp;
       }
 
-      // TODO assert that this line will never be achieved
+      console.error("No component with instance id "+id+" found");
       return null;
     },
     updateStates: function(currentStates) {
@@ -46,8 +46,6 @@ angular.module('lauEditor')
         dstComponent.setValues(srcComponent);
       }
     },
-    // TODO having to pass the scope around sucks. Maybe this can be solved by
-    // making everything as services.
     destroy: function() {
       for(var i = 0; i < this.components.length; ++i) {
         this.components[i].destroy();

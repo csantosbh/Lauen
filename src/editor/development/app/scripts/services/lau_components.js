@@ -24,13 +24,13 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
     if($editCanvas.isEditMode()) {
       ////
       // Bind to edit canvas
-      var boundingBox = $editCanvas.getBoundingBox();
-      // TODO use Object.setProperty and add this as a private property
-      this.boundingBox = boundingBox;
-      $editCanvas.scene.add(boundingBox);
+      var $this = this;
+      this._boundingBox = $editCanvas.getBoundingBox();
+      $editCanvas.scene.add(this._boundingBox);
+
       function updatePosition(newValue) {
         if(newValue != null)
-          boundingBox.position.fromArray(newValue);
+          $this._boundingBox.position.fromArray(newValue);
       }
       function positionObserver(changes) {
         var newValue = changes[changes.length-1].object;
@@ -38,7 +38,7 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
       }
       function updateRotation(newValue) {
         if(newValue != null)
-          boundingBox.rotation.fromArray(newValue);
+          $this._boundingBox.rotation.fromArray(newValue);
       }
       function rotationObserver(changes) {
         var newValue = changes[changes.length-1].object;
@@ -46,13 +46,12 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
       }
       function updateScale(newValue) {
         if(newValue != null)
-          boundingBox.scale.fromArray(newValue);
+          $this._boundingBox.scale.fromArray(newValue);
       }
       function scaleObserver(changes) {
         var newValue = changes[changes.length-1].object;
         updateScale(newValue);
       }
-      var $this = this;
       Object.observe(this, function(changes) {
         // TODO investigate if this will leak memory (Im not-explicitly ceasing to observe the older position)
         for(var i = 0; i < changes.length; ++i) {
@@ -92,7 +91,7 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
     },
     destroy: function() {
       if($editCanvas.isEditMode()) {
-        $editCanvas.scene.remove(this.boundingBox);
+        $editCanvas.scene.remove(this._boundingBox);
       }
     }
   };

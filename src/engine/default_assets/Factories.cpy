@@ -2,74 +2,69 @@
 // Automatically generated!
 
 #include <Eigen>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/prettywriter.h>
 
+// TODO make this a regular cpp file
 #include "Factories.hpp"
 
 % for type,default_component in default_components.iteritems():
 #include "${default_component['path']}"
 % endfor
-% for component in components:
-#include "${component['path']}"
-% endfor
 
 
 namespace lau {
+
 ////
 // Factories
 ////
-shared_ptr<Component> Factories::componentFactory(const rapidjson::Value& serializedComponent) {
+std::map<int, std::shared_ptr<Component>(*)(const rapidjson::Value&)> Factories::componentInstanceFactories;
+
+% for type, default_component in default_components.iteritems():
+template<>
+shared_ptr<Component> Factories::componentInternalFactory<${default_component['full_class_name']}>(const rapidjson::Value& fields) {
+	${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(fields);
+
 	shared_ptr<Component> result;
-
-	// TODO: make sure all components have an id member
-	if(serializedComponent.HasMember("id")) {
-		switch(serializedComponent["id"].GetInt()) {
-			// Default components
-			% for type, default_component in default_components.iteritems():
-			case ${default_component['id']}: {
-				const rapidjson::Value& fields = serializedComponent["fields"];
-
-				${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(fields);
 #ifndef PREVIEW_MODE
-				result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
+	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
 #else
-				result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<${default_component['full_class_name']}>(shared_ptr<${default_component['full_class_name']}>(ptr))));
+	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<${default_component['full_class_name']}>(shared_ptr<${default_component['full_class_name']}>(ptr))));
 #endif
-				break;
-			}
-			% endfor
-
-			// User scripts
-			% for component in components:
-			case ${component['id']}: {
-				const rapidjson::Value& fields = serializedComponent["fields"];
-
-				${component['namespace']}::${component['class']}* ptr = new ${component['namespace']}::${component['class']}();
-
-				% for f in component['fields']:
-					% if component['types'][f] == 'float' or component['types'][f] == 'double':
-				ptr->${f} = fields["${f}"].GetDouble();
-					% elif isVecType(component['types'][f]):
-				{
-				const auto& vec = fields["${f}"];
-				for(int i = 0; i < ${vecIterations[component['types'][f]]}; ++i) {
-					ptr->${f}[i] = vec[i].GetDouble();
-				}
-				}
-					% endif
-				% endfor
-
-#ifndef PREVIEW_MODE
-				result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#else
-				result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<${component['namespace']}::${component['class']}>(shared_ptr<${component['namespace']}::${component['class']}>(ptr))));
-#endif
-				break;
-			}
-			% endfor
-		}
-	}
 
 	return result;
+}
+
+template<>
+struct Initializer<${default_component['full_class_name']}> {
+	Initializer() {
+		Factories::componentInstanceFactories[${default_component['id']}] = &Factories::componentInternalFactory<${default_component['full_class_name']}>;
+	}
+	static Initializer<${default_component['full_class_name']}> instance;
+};
+Initializer<${default_component['full_class_name']}> Initializer<${default_component['full_class_name']}>::instance;
+
+% endfor
+
+shared_ptr<Component> Factories::componentFactory(const rapidjson::Value& serializedComponent) {
+	if(serializedComponent.HasMember("id")) {
+#ifdef DEBUG
+		if(componentInstanceFactories.find(serializedComponent["id"].GetInt()) == componentInstanceFactories.end()) {
+			// TODO change this to lerr once it is working with the editor
+			lout << "Could not find component of id " << serializedComponent["id"].GetInt() << endl;
+		}
+#endif
+		return componentInstanceFactories[serializedComponent["id"].GetInt()](serializedComponent["fields"]);
+	}
+
+	rapidjson::StringBuffer buffer;
+	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+	serializedComponent.Accept(writer);
+	const char* str = buffer.GetString();
+	// TODO URGENT lerr is not being redirected to the editor in x86_linux mode
+	// TODO change this to lerr once it is working with the editor
+	lout << "Serialized component has no <id>: " << buffer.GetString() << endl;
+	return nullptr;
 }
 
 vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Document& objects) {

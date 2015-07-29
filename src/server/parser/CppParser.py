@@ -125,13 +125,17 @@ def parseCPPFile(fileName):
         tu = _translationUnits[fileName]
         tu.reparse([(fileName, open(fileName,'r'))])
     else:
-        tu = _clangIndex.parse(fileName, ['-std=c++11',
-                                    '-Werror',
-                                    '-I',Config.get('export', 'third_party_folder')+'/Eigen',
-                                    '-include-pch',
-                                    Config.get('export', 'third_party_folder')+'/Eigen/Eigen.pch' ],
-                                    options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
-        _translationUnits[fileName] = tu
+        try :
+            tu = _clangIndex.parse(fileName, ['-std=c++11',
+                                        '-Werror',
+                                        '-I',Config.get('export', 'third_party_folder')+'/Eigen',
+                                        '-include-pch',
+                                        Config.get('export', 'third_party_folder')+'/Eigen/Eigen.pch' ],
+                                        options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
+            _translationUnits[fileName] = tu
+        except:
+            return dict(symbols=[], dependencies=[])
+            pass
         pass
 
     # Get list of pragmas
@@ -156,6 +160,7 @@ def parseCPPFile(fileName):
 def GetSimpleClass(fileName):
     from server.project import Project
     from server.components import DefaultComponentManager
+    print 'parsing ' + fileName
     parsedFile = parseCPPFile(fileName)
     fileSymbols = parsedFile['symbols']
     simpleClass = dict()

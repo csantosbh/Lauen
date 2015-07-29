@@ -3,7 +3,7 @@
 // Display errors/warnings/etc
 function setupConsole($scope, $timeout) {
   $event.listen('compilationStatus', function(eMsg) {
-    console.clear();
+    //console.clear();
     console.log(eMsg.message);
   });
   $event.listen('executionMessage', function(eMsg) {

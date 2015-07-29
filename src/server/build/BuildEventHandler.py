@@ -51,13 +51,29 @@ def _renderTemplateSources(componentFiles):
 
     projectFolder = Project.getProjectFolder()
 
-    templateFiles = ['Factories.cpy', 'Peekers.cpy']
+    templatePath = projectFolder+'/default_assets/factories/FactoryTemplates.cpy'
+    for component in componentFiles:
+        renderParameters = dict(component=component,
+                                isVecType=_isVecType,
+                                vecIterations=dict(v4f=4, v3f=3, v2f=2))
+        fname = io.Utils.GetFileNameFromPath(component['path'])
+        outputPath = projectFolder+'/default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(component['id']) + '.cpp'
 
-    renderParameters = dict(components=componentFiles,
-                            default_components=DefaultComponentManager.getDefaultComponents(),
-                            isVecType=_isVecType,
+        # Only update the auto-generated files when their CPY sources have been
+        # updated, or when one of its dependencies have been updated.
+        if Project.isCPYTemplateOutdated(templatePath):
+            print 'Updating template '+outputPath
+            componentFactoryTemplate = open(templatePath).read()
+            with open(outputPath, 'w') as outputHandle:
+                outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
+                pass
+            pass
+        pass
+
+    # TODO deprecate these templates below, use regular cpp files instead
+    renderParameters = dict(default_components=DefaultComponentManager.getDefaultComponents(),
                             vecIterations=dict(v4f=4, v3f=3, v2f=2))
-
+    templateFiles = ['Factories.cpy', 'Peekers.cpy']
     for templateFile in templateFiles:
         templatePath = projectFolder+'/default_assets/'+templateFile
         outputPath = projectFolder+'/default_assets/'+templateFile[:templateFile.rfind('.')] + '.cpp'
@@ -148,6 +164,7 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
             pass
 
         # Link
+        # TODO only link if the final executable is older than any of the object files
         print 'linking...'
         if compilationStatus['returncode'] == 0:
             compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
@@ -155,7 +172,6 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
         print 'linking done.'
 
     except subprocess.CalledProcessError as e:
-        # TODO show compilation error messages on console
         compilationStatus['message'] = e.output
         compilationStatus['returncode'] = e.returncode
         pass
@@ -172,10 +188,6 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
 
 def buildGame(event_msg):
     BuildProject()
-
-def AutoBuild():
-    # TODO: Watch for file modifications and re-generate .o's
-    pass
 
 def _PostExportStep(platform, outputFolder):
     import subprocess

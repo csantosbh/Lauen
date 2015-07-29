@@ -68,8 +68,7 @@ angular.module('lauEditor')
             $gom.removeScriptFromGameObjects(projFiles[currentInstanceIdx].flyweight);
             projFiles.splice(currentInstanceIdx, 1);
           } else {
-            // TODO assert that this will never happen!
-            console.error('Invalid deleted asset!');
+            console.error('Could not delete asset of path "' + data.path+ '" because it doesn\'t exist in the flyweight list');
           }
         } else if(data.event == 'update') {
           // Find asset index

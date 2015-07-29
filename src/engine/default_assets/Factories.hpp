@@ -2,6 +2,7 @@
 
 #include <memory>
 #include <vector>
+#include <map>
 
 #include <rapidjson/document.h>
 
@@ -11,7 +12,6 @@
 
 #include "Peekers.hpp"
 
-// TODO figure out a way to move all the preview related code elsewhere
 namespace lau {
 
 using namespace std;
@@ -22,9 +22,17 @@ using namespace std;
 class Factories {
 public:
 	static shared_ptr<Component> componentFactory(const rapidjson::Value& serializedComponent);
-
 	static vector<shared_ptr<GameObject>> gameObjectFactory(const rapidjson::Document& objects);
+	static std::map<int, std::shared_ptr<Component>(*)(const rapidjson::Value&)> componentInstanceFactories;
 
+	template<class T>
+	static shared_ptr<Component> componentInternalFactory(const rapidjson::Value& serializedComponent);
+};
+
+template<typename T>
+struct Initializer {
+	Initializer();
+	static Initializer<T> instance;
 };
 
 }

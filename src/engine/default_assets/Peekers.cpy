@@ -1,12 +1,11 @@
-#ifdef PREVIEW_MODE
+// TODO make this a regular cpp file
 
 #include "Peekers.hpp"
-% for component in components:
-#include "${component['path']}"
-% endfor
 % for type,default_component in default_components.iteritems():
 #include "${default_component['path']}"
 % endfor
+
+#ifdef PREVIEW_MODE
 
 namespace lau {
 
@@ -16,45 +15,6 @@ int generateInstanceId() {
 	return lastInstanceId++;
 }
 
-/////////
-// Script component peekers
-/////
-% for component in components:
-template<>
-ComponentPeeker<${component['namespace']}::${component['class']}>::ComponentPeeker(shared_ptr<${component['namespace']}::${component['class']}> actualComp) : impl(actualComp)
-{ }
-
-template<>
-int ComponentPeeker<${component['namespace']}::${component['class']}>::getComponentId() {
-	return ${component['id']};
-}
-
-template<>
-const pp::VarDictionary& ComponentPeeker<${component['namespace']}::${component['class']}>::getCurrentState() {
-	// Peek class fields
-	% for f in component['fields']:
-		% if isVecType(component['types'][f]):
-	{
-		pp::VarArray vec;
-		for(int i = 0; i < ${vecIterations[component['types'][f]]}; ++i) {
-			vec.Set(i, impl->${f}[i]);
-		}
-		currentState.Set("${f}", vec);
-	}
-		% else: # all remaining components
-		currentState.Set("${f}", impl->${f});
-		% endif
-	% endfor
-
-	return currentState;
-}
-
-template<>
-void ComponentPeeker<${component['namespace']}::${component['class']}>::update(float dt) {
-	impl->update(dt);
-}
-
-% endfor
 
 /////////
 // Standard component peekers
@@ -72,7 +32,6 @@ void ComponentPeeker<Transform>::update(float dt) {
 
 template<>
 const pp::VarDictionary& ComponentPeeker<Transform>::getCurrentState() {
-	// TODO make standard components have their stuff initialized with python scripting, just like user scripts
 	// TODO figure out how the eulerangles are being returned (in which order?), and make sure it is consistent with the order in the Editor
 	Eigen::Vector3f rotation = impl->rotation.toRotationMatrix().eulerAngles(0, 1, 2);
 

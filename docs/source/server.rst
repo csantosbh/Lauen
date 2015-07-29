@@ -191,6 +191,11 @@ The ``io/Utils.py`` module contains filesystem related utility functions.
 
    Given the path to a file ``path``, returns the name of the file.
 
+    .. code-block:: javascript
+
+        >>> Utils.GetFileNameFromPath('/var/tmp/file.cpp')
+        'file.cpp'
+
    :param path: Complete path to a file.
 
 .. function:: PathHasExtension(path, extensions) -> bool
@@ -465,9 +470,11 @@ The server broadcasts the following events to the editor:
 
 =================  ===================================================
 executionMessage    Contains the output from the executed game when it
-                    is previewed in a separate window. TODO make this the result of a build RPC
-compilationStatus   Contains the result from a build command, including
-                    warnings and errors. TODO make this the result of a build RPC
+                    is previewed in a separate window.
+compilationStatus   Contains the result from a build attempt (both when the
+                    user explicitly requests the game to be built, and when
+                    the server automatically builds object files), including
+                    warnings and errors.
 AssetWatch          Broadcast everytime an asset file is created/updated
                     (``event`` = ``update``) or deleted (``event`` = ``delete``).
                     When ``event`` = ``update``, it has the format

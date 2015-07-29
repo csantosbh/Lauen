@@ -197,7 +197,6 @@ class _Project:
             if Utils.IsImplementationFile(assetPath):
                 buildStatus = BuildEventHandler.BuildPreviewObject(assetPath)
 
-                # TODO return the "success" flag on BuildPreviewObject and re-enable the code below
                 if buildStatus['returncode'] != 0:
                     return None
 
