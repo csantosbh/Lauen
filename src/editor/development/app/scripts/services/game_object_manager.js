@@ -7,7 +7,7 @@
  * # gameObjectManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('gameObjectManager', ['lauComponents', function ($lauComps) {
+angular.module('lauEditor').service('gameObjectManager', function () {
   // AngularJS will instantiate a singleton by calling "new" on this function
 
   var currentGameObjectId = -1;
@@ -23,7 +23,6 @@ angular.module('lauEditor').service('gameObjectManager', ['lauComponents', funct
     getGameObjectByInstanceId: getGameObjectByInstanceId,
     serializeGameObjects: serializeGameObjects,
     removeScriptFromGameObjects: removeScriptFromGameObjects,
-    updateScriptsFromFlyweight: updateScriptsFromFlyweight,
   };
 
   var _editorGameObjects; // Backup for the real gameobjects from the edit mode
@@ -105,23 +104,6 @@ angular.module('lauEditor').service('gameObjectManager', ['lauComponents', funct
     }
   }
 
-  function updateScriptsFromFlyweight(scriptFlyweight) {
-    for(var g = 0; g < gameObjects.length; ++g) {
-      var gameObj = gameObjects[g];
-      for(var c = gameObj.components.length-1; c >= 0; --c) {
-        var comp = gameObj.components[c];
-        if(comp.type=='script' && comp.flyweight.path == scriptFlyweight.path) {
-          // Backup original data
-          var componentBackup = comp.export();
-          // Update flyweight
-          gameObj.components[c] = $lauComps.createComponentFromFlyWeight(gameObj, scriptFlyweight);
-          // Restore data
-          gameObj.components[c].setValues(componentBackup);
-        }
-      }
-    }
-  }
-
   ////
   // Internal functions
   var _editIds = new Set();
@@ -143,4 +125,4 @@ angular.module('lauEditor').service('gameObjectManager', ['lauComponents', funct
   });
 
   return gameObjectManager;
-}]);
+});

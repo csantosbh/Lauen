@@ -224,18 +224,21 @@ class _Project:
 
         return None # Untrackable file format
 
-    def isFileOlderThanDepencency(self, filePath, assetPath):
+    def isFileOlderThanDependency(self, filePath, assetPath):
         # If file doesnt even exist, then it must be touched to begin with
         if not os.path.exists(filePath):
+            print '\tFile '+filePath+' doesn\'t exist.'
             return True
         # If the asset itself is newer than the filePath, return true
         queryFileMTime = os.path.getmtime(filePath)
         if os.path.getmtime(assetPath) > queryFileMTime:
+            print '\tFile '+assetPath+' is older than '+filePath+'.'
             return True
 
         # If any of the asset dependencies are newer than the filePath, return true
         for dependency in self.assets[assetPath]['dependencies']:
             if os.path.getmtime(dependency) > queryFileMTime:
+                print '\tFile '+dependency+' is older than '+filePath
                 return True
             pass
 
@@ -245,16 +248,19 @@ class _Project:
         cppFilePath = cpyFilePath[:cpyFilePath.rfind('.')] + '.cpp'
         # If C++ file doesnt even exist, then it must be touched to begin with
         if not os.path.exists(cppFilePath):
+            print '\tFile '+cppFilePath+' doesn\'t exist.'
             return True
 
         # If the template itself is newer than the C++ file, return true
         cppFileMTime = os.path.getmtime(cppFilePath)
         if os.path.getmtime(cpyFilePath) > cppFileMTime:
+            print '\tFile '+cpyFilePath+' is older than '+cppFilePath
             return True
 
         # If the C++ file is older than any of its dependencies, return true
         for dependency in self.assets[cppFilePath]['dependencies']:
             if os.path.getmtime(dependency) > cppFileMTime:
+                print '\tFile '+dependency+' is older than '+cppFilePath
                 return True
             pass
 
@@ -297,9 +303,9 @@ def processAsset(assetPath, saveProject):
     global _currentProject
     return _currentProject.processAsset(assetPath, saveProject)
 
-def isFileOlderThanDepencency(filePath, assetPath):
+def isFileOlderThanDependency(filePath, assetPath):
     global _currentProject
-    return _currentProject.isFileOlderThanDepencency(filePath, assetPath)
+    return _currentProject.isFileOlderThanDependency(filePath, assetPath)
 
 def isCPYTemplateOutdated(cpyFilePath):
     global _currentProject

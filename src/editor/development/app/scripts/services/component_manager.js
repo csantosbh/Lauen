@@ -8,7 +8,7 @@
  * Service in the lauEditor.
  */
 angular.module('lauEditor')
-  .service('componentManager', ['$timeout', function ($timeout) {
+  .service('componentManager', ['$timeout', 'gameObjectManager', 'lauComponents', function ($timeout, $gom, $lauComps) {
     ////
     // Internal fields
     var components = [];
@@ -49,31 +49,54 @@ angular.module('lauEditor')
       return null;
     }
 
+    function createComponentFromId(gameObject, id, instanceId) {
+      // Search for component flyweight.
+      var flyweight = getFlyweightById(id);
+      return $lauComps.createComponentFromFlyWeight(gameObject, flyweight, instanceId);
+    }
+
+    function updateGameObjectsAfterUpdatedFlyweight(scriptFlyweight) {
+      var gameObjects = $gom.getGameObjects();
+      for(var g = 0; g < gameObjects.length; ++g) {
+        var gameObj = gameObjects[g];
+        for(var c = gameObj.components.length-1; c >= 0; --c) {
+          var comp = gameObj.components[c];
+          if(comp.type=='script' && comp.flyweight.path == scriptFlyweight.path) {
+            // Backup original data
+            var componentBackup = comp.export();
+            // Update flyweight
+            gameObj.components[c] = $lauComps.createComponentFromFlyWeight(gameObj, scriptFlyweight);
+            // Restore data
+            gameObj.components[c].setValues(componentBackup);
+          }
+        }
+      }
+    }
+
     ////
     // Event management
     $event.listen('AssetWatch', function(data) {
       $timeout(function() {
-        var projFiles = projectFiles;
         var currentInstanceIdx = -1;
         if(data.event == 'delete') {
           // Find asset index
-          for(var i = 0; i < projFiles.length; ++i) {
-            if(projFiles[i].flyweight.path == data.path) {
+          for(var i = 0; i < components.length; ++i) {
+            if(components[i].flyweight.path == data.path) {
               currentInstanceIdx = i;
               break;
             }
           }
 
           if(currentInstanceIdx != -1) {
-            $gom.removeScriptFromGameObjects(projFiles[currentInstanceIdx].flyweight);
-            projFiles.splice(currentInstanceIdx, 1);
+            $gom.removeScriptFromGameObjects(components[currentInstanceIdx].flyweight);
+            components.splice(currentInstanceIdx, 1);
           } else {
             console.error('Could not delete asset of path "' + data.path+ '" because it doesn\'t exist in the flyweight list');
           }
         } else if(data.event == 'update') {
           // Find asset index
-          for(var i = 0; i < projFiles.length; ++i) {
-            if(projFiles[i].flyweight.path == data.asset.path) {
+          for(var i = 0; i < components.length; ++i) {
+            if(components[i].flyweight.path == data.asset.path) {
               currentInstanceIdx = i;
               break;
             }
@@ -86,11 +109,11 @@ angular.module('lauEditor')
           };
           if(currentInstanceIdx == -1) {
             // New file created
-            projFiles.push(assetFlyweight);
+            components.push(assetFlyweight);
           } else {
             // File updated
-            projFiles[currentInstanceIdx] = assetFlyweight;
-            $gom.updateScriptsFromFlyweight(assetFlyweight.flyweight);
+            components[currentInstanceIdx] = assetFlyweight;
+            updateGameObjectsAfterUpdatedFlyweight(assetFlyweight.flyweight);
           }
         }
       });
@@ -109,5 +132,6 @@ angular.module('lauEditor')
       getComponents: getComponents,
       getComponentMenu: getComponentMenu,
       getFlyweightById: getFlyweightById,
+      createComponentFromId: createComponentFromId,
     };
   }]);

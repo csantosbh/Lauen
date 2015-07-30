@@ -159,15 +159,6 @@ The Game Object Manager service has provides the following functions:
    :param scriptFlyweight: The flyweight of the component being removed from all game objects.
 
 
-.. function:: updateScriptsFromFlyweight(scriptFlyweight)
-
-   Iterates over all game objects in the current scene, updating their
-   instances of the script component specified by ``scripyFlyweight``, when
-   they possess it. Updating means that fields that are no longer present are
-   removed from the game object's component, and new fields are added.
-
-   :param scriptFlyweight: The flyweight of the component being updated. TODO implement this for all scenes! VERY IMPORTANT!
-
 .. function:: addComponentToSelectedGameObject(component)
 
    Adds the component to the currently selected game object.
@@ -606,6 +597,23 @@ scripts and shader programs. It is implemented as a service of name
    Given the unique numeric id that identifies every component, returns the
    flyweight of that component, or ``null`` if no component matching that id
    was found.
+
+.. function:: createComponentFromId(gameObject, id, instanceId)
+
+   Given the unique numeric id that identifies every component, returns a new
+   component instance for that flyweight.
+
+   :param gameObject: Game object where the component will be inserted.
+   :param id: Unique id identifying the component type.
+   :param instanceId: Unique numeric id that can be used to identify every single component in the scene. Only used by the NaCl previewer, since only it queries components by their ids during every update iteration.
+
+The internal function ``updateGameObjectsAfterUpdatedFlyweight(scriptFlyweight)`` iterates
+over all game objects in the current scene, updating their instances of the
+script component specified by ``scripyFlyweight``, when they possess it.
+Updating means that fields that are no longer present are removed from the game
+object's component, and new fields are added.  Its parameter
+``scriptFlyweight`` is the flyweight of the component being updated. TODO
+implement this for all scenes! VERY IMPORTANT!
 
 .. _asset-types:
 

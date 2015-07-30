@@ -6,7 +6,7 @@
  * @description
  * # projectPanel
  */
-angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauComponents', 'lauGameObject', function ($timeout, $gom, $cm, $lauComps, $lgo) {
+angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauGameObject', function ($timeout, $gom, $cm, $lgo) {
   // TODO this was moved here because the RPCs are not guaranteeded to obey any
   // particular call order. Implement some order-filtering to RPC calls. Maybe a
   // 'requires' parameter that specifies its dependencies.
@@ -17,7 +17,7 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
         var gameObj = new $lgo.GameObject(sceneData[i].name);
         var comps = sceneData[i].components;
         for(var c = 0; c < comps.length; ++c) {
-          var component = $lauComps.createComponentFromId(gameObj, comps[c].id, $scope);
+          var component = $cm.createComponentFromId(gameObj, comps[c].id);
           if(component == null) {
             console.log('[warning] could not create component from id ' + comps[c].id);
             continue;

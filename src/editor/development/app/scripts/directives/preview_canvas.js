@@ -34,8 +34,7 @@ angular.module('lauEditor')
           if(msg.newComponents.length > 0) {
             for(var i = 0; i < msg.newComponents.length; ++i) {
               var gameObj = $gom.getGameObjectByInstanceId(msg.newComponents[i].instanceId);
-              var componentData = $lauComps.createComponentFromId(
-                gameObj,
+              var componentData = $lauComps.createComponentFromId(gameObj,
                 msg.newComponents[i].component.componentId,
                 msg.newComponents[i].component.instanceId);
                 // TODO create an addComponent function to the gameObject prototype

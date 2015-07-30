@@ -7,7 +7,7 @@
  * # lauComponents
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('lauComponents', ['componentManager', 'editCanvasManager', function ($cm, $editCanvas) {
+angular.module('lauEditor').service('lauComponents', ['editCanvasManager', function ($editCanvas) {
   // Return default initial value for each field type
 
   ///
@@ -154,15 +154,8 @@ angular.module('lauEditor').service('lauComponents', ['componentManager', 'editC
     return result;
   }
 
-  function createComponentFromId(gameObject, id, instanceId) {
-    // Search for component flyweight.
-    var flyweight = $cm.getFlyweightById(id);
-    return createComponentFromFlyWeight(gameObject, flyweight, instanceId);
-  }
-
   return {
     TransformComponent: TransformComponent,
     createComponentFromFlyWeight: createComponentFromFlyWeight,
-    createComponentFromId: createComponentFromId
   };
 }]);

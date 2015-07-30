@@ -61,7 +61,7 @@ def _renderTemplateSources(componentFiles):
 
         # Only update the auto-generated files when their CPY sources have been
         # updated, or when one of its dependencies have been updated.
-        if Project.isCPYTemplateOutdated(templatePath):
+        if Project.isFileOlderThanDependency(outputPath, outputPath):
             print 'Updating template '+outputPath
             componentFactoryTemplate = open(templatePath).read()
             with open(outputPath, 'w') as outputHandle:
@@ -113,7 +113,7 @@ def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags):
 
     try:
         # Only build the object file if it is older than any of its dependencies
-        if Project.isFileOlderThanDepencency(outputFilePath, sourceFile):
+        if Project.isFileOlderThanDependency(outputFilePath, sourceFile):
             print 'building '+outputFilePath
             compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
             pass
