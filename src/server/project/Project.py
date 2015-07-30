@@ -214,6 +214,7 @@ class _Project:
                 fileSymbols['path'] = assetPath
                 if 'id' in self.assets[assetPath]:
                     fileSymbols['id'] = self.assets[assetPath]['id']
+                    BuildEventHandler.RenderFactorySources([fileSymbols])
                     pass
 
                 self.updateAsset(assetPath, fileInfo['dependencies'], saveProject=saveProject)

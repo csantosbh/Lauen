@@ -46,11 +46,10 @@ def _getFlags(compilationMode):
 def _isVecType(type):
     return type == 'v4f' or type == 'v3f' or type == 'v2f'
 
-def _renderTemplateSources(componentFiles):
+def RenderFactorySources(componentFiles):
     from mako.template import Template
 
     projectFolder = Project.getProjectFolder()
-
     templatePath = projectFolder+'/default_assets/factories/FactoryTemplates.cpy'
     for component in componentFiles:
         renderParameters = dict(component=component,
@@ -69,6 +68,13 @@ def _renderTemplateSources(componentFiles):
                 pass
             pass
         pass
+    pass
+
+def _renderTemplateSources(componentFiles):
+    from mako.template import Template
+
+    projectFolder = Project.getProjectFolder()
+    RenderFactorySources(componentFiles)
 
     # TODO deprecate these templates below, use regular cpp files instead
     renderParameters = dict(default_components=DefaultComponentManager.getDefaultComponents(),
