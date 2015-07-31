@@ -1,8 +1,37 @@
+/* Non-responsive overrides
+ *
+ * Utilize the following CSS to disable the responsive-ness of the container,
+ * grid system, and navbar.
+ */
+
+/* Disable responsive navbar -- we want it to behave as a menubar */
+.navbar-nav > li {
+  float: left;
+}
+.navbar .navbar-nav .open .dropdown-menu {
+  position: absolute;
+  float: left;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, .15);
+  border-width: 0 1px 1px;
+  border-radius: 0 0 4px 4px;
+  -webkit-box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+          box-shadow: 0 6px 12px rgba(0, 0, 0, .175);
+}
+
+// ...
 ul, ol {
   list-style: none;
 }
 
-.navbar-nav > li > a {padding-top:0px !important; padding-bottom:0px !important;}
+.navbar-nav > li > a {
+  padding-top:0px !important;
+  padding-bottom:0px !important;
+}
+.navbar-nav {
+  margin: 0px !important;
+}
 .navbar {
   min-height:22px !important;
   border: 0px none;
