@@ -60,9 +60,10 @@ int ComponentPeeker<Transform>::getComponentId() {
 // Game object peeker
 /////
 
-GameObjectPeeker::GameObjectPeeker() : gameObjectId(generateInstanceId()) {
+GameObjectPeeker::GameObjectPeeker(const rapidjson::Value& serializedObject) : gameObjectId(generateInstanceId()), gameObjectName(serializedObject["name"].GetString()) {
 	pp::VarDictionary gameObjectInfo;
 	gameObjectInfo.Set("instanceId", gameObjectId);
+	gameObjectInfo.Set("name", gameObjectName);
 	NaCl::getInstance()->createGameObject(gameObjectInfo);
 }
 

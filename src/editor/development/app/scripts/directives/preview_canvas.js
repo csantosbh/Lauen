@@ -7,7 +7,7 @@
  * # previewCanvas
  */
 angular.module('lauEditor')
-.directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'lauComponents', 'editCanvasManager', function ($timeout, $gom, $lauGameObj, $lauComps, $editCanvas) {
+.directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'componentManager', 'editCanvasManager', function ($timeout, $gom, $lauGameObj, $cm, $editCanvas) {
   return {
     template: '<embed class="inner-canvas" src="lau_canvas.nmf" type="application/x-pnacl" />',
     restrict: 'E',
@@ -26,7 +26,7 @@ angular.module('lauEditor')
           if(msg.newGameObjects.length > 0) {
             for(var i = 0; i < msg.newGameObjects.length; ++i) {
               // TODO retrieve game object name
-              var newGameObject = new $lauGameObj.GameObject(null, msg.newGameObjects[i].instanceId);
+              var newGameObject = new $lauGameObj.GameObject(msg.newGameObjects[i].name, msg.newGameObjects[i].instanceId);
               $gom.pushGameObject(newGameObject);
             }
           }
@@ -34,7 +34,7 @@ angular.module('lauEditor')
           if(msg.newComponents.length > 0) {
             for(var i = 0; i < msg.newComponents.length; ++i) {
               var gameObj = $gom.getGameObjectByInstanceId(msg.newComponents[i].instanceId);
-              var componentData = $lauComps.createComponentFromId(gameObj,
+              var componentData = $cm.createComponentFromId(gameObj,
                 msg.newComponents[i].component.componentId,
                 msg.newComponents[i].component.instanceId);
                 // TODO create an addComponent function to the gameObject prototype

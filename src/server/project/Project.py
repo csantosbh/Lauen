@@ -213,7 +213,9 @@ class _Project:
                 fileSymbols = fileInfo['symbols']
                 fileSymbols['path'] = assetPath
                 if 'id' in self.assets[assetPath]:
+                    # This is a user script asset! Set its id.
                     fileSymbols['id'] = self.assets[assetPath]['id']
+                    # Re-generate its FactoryPeeker file.
                     BuildEventHandler.RenderFactorySources([fileSymbols])
                     pass
 

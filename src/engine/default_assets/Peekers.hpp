@@ -2,6 +2,8 @@
 
 #ifdef PREVIEW_MODE
 
+#include <rapidjson/document.h>
+
 #include "Component.hpp"
 #include "window/NaCl.hpp"
 
@@ -40,7 +42,7 @@ private:
 
 class GameObjectPeeker : public GameObject {
 public:
-	GameObjectPeeker();
+	GameObjectPeeker(const rapidjson::Value& serializedObject);
 	~GameObjectPeeker();
 
 	void update(float dt);
@@ -49,6 +51,7 @@ public:
 
 private:
 	int gameObjectId;
+	std::string gameObjectName;
 };
 
 } // namespace lau

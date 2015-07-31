@@ -73,7 +73,7 @@ vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Doc
 #ifndef PREVIEW_MODE
 		shared_ptr<GameObject> obj(new GameObject());
 #else
-		shared_ptr<GameObject> obj(new GameObjectPeeker());
+		shared_ptr<GameObject> obj(new GameObjectPeeker(objects[i]));
 #endif
 		const rapidjson::Value& components = objects[i]["components"];
 
