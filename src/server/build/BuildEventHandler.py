@@ -132,7 +132,7 @@ def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags):
     return dict(output=outputFilePath, message=compilationMessage, returncode=returncode)
 
 def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
-    import subprocess
+    import subprocess, time
     compilationFlags=_getFlags(compilationMode)
 
     projectFolder = Project.getProjectFolder()
@@ -172,10 +172,13 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
         # Link
         # TODO only link if the final executable is older than any of the object files
         print 'linking...'
+        startTime=time.time()
         if compilationStatus['returncode'] == 0:
+            print '...'+cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform]+'...'
             compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+            print 'ok.'
             pass
-        print 'linking done.'
+        print 'linking done ('+str(time.time()-startTime)+'s)'
 
     except subprocess.CalledProcessError as e:
         compilationStatus['message'] = e.output
@@ -201,7 +204,7 @@ def _PostExportStep(platform, outputFolder):
         thirdPartyFolder = Config.get('export', 'third_party_folder')
         io.Utils.CopyFilesOfTypes(thirdPartyFolder+'/cross_compiling/windows/redist', outputFolder, ['.dll'])
         pass
-    elif platform == 'nacl' or platform == 'preview':
+    elif platform == 'preview' or platform == 'nacl':
         naclFolder = Config.get('export', 'nacl')['pepper_folder']
         subprocess.check_output(naclFolder+'/toolchain/linux_pnacl/bin/pnacl-finalize '+outputFolder+'/game -o '+outputFolder+'/lau_canvas.pexe', shell=True)
         pass

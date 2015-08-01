@@ -93,14 +93,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
   function removeScriptFromGameObjects(scriptFlyweight) {
     for(var g = 0; g < gameObjects.length; ++g) {
-      var gameObj = gameObjects[g];
-      // TODO implement component removal inside the GameObject class
-      for(var c = gameObj.components.length-1; c >= 0; --c) {
-        var comp = gameObj.components[c];
-        if(comp.type=='script' && comp.flyweight.path == scriptFlyweight.path) {
-          gameObj.components.splice(c, 1);
-        }
-      }
+      gameObjects[g].removeScriptsByPath(scriptFlyweight.path);
     }
   }
 

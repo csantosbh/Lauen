@@ -94,19 +94,21 @@ fields:
 
     /// Game Object Prototype
     {
-      components: Array[], // Array of components
-      name: "string", // Component name
+      components: Array[], // Array of components.
+      name: "string", // Component name.
       instanceId: <int>, // Only set during preview mode, represents the
                          // id of that game object instance, used for
                          // linking the editor game object with its NaCl
                          // equivalent.
       constructor: function(scope, name='unnamed', components=[], instanceId=undefined),
       getComponentById: function(id), // Returns the first component whose id equals the
-                                      // parameter id
+                                      // parameter id.
       getComponentByInstanceId: function(id), // Returns the first component whose instance
-                                              // id equals id
+                                              // id equals id.
       updateStates: function(currentStates), // Updates all components within the provided
-                                             // state array
+                                             // state array.
+      removeScriptsByPath: function(scriptPath), // Removes all script assets whose paths
+                                                 // equal scriptPath.
       destroy: function(scope) // Game Object destructor. Must be manually called whenever
                                // a game object is permanently removed from scope.
     }

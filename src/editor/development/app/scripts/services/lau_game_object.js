@@ -46,6 +46,14 @@ angular.module('lauEditor')
         dstComponent.setValues(srcComponent);
       }
     },
+    removeScriptsByPath: function(scriptPath) {
+      for(var c = this.components.length-1; c >= 0; --c) {
+        var comp = this.components[c];
+        if(comp.type=='script' && comp.flyweight.path == scriptPath) {
+          this.components.splice(c, 1);
+        }
+      }
+    },
     destroy: function() {
       for(var i = 0; i < this.components.length; ++i) {
         this.components[i].destroy();
