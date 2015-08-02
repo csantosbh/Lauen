@@ -12,6 +12,7 @@ class _AssetFolderWatcher(pyinotify.ProcessEvent):
         pass
 
     def process_IN_DELETE(self, event):
+        Project.removeAsset(event.pathname, saveProject=True)
         if Utils.IsTrackableAsset(event.pathname):
             WSServer.send('AssetWatch', dict(event="delete", path=event.pathname))
         pass

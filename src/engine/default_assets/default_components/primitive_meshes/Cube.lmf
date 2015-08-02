@@ -1,0 +1,11 @@
+{
+    "metadata": {
+        "version": 4,
+        "type": "Geometry",
+        "generator": "GeometryExporter"
+    },
+    "indices": [0,1,2],
+    "vertices": [50,50,50],
+    "normals": [1,0,0],
+    "uvs": [0,1]
+}

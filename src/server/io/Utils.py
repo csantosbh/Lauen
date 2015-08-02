@@ -29,7 +29,7 @@ def IsScriptFile(assetPath):
 
 def IsTrackableAsset(filePath):
     # TODO also check for other supported file type
-    return IsScriptFile(filePath)
+    return IsHeaderFile(filePath)
 
 def ListFilesFromFolder(mypath, extensions = None):
     from server.parser import CppParser
@@ -46,6 +46,17 @@ def ListFilesFromFolder(mypath, extensions = None):
         pass
 
     return filesFound
+
+def FileExists(filename):
+    import os
+    return os.path.exists(filename)
+
+def RemoveFile(filename):
+    import os
+    print 'Removing ' + filename
+    if FileExists(filename):
+        os.remove(filename)
+    pass
 
 def OpenRec(filename, mode):
     import os

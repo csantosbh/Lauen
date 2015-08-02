@@ -69,7 +69,6 @@ angular.module('lauEditor')
       }
 
       element.find('embed')[0].addEventListener('message', handleNaClMessage, true);
-      lau = $gom;
       var _editRequested = false;
       scope.previewCanvas = {
         toggleEditMode: function() {

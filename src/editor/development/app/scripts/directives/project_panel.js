@@ -31,6 +31,11 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
     });
   }
 
+  function getProjectFiles() {
+    var components = $cm.getComponents();
+    return components.script;
+  }
+
   return {
     templateUrl: 'views/directives/project_panel.html',
     restrict: 'E',
@@ -39,7 +44,7 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
         onDrop:function() {
           scope.gameObjectEditor.addComponent(scope.dropBucket);
         },
-        projectFiles: $cm.getComponents(),
+        projectFiles: getProjectFiles,
       };
 
       $rpc.call('getAssetList', null, function(fileList) {

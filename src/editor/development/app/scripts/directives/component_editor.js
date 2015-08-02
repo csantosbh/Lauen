@@ -14,6 +14,8 @@ angular.module('lauEditor')
           return 'views/directives/component_editors/transform_editor.html';
         case 'script':
           return 'views/directives/component_editors/script_editor.html';
+        case 'mesh':
+          return 'views/directives/component_editors/mesh_editor.html';
       }
     }
     return {

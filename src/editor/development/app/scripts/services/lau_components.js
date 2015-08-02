@@ -96,6 +96,63 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     }
   };
 
+  // Mesh component
+  function MeshComponent(gameObject, componentFlyWeight) {
+    this.type = 'mesh';
+    this.mesh = componentFlyWeight.fields.mesh;
+    this.flyweight = componentFlyWeight;
+    this.parent = gameObject;
+
+    if($editCanvas.isEditMode()) {
+      ////
+      // Bind to edit canvas
+      var $this = this;
+      // TODO make sure that this game object has a Transform
+      //this._mesh = $editCanvas.getMesh();
+      //$editCanvas.scene.add(this._mesh);
+
+      function updateMesh(newValue) {
+        if(newValue != null) {
+          // TODO update THREE.js mesh
+          // $this._mesh = ...;
+        }
+      }
+      function meshObserver(changes) {
+        var newValue = changes[changes.length-1].object;
+        updateMesh(newValue);
+      }
+      Object.observe(this, function(changes) {
+        // TODO investigate if this will leak memory (Im not-explicitly ceasing to observe the older position)
+        for(var i = 0; i < changes.length; ++i) {
+          var cng = changes[i];
+          if(cng.name == "mesh" && cng.type=="update") {
+            updateMesh($this.mesh);
+            Object.observe($this.mesh, meshObserver);
+          }
+        }
+      });
+    }
+  }
+  MeshComponent.prototype = {
+    export: function() {
+      return {
+        type: this.flyweight.type,
+        id: this.flyweight.id,
+        fields: {
+          mesh: this.mesh,
+        }
+      };
+    },
+    setValues: function(flyweight) {
+      this.scale = LAU.Utils.clone(flyweight.fields.mesh);
+    },
+    destroy: function() {
+      if($editCanvas.isEditMode()) {
+        //$editCanvas.scene.remove(this._mesh);
+      }
+    }
+  };
+
   // Script Component
   function ScriptComponent(gameObject, componentFlyWeight) {
     this.type = 'script';
@@ -140,6 +197,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     switch(componentFlyWeight.type) {
       case 'transform':
         result = new TransformComponent(gameObject, componentFlyWeight);
+      break;
+      case 'mesh':
+        result = new MeshComponent(gameObject, componentFlyWeight);
       break;
       case 'script':
         result = new ScriptComponent(gameObject, componentFlyWeight);

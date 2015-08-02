@@ -11,41 +11,51 @@ angular.module('lauEditor')
   .service('componentManager', ['$timeout', 'gameObjectManager', 'lauComponents', function ($timeout, $gom, $lauComps) {
     ////
     // Internal fields
-    var components = [];
-    var standardComponents = {
-      'transform': {menu_label:'Transform', flyweight: null },
+    var componentFlyweights = {
+      transform: {menu_label: 'Transform', flyweight: null},
+      mesh: {menu_label: 'Mesh', flyweight: null},
+      script: [],
     };
     var componentMenu = [
-      standardComponents.transform,
-      // TODO when we start having more components, this will no longer work.
-      // I will need a getScriptComponents, and children will have to be
-      // dynamic (maybe a function).
-      {menu_label: 'Scripts', children: getComponents()}
+      componentFlyweights.transform,
+      componentFlyweights.mesh,
+      {menu_label: 'Scripts', children: componentFlyweights.script}
     ];
+    lau = componentMenu;
 
     ////
     // Public functions
-    function pushComponent(componentWrapper) {
-      components.push(componentWrapper);
-    }
-    function getComponents() {
-      return components;
-    }
     function getComponentMenu() {
       return componentMenu;
     }
+    function getComponents() {
+      return componentFlyweights;
+    }
+    function pushComponent(componentWrapper) {
+      if(Array.isArray(componentFlyweights[componentWrapper.flyweight.type]))
+        componentFlyweights[componentWrapper.flyweight.type].push(componentWrapper);
+      else
+        componentFlyweights[componentWrapper.flyweight.type].flyweight = componentWrapper.flyweight;
+    }
+    function getMeshComponents() {
+      return [];
+    }
     function getFlyweightById(id, componentSubMenu) {
-      if(!componentSubMenu) componentSubMenu = componentMenu;
+      var isRootCall = (componentSubMenu==undefined);
+      if(isRootCall) componentSubMenu = componentMenu;
 
       for(var i = 0; i < componentSubMenu.length; ++i) {
         if(componentSubMenu[i].hasOwnProperty('children')) {
           var deepSearchResult = getFlyweightById(id, componentSubMenu[i].children);
           if(deepSearchResult != null)
             return deepSearchResult;
-        } else if(componentSubMenu[i].flyweight.id == id) {
+        } else if(componentSubMenu[i].flyweight != null && componentSubMenu[i].flyweight.id == id) {
           return componentSubMenu[i].flyweight;
         }
       }
+
+      if(isRootCall)
+        console.error('Cannot find component of id [' + id + ']');
       return null;
     }
 
@@ -75,45 +85,49 @@ angular.module('lauEditor')
 
     ////
     // Event management
-    $event.listen('AssetWatch', function(data) {
-      $timeout(function() {
-        var currentInstanceIdx = -1;
-        if(data.event == 'delete') {
-          // Find asset index
-          for(var i = 0; i < components.length; ++i) {
-            if(components[i].flyweight.path == data.path) {
-              currentInstanceIdx = i;
-              break;
+    function findComponentByPath(path) {
+      // Find asset index
+      for(var type in componentFlyweights) {
+        if(componentFlyweights.hasOwnProperty(type)) {
+          var compType = componentFlyweights[type];
+          for(var i = 0; i < compType.length; ++i) {
+            if(compType[i].flyweight.path == path) {
+              return {type: type, idx: i};
             }
           }
+        }
+      }
+      return {type: null, idx: -1};
+    }
 
-          if(currentInstanceIdx != -1) {
-            $gom.removeScriptFromGameObjects(components[currentInstanceIdx].flyweight);
-            components.splice(currentInstanceIdx, 1);
+    $event.listen('AssetWatch', function(data) {
+      $timeout(function() {
+        if(data.event == 'delete') {
+          var compInd = findComponentByPath(data.path);
+          if(compInd.idx != -1) {
+            $gom.removeScriptFromGameObjects(componentFlyweights[compInd.type][compInd.idx].flyweight);
+            componentFlyweights[compInd.type].splice(compInd.idx, 1);
           } else {
             console.error('Could not delete asset of path "' + data.path+ '" because it doesn\'t exist in the flyweight list');
           }
         } else if(data.event == 'update') {
           // Find asset index
-          for(var i = 0; i < components.length; ++i) {
-            if(components[i].flyweight.path == data.asset.path) {
-              currentInstanceIdx = i;
-              break;
-            }
-          }
+          var compInd = findComponentByPath(data.asset.path);
 
+          // TODO data.asset.type must come from the server
           data.asset.type = 'script';
-          var assetFlyweight = {
+          var flyweightWrapper = {
             menu_label: LAU.IO.getFileNameFromPath(data.asset.path),
             flyweight: data.asset
           };
-          if(currentInstanceIdx == -1) {
+
+          if(compInd.idx == -1) {
             // New file created
-            components.push(assetFlyweight);
+            componentFlyweights[data.asset.type].push(flyweightWrapper);
           } else {
             // File updated
-            components[currentInstanceIdx] = assetFlyweight;
-            updateGameObjectsAfterUpdatedFlyweight(assetFlyweight.flyweight);
+            componentFlyweights[compInd.type][compInd.idx] = flyweightWrapper;
+            updateGameObjectsAfterUpdatedFlyweight(flyweightWrapper.flyweight);
           }
         }
       });
@@ -122,7 +136,11 @@ angular.module('lauEditor')
     $rpc.call('getDefaultComponents', null, function(dcs) {
       for(var i in dcs) {
         if(dcs.hasOwnProperty(i)) {
-          standardComponents[i].flyweight = dcs[i];
+          var flyweightWrapper = {
+            menu_label: LAU.IO.getFileNameFromPath(dcs[i].path),
+            flyweight: dcs[i]
+          };
+          pushComponent(flyweightWrapper);
         }
       }
     });

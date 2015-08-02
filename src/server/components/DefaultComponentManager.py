@@ -23,6 +23,15 @@ _defaultComponents = {
             'scale': [1,1,1],
             'rotation': [0,0,0]
         }
+    },
+    'mesh': {
+        'id': 1,
+        'type': 'mesh', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
+        'path': 'default_components/Mesh.hpp',
+        'full_class_name': 'lau::Mesh',
+        'fields': {
+            'mesh': 'default_components/primitive_meshes/Cube.lmf',
+        }
     }
 }
 

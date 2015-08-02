@@ -7,6 +7,8 @@
 
 namespace lau {
 
+% if 'namespace' in component and 'class' in component:
+
 #ifdef PREVIEW_MODE
 /////////
 // Script component peekers
@@ -81,5 +83,7 @@ struct Initializer<${component['namespace']}::${component['class']}> {
 	static Initializer<${component['namespace']}::${component['class']}> instance;
 };
 Initializer<${component['namespace']}::${component['class']}> Initializer<${component['namespace']}::${component['class']}>::instance;
+
+% endif
 
 } // namespace lau

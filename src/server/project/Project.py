@@ -34,16 +34,32 @@ class _Project:
             self.currentScene = projInfo['currentScene']
             pass
 
+        # Internal fields
+        self._processAssetRecursionLock = set()
         self._assetId2Path = dict()
+
+        removedAssets=[]
         for asset in self.assets:
-            if 'id' in self.assets[asset]:
+            if not Utils.FileExists(asset):
+                removedAssets.append(asset)
+            elif 'id' in self.assets[asset]:
                 self._assetId2Path[self.assets[asset]['id']] = asset
                 pass
             pass
+
+        # Remove deleted assets from the project
+        for removedAsset in removedAssets:
+            self.removeAsset(removedAsset, True)
+            pass
+
         pass
 
     def isUserAsset(self, assetPath):
-        return Utils.IsSubdir(assetPath, getProjectFolder()+'/assets/')
+        return Utils.IsSubdir(assetPath, self.getProjectFolder()+'/assets/')
+
+    def getProjectFolder(self):
+        import os
+        return os.path.dirname(self.project_path)
 
     def initializeAsset(self, assetPath):
         if not assetPath in self.assets:
@@ -73,7 +89,6 @@ class _Project:
 
     def getScriptId(self, scriptPath):
         self.initializeAsset(scriptPath)
-        print scriptPath
         return self.assets[scriptPath]['id']
 
     def saveProject(self):
@@ -143,20 +158,14 @@ class _Project:
         # Normalize path to avoid ambiguities
         filePath = os.path.abspath(filePath)
 
-        # Update all files that depend on filePath
-        for asset in self.assets:
-            if filePath in self.assets[asset]['dependencies']:
-                print filePath,' is dependency of ', asset
-                depSet = set(self.assets[asset]['dependencies'])
-                depSet.update(dependencies)
-                self.assets[asset]['dependencies'] = list(depSet)
-                self.processAsset(asset, False)
-                pass
-            pass
-
-        # Update dependencies list for current asset
-        self.assets[filePath]['dependencies'] = list(dependencies)
-        self.assets[filePath]['mtime'] = os.path.getmtime(filePath)
+        # If file exists, update it.
+        if Utils.FileExists(filePath):
+            # Update dependencies list for current asset
+            self.assets[filePath]['dependencies'] = list(dependencies)
+            self.assets[filePath]['mtime'] = os.path.getmtime(filePath)
+        elif filePath in self.assets:
+            # If tile doesnt exist, remove it from project
+            del self.assets[filePath]
 
         # Save project, if requested
         if saveProject:
@@ -164,8 +173,8 @@ class _Project:
         pass
 
     def getAssetInfoCachePath(self, assetPath):
-        relative = os.path.relpath(assetPath, getProjectFolder())
-        return getProjectFolder()+'/cache/'+relative+'.json'
+        relative = os.path.relpath(assetPath, self.getProjectFolder())
+        return self.getProjectFolder()+'/cache/'+relative+'.json'
 
     def saveAssetInfoCache(self, assetPath, assetSymbols):
         import json
@@ -175,6 +184,11 @@ class _Project:
             pass
         pass
 
+    def removeAssetInfoCache(self, assetPath):
+        import json
+        Utils.RemoveFile(self.getAssetInfoCachePath(assetPath))
+        pass
+
     def loadAssetInfoCache(self, assetPath):
         import json
         with open(self.getAssetInfoCachePath(assetPath), 'r') as f:
@@ -182,27 +196,67 @@ class _Project:
             pass
         pass
 
+    def removeAsset(self, assetPath, saveProject):
+        # Handle DELETE cases
+        if not Utils.FileExists(assetPath):
+            if Utils.IsScriptFile(assetPath):
+                # Remove cache .json files
+                self.removeAssetInfoCache(assetPath)
+                pass
+
+            if Utils.IsImplementationFile(assetPath):
+                # Remove preview .o files
+                fname = Utils.GetFileNameFromPath(assetPath)
+                objectFilePaths = [self.getProjectFolder()+'/build/'+fname+'.o',
+                        self.getProjectFolder()+'/build/nacl/build/'+fname+'.o']
+                for obj in objectFilePaths:
+                    Utils.RemoveFile(obj)
+                    pass
+                pass
+
+            if Utils.IsHeaderFile(assetPath):
+                fname = Utils.GetFileNameFromPath(assetPath)
+                assetId = self.assets[assetPath]['id']
+
+                # Remove FactoryPeeker
+                factoryFilePath = self.getProjectFolder()+'/default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(assetId) + '.cpp'
+                Utils.RemoveFile(factoryFilePath)
+
+                pass
+
+            # Remove asset from the project list of assets
+            self.updateAsset(assetPath, None, saveProject=saveProject)
+            # TODO remove asset from the dependency list of all other assets
+            pass
+        pass
+
     def processAsset(self, assetPath, saveProject):
         from server.parser import CppParser
-        from server.io import Utils
         from server.build import BuildEventHandler
 
+        # Avoid infinite loop
+        if assetPath in self._processAssetRecursionLock:
+            print '\tRequested processAsset('+assetPath+'); already processing this asset.'
+            return None
+
+        self._processAssetRecursionLock.add(assetPath)
+
+        # Handle CHANGE/CREATE cases
         if Utils.IsScriptFile(assetPath):
             # Initialize asset reference, if none exist
             self.initializeAsset(assetPath)
 
-            # Generate its .o object
-            # TODO investigate possibility of infinite loop due to generating a new file inside this callback (which would trigger a new END_WRITE callback to this function)
-            # Check if the path doesn't refer to a header file
+            # Generate its .o object. Check if the path doesn't refer to a
+            # header file
             if Utils.IsImplementationFile(assetPath):
                 buildStatus = BuildEventHandler.BuildPreviewObject(assetPath)
 
                 if buildStatus['returncode'] != 0:
+                    self._processAssetRecursionLock.remove(assetPath)
                     return None
 
                 pass
 
-                # TODO if this is a user component class, then call a FactoryUpdater so it will generate the cpp file for this component (have one cpp per component, to speed up compilation)
             # Check if the asset is up to date, so we dont need to process it
             if self.assets[assetPath]['mtime'] >= os.path.getmtime(assetPath):
                 fileSymbols = self.loadAssetInfoCache(assetPath)
@@ -221,10 +275,29 @@ class _Project:
 
                 self.updateAsset(assetPath, fileInfo['dependencies'], saveProject=saveProject)
                 self.saveAssetInfoCache(assetPath, fileSymbols)
+
+                # Update all files that depend on assetPath
+                recurseDependencies = []
+                for asset in self.assets:
+                    if assetPath in self.assets[asset]['dependencies']:
+                        recurseDependencies.append(asset)
+                        pass
+                    pass
+                for asset in recurseDependencies:
+                    print assetPath,' is dependency of ', asset
+                    self.processAsset(asset, False)
+                    pass
+
                 pass
 
-            return fileSymbols
+            self._processAssetRecursionLock.remove(assetPath)
 
+            if Utils.IsHeaderFile(assetPath):
+                return fileSymbols
+            else:
+                return None
+
+        self._processAssetRecursionLock.remove(assetPath)
         return None # Untrackable file format
 
     def isFileOlderThanDependency(self, filePath, assetPath):
@@ -235,13 +308,13 @@ class _Project:
         # If the asset itself is newer than the filePath, return true
         queryFileMTime = os.path.getmtime(filePath)
         if os.path.getmtime(assetPath) > queryFileMTime:
-            print '\tFile '+assetPath+' is older than '+filePath+'.'
+            print '\tFile '+assetPath+' is newer than '+filePath+'.'
             return True
 
         # If any of the asset dependencies are newer than the filePath, return true
         for dependency in self.assets[assetPath]['dependencies']:
             if os.path.getmtime(dependency) > queryFileMTime:
-                print '\tFile '+dependency+' is older than '+filePath
+                print '\tFile '+dependency+' is newer than '+filePath
                 return True
             pass
 
@@ -277,7 +350,7 @@ def getAssetList():
 
 def getProjectFolder():
     global _currentProject
-    return os.path.dirname(_currentProject.project_path)
+    return _currentProject.getProjectFolder()
 
 def createNewProject(path):
     global _currentProject
@@ -305,6 +378,10 @@ def loadProject(path):
 def processAsset(assetPath, saveProject):
     global _currentProject
     return _currentProject.processAsset(assetPath, saveProject)
+
+def removeAsset(assetPath, saveProject):
+    global _currentProject
+    return _currentProject.removeAsset(assetPath, saveProject)
 
 def isFileOlderThanDependency(filePath, assetPath):
     global _currentProject

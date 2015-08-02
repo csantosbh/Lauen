@@ -327,7 +327,7 @@ all of the following items are required:
 * **Make the editor view loadable** Add a ``case 'component_name'`` to make the
   new component loadable in ``scripts/directives/component_editor.js``.
 * **Add the new component to the component menu** This involves editing the
-  file ``scripts/directives/game_object_editor.js``, and the required changes
+  file ``scripts/services/component_manager.js``, and the required changes
   will depend on the type of component you are creating. This step is explained
   in detail :ref:`down below <add-component-to-menu>`.
 * **Define a unique numeric id for the new component** This requires modifying
@@ -384,16 +384,21 @@ Notice that a category may contain both components and subcategories.
 The **menu_label** field in the component object is the name that will be
 displayed in the Component Menu; the **flyweight** field points to an object
 with implementation specific data (for instance, the unique numeric id and the
-path to the file where the component is implemented). Typically, the
-*flyweight* will be provided by the server through the ``getDefaultComponents``
-RPC. This is the case when the component is implemented by a single class. In
-different cases (for instance, the Script type has one implementation per file,
-and is given by the engine user), the flyweight has to be managed and retrieved
-from the server accordingly (the Script components are managed by the Project
-Panel module, and are given by the server during startup and every time a new
-script is detected). Normal components, however, are only required to be added
-to the ``componentTypes`` object and directly to the menu via a reference to
-the ``componentTypes`` object.
+path to the file where the component is implemented).
+
+Typically, the *flyweight* will be provided by the server through the
+``getDefaultComponents`` RPC. This is the case when the component is
+implemented by a single class. In different cases (for instance, the Script
+type has one implementation per file, and is given by the engine user), the
+flyweight has to be managed and retrieved from the server accordingly (the
+Script components are managed by the Project Panel module, and are given by the
+server during startup and every time a new script is detected).
+
+In the editor, all components are required to be added to the
+``componentFlyweights`` object (with a reference to its value also added to the
+``componentMenu`` array). Notice that the key in ``componentFlyweights`` must
+match the unique string identifier of the component category, which is defined
+in the ``getDefaultComponents`` RPC (in the case of standard components).
 
 .. _define-unique-component-id:
 
@@ -401,7 +406,7 @@ the ``componentTypes`` object.
 Defining a unique numeric id for the new Component
 ----
 The engine requires each component type to have a unique numeric ID. Even
-individual scripts have their own unique ID, so two different scripts have
+individual user scripts have their own unique ID, so two different scripts have
 different IDs. This is required by the Component instantiation code, which
 looks up to the required ID in order to decide which class to instantiate.
 
@@ -435,9 +440,10 @@ typical component), make sure to edit the
 Implementing custom components
 ----
 
-Custom components are typically within the ``lau`` namespace. Although not
-obligatory, this is a good practice since it will prevent from cluttering the
-global namespace.
+Standard components are typically within the ``lau`` namespace, inside the
+folder ``engine/default_assets/default_components``. Although not obligatory,
+using the ``lau`` namespace is a good practice since it will prevent from
+cluttering the global namespace.
 
 Whenever implementing a standard component, make sure to fill the
 :ref:`DefaultComponentManager.py file accordingly
@@ -459,19 +465,19 @@ changes must be implemented:
 * Adapt the function ``createComponentFromFlyWeight``. This function creates
   javascript instances of components, which are usually added to a game object
   (either by the editor, or as requested by the previewer).
-* Implement the following prototype:
+* Implement the following prototype (change the name ``ComponentPrototype`` to
+  something that suits your component better):
 
 .. code-block:: javascript
 
-  // The parameter "flyweight" is either the value you
-  // defined as flyweight in the componentTypes variable (game_object_editor.js)
-  // or a serialized data, which may have been loaded from disk or
-  // received from the previewer. Either way, it will always have
-  // the same format.
-  function ComponentPrototype(flyweight) {
+  function ComponentPrototype(gameObject, componentFlyWeight) {
     // Initialize internal fields. Do not copy all values from the flyweight;
-    // instead, keep a reference to it. Only copy values that vary across
-    // instances.
+    // instead, keep a reference to it and only copy values that are specific
+    // to each instance.
+    // At least the following fields must be initialized:
+    this.type = <identifier_string>;
+    this.flyweight = componentFlyWeight;
+    this.parent = gameObject;
   }
   ComponentPrototype.prototype = {
     export: function(), // Exports a serializable object with data
