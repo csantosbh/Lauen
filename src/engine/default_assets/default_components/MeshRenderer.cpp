@@ -80,7 +80,7 @@ void MeshRenderer::draw(float alpha) {
 
 		auto& vbo = mesh->getVBO();
 		vbo.bindForDrawing(vertexAttribId);
-		glDrawElements(GL_TRIANGLE_STRIP, vbo.vertexCount(), GL_UNSIGNED_BYTE, 0);
+		glDrawElements(GL_TRIANGLE_STRIP, vbo.vertexCount(), GL_UNSIGNED_INT, 0);
 	}
 }
 
