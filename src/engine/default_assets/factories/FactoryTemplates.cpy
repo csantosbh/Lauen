@@ -18,11 +18,6 @@ ComponentPeeker<${component['namespace']}::${component['class']}>::ComponentPeek
 { }
 
 template<>
-int ComponentPeeker<${component['namespace']}::${component['class']}>::getComponentId() {
-	return ${component['id']};
-}
-
-template<>
 const pp::VarDictionary& ComponentPeeker<${component['namespace']}::${component['class']}>::getCurrentState() {
 	// Peek class fields
 	% for f in component['fields']:
@@ -49,7 +44,12 @@ void ComponentPeeker<${component['namespace']}::${component['class']}>::update(f
 #endif
 
 template<>
-shared_ptr<Component> Factories::componentInternalFactory<${component['namespace']}::${component['class']}>(const rapidjson::Value& fields) {
+int Component::getComponentId<${component['namespace']}::${component['class']}>() {
+	return ${component['id']};
+}
+
+template<>
+shared_ptr<Component> Factories::componentInternalFactory<${component['namespace']}::${component['class']}>(shared_ptr<GameObject>&, const rapidjson::Value& fields) {
 	${component['namespace']}::${component['class']}* ptr = new ${component['namespace']}::${component['class']}();
 
 	% for f in component['fields']:
@@ -72,6 +72,7 @@ shared_ptr<Component> Factories::componentInternalFactory<${component['namespace
 	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<${component['namespace']}::${component['class']}>(shared_ptr<${component['namespace']}::${component['class']}>(ptr))));
 #endif
 
+	result->setId(${component['id']});
 	return result;
 }
 

@@ -29,6 +29,16 @@ angular.module('lauEditor')
 
       return components;
     },
+    getComponentsByType: function(type) {
+      var components = [];
+      for(var i = 0; i < this.components.length; ++i) {
+        var comp = this.components[i];
+        if(comp.flyweight.type == type)
+          components.push(comp);
+      }
+
+      return components;
+    },
     getComponentByInstanceId: function getComponentByInstanceId(id) {
       for(var i = 0; i < this.components.length; ++i) {
         var comp = this.components[i];

@@ -129,6 +129,7 @@ def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags):
         success = False
         pass
 
+    print compilationMessage
     return dict(output=outputFilePath, message=compilationMessage, returncode=returncode)
 
 def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):

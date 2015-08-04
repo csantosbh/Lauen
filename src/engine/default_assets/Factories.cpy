@@ -18,11 +18,16 @@ namespace lau {
 ////
 // Factories
 ////
-std::map<int, std::shared_ptr<Component>(*)(const rapidjson::Value&)> Factories::componentInstanceFactories;
+std::map<int, std::shared_ptr<Component>(*)(shared_ptr<GameObject>&, const rapidjson::Value&)> Factories::componentInstanceFactories;
 
 % for type, default_component in default_components.iteritems():
 template<>
-shared_ptr<Component> Factories::componentInternalFactory<${default_component['full_class_name']}>(const rapidjson::Value& fields) {
+int Component::getComponentId<${default_component['full_class_name']}>() {
+	return ${default_component['id']};
+}
+
+template<>
+shared_ptr<Component> Factories::componentInternalFactory<${default_component['full_class_name']}>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
 	${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(fields);
 
 	shared_ptr<Component> result;
@@ -31,6 +36,8 @@ shared_ptr<Component> Factories::componentInternalFactory<${default_component['f
 #else
 	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<${default_component['full_class_name']}>(shared_ptr<${default_component['full_class_name']}>(ptr))));
 #endif
+
+	result->setId(${default_component['id']});
 
 	return result;
 }
@@ -46,7 +53,7 @@ Initializer<${default_component['full_class_name']}> Initializer<${default_compo
 
 % endfor
 
-shared_ptr<Component> Factories::componentFactory(const rapidjson::Value& serializedComponent) {
+shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent) {
 	if(serializedComponent.HasMember("id")) {
 #ifdef DEBUG
 		if(componentInstanceFactories.find(serializedComponent["id"].GetInt()) == componentInstanceFactories.end()) {
@@ -54,7 +61,7 @@ shared_ptr<Component> Factories::componentFactory(const rapidjson::Value& serial
 			lout << "Could not find component of id " << serializedComponent["id"].GetInt() << endl;
 		}
 #endif
-		return componentInstanceFactories[serializedComponent["id"].GetInt()](serializedComponent["fields"]);
+		return componentInstanceFactories[serializedComponent["id"].GetInt()](gameObj, serializedComponent["fields"]);
 	}
 
 	rapidjson::StringBuffer buffer;
@@ -78,10 +85,11 @@ vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Doc
 		const rapidjson::Value& components = objects[i]["components"];
 
 		for(int c = 0; c < components.Size(); ++c) {
-			shared_ptr<Component> component = componentFactory(components[c]);
+			shared_ptr<Component> component = componentFactory(obj, components[c]);
 
 			// TODO assert that component cant be null?
 			if(component != NULL) {
+				component->setGameObject(obj);
 #ifndef PREVIEW_MODE
 				obj->addComponent(component);
 #else

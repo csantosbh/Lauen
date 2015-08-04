@@ -25,12 +25,13 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       ////
       // Bind to edit canvas
       var $this = this;
-      this._boundingBox = $editCanvas.getBoundingBox();
-      $editCanvas.scene.add(this._boundingBox);
+      this.hierarchyGroup = $editCanvas.createGroup();
+      this.hierarchyGroup.add($editCanvas.createBoundingBox());
+      $editCanvas.scene.add(this.hierarchyGroup);
 
       function updatePosition(newValue) {
         if(newValue != null)
-          $this._boundingBox.position.fromArray(newValue);
+          $this.hierarchyGroup.position.fromArray(newValue);
       }
       function positionObserver(changes) {
         var newValue = changes[changes.length-1].object;
@@ -38,7 +39,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       }
       function updateRotation(newValue) {
         if(newValue != null)
-          $this._boundingBox.rotation.fromArray(newValue);
+          $this.hierarchyGroup.rotation.fromArray(newValue);
       }
       function rotationObserver(changes) {
         var newValue = changes[changes.length-1].object;
@@ -46,7 +47,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       }
       function updateScale(newValue) {
         if(newValue != null)
-          $this._boundingBox.scale.fromArray(newValue);
+          $this.hierarchyGroup.scale.fromArray(newValue);
       }
       function scaleObserver(changes) {
         var newValue = changes[changes.length-1].object;
@@ -91,7 +92,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     },
     destroy: function() {
       if($editCanvas.isEditMode()) {
-        $editCanvas.scene.remove(this._boundingBox);
+        $editCanvas.scene.remove(this.hierarchyGroup);
       }
     }
   };
@@ -107,30 +108,34 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       ////
       // Bind to edit canvas
       var $this = this;
-      // TODO make sure that this game object has a Transform
-      //this._mesh = $editCanvas.getMesh();
-      //$editCanvas.scene.add(this._mesh);
+      this.meshGeometry = $editCanvas.createMesh(this.mesh);
 
       function updateMesh(newValue) {
         if(newValue != null) {
           // TODO update THREE.js mesh
-          // $this._mesh = ...;
+          // remove old mesh...
+          // $this.meshGeometry = ...;
+          // transform.group.add($this.meshGeometry)... if theres a mesh renderer
         }
-      }
-      function meshObserver(changes) {
-        var newValue = changes[changes.length-1].object;
-        updateMesh(newValue);
       }
       Object.observe(this, function(changes) {
         // TODO investigate if this will leak memory (Im not-explicitly ceasing to observe the older position)
-        for(var i = 0; i < changes.length; ++i) {
+        // Only the last change to this.mesh interests us. Break after it's found.
+        for(var i = changes.length-1; i >= 0; --i) {
           var cng = changes[i];
           if(cng.name == "mesh" && cng.type=="update") {
             updateMesh($this.mesh);
-            Object.observe($this.mesh, meshObserver);
+            break;
           }
         }
       });
+
+      // Draw the mesh, if there's a mesh renderer
+      var meshRenderer = this.parent.getComponentsByType('mesh_renderer');
+      if(meshRenderer.length != 0) {
+        meshRenderer = meshRenderer[0];
+        meshRenderer.updateModels();
+      }
     }
   }
   MeshComponent.prototype = {
@@ -144,11 +149,56 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       };
     },
     setValues: function(flyweight) {
-      this.scale = LAU.Utils.clone(flyweight.fields.mesh);
+      this.mesh = LAU.Utils.clone(flyweight.fields.mesh);
     },
     destroy: function() {
       if($editCanvas.isEditMode()) {
-        //$editCanvas.scene.remove(this._mesh);
+        // Remove this mesh from the hierarchy that groups everything from this game object
+        var transform = this.parent.getComponentsByType('transform');
+        if(transform.length != 0) {
+          transform = transform[0];
+          transform.hierarchyGroup.remove(this.meshGeometry);
+        }
+      }
+    }
+  };
+
+  // Mesh Renderer component
+  function MeshRendererComponent(gameObject, componentFlyWeight) {
+    this.type = 'mesh_renderer';
+    this.flyweight = componentFlyWeight;
+    this.parent = gameObject;
+
+    if($editCanvas.isEditMode()) {
+      ////
+      // Bind to edit canvas
+      this.updateModels();
+    }
+  }
+  MeshRendererComponent.prototype = {
+    export: function() {
+      return {
+        type: this.flyweight.type,
+        id: this.flyweight.id,
+        fields: {
+          mesh: this.mesh,
+        }
+      };
+    },
+    setValues: function(flyweight) { },
+    destroy: function() {
+      if($editCanvas.isEditMode()) {
+        //$editCanvas.scene.remove(this.meshGeometry);
+      }
+    },
+    updateModels: function() {
+      var transformComponent = this.parent.getComponentsByType('transform');
+      if(transformComponent.length > 0) {
+        transformComponent = transformComponent[0];
+        var meshComponents = this.parent.getComponentsByType('mesh');
+        for(var i = 0; i < meshComponents.length; ++i) {
+          transformComponent.hierarchyGroup.add(meshComponents[i].meshGeometry);
+        }
       }
     }
   };
@@ -200,6 +250,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       break;
       case 'mesh':
         result = new MeshComponent(gameObject, componentFlyWeight);
+      break;
+      case 'mesh_renderer':
+        result = new MeshRendererComponent(gameObject, componentFlyWeight);
       break;
       case 'script':
         result = new ScriptComponent(gameObject, componentFlyWeight);

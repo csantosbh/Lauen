@@ -7,13 +7,13 @@ from server.project import Project
 class _AssetFolderWatcher(pyinotify.ProcessEvent):
     def process_IN_CLOSE_WRITE(self, event):
         asset = Project.processAsset(event.pathname, saveProject=True)
-        if asset != None:
+        if asset != None and Project.isUserAsset(event.pathname):
             WSServer.send('AssetWatch', dict(event="update", asset=asset))
         pass
 
     def process_IN_DELETE(self, event):
         Project.removeAsset(event.pathname, saveProject=True)
-        if Utils.IsTrackableAsset(event.pathname):
+        if Utils.IsTrackableAsset(event.pathname) and Project.isUserAsset(event.pathname):
             WSServer.send('AssetWatch', dict(event="delete", path=event.pathname))
         pass
 

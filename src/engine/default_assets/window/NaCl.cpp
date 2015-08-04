@@ -1,7 +1,6 @@
 #ifdef NACL
 #include <queue>
 #include <iostream>
-#include <sstream>
 
 #include "LauCommon.h"
 #include "NaCl.hpp"

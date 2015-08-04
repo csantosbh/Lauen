@@ -30,8 +30,15 @@ _defaultComponents = {
         'path': 'default_components/Mesh.hpp',
         'full_class_name': 'lau::Mesh',
         'fields': {
-            'mesh': 'default_components/primitive_meshes/Cube.lmf',
+            'mesh': 'default_assets/default_components/primitive_meshes/Cube.lmf',
         }
+    },
+    'mesh_renderer': {
+        'id': 2,
+        'type': 'mesh_renderer', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
+        'path': 'default_components/MeshRenderer.hpp',
+        'full_class_name': 'lau::MeshRenderer',
+        'fields': { }
     }
 }
 

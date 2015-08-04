@@ -21,12 +21,12 @@ using namespace std;
 ////
 class Factories {
 public:
-	static shared_ptr<Component> componentFactory(const rapidjson::Value& serializedComponent);
+	static shared_ptr<Component> componentFactory(shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent);
 	static vector<shared_ptr<GameObject>> gameObjectFactory(const rapidjson::Document& objects);
-	static std::map<int, std::shared_ptr<Component>(*)(const rapidjson::Value&)> componentInstanceFactories;
+	static std::map<int, std::shared_ptr<Component>(*)(shared_ptr<GameObject>&, const rapidjson::Value&)> componentInstanceFactories;
 
 	template<class T>
-	static shared_ptr<Component> componentInternalFactory(const rapidjson::Value& serializedComponent);
+	static shared_ptr<Component> componentInternalFactory(shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent);
 };
 
 template<typename T>

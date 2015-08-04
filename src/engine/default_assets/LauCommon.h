@@ -1,6 +1,8 @@
 #pragma once
 
 #ifdef NACL
+#include <sstream>
+
 #include "ppapi/gles2/gl2ext_ppapi.h"
 #include "ppapi/cpp/module.h"
 #include "ppapi/cpp/instance.h"
@@ -15,9 +17,9 @@ extern std::stringstream lerr;
 }
 #define GL_ES
 #else
+#include <iostream>
 #include <GL/glew.h>
 #include <GL/gl.h>
-#include <iostream>
 namespace lau {
 extern std::ostream& lout;
 extern std::ostream& lerr;

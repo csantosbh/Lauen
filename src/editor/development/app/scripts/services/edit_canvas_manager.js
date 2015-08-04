@@ -18,7 +18,17 @@ angular.module('lauEditor').service('editCanvasManager', function ($rootScope) {
     return editMode;
   }
 
-  function getBoundingBox() {
+  function createGroup() {
+    return new THREE.Group();
+  }
+
+  function createMesh(modelPath) {
+    var modelGeometry = new THREE.BoxGeometry( 100, 100, 100 ); // TODO load the actual model
+    // TODO after that, cache models
+    return new THREE.Mesh(modelGeometry, boundingBoxMaterial);
+  }
+
+  function createBoundingBox() {
     return new THREE.Mesh(boundingBoxGeometry, boundingBoxMaterial);
   }
 
@@ -42,7 +52,9 @@ angular.module('lauEditor').service('editCanvasManager', function ($rootScope) {
   return {
     isEditMode: isEditMode,
     scene: scene,
-    getBoundingBox: getBoundingBox,
+    createGroup: createGroup,
+    createMesh: createMesh,
+    createBoundingBox: createBoundingBox,
     disableEditMode: disableEditMode,
     enableEditMode: enableEditMode,
   };

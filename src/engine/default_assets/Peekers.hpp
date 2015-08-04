@@ -16,7 +16,6 @@ public:
 	ComponentPeekerBase() : instanceId(generateInstanceId())
 	{}
 	virtual const pp::VarDictionary& getCurrentState() = 0;
-	virtual int getComponentId() = 0;
 	int getInstanceId() {
 		return instanceId;
 	}
@@ -32,8 +31,21 @@ class ComponentPeeker: public ComponentPeekerBase {
 public:
 	ComponentPeeker(shared_ptr<T> actualComponent);
 	const pp::VarDictionary& getCurrentState();
-	int getComponentId();
-	void update(float dt);
+
+    void setGameObject(std::shared_ptr<GameObject>& gameObj) {
+		impl->setGameObject(gameObj);
+	}
+
+	void setId(int id) {
+		impl->setId(id);
+	}
+	int getId() {
+		return impl->getId();
+	}
+	void update(float dt) {
+		impl->update(dt);
+	}
+
 	virtual ~ComponentPeeker() {}
 
 private:

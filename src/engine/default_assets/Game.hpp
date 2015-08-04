@@ -23,17 +23,6 @@ public:
 
 private:
     std::vector<std::shared_ptr<GameObject>> gameObjects;
-
-    ////// TODO shader&VBO&EBO classes
-    //////
-    GLuint bufferIds[2];
-    GLuint program;
-    const int vertexAttribId = 0;
-    void checkShaderCompilation(GLuint shaderId);
-
-    void createSimpleGeometry();
-
-    void onLoadShaders(std::deque<pair<bool, std::vector<uint8_t>>>&shaderFiles);
 };
 
 } // namespace lau

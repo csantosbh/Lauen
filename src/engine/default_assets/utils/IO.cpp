@@ -3,7 +3,10 @@
 #include <string.h>
 #include <queue>
 
-#include <iostream>
+#include <rapidjson/stringbuffer.h>
+#include <rapidjson/prettywriter.h>
+
+#include "LauCommon.h"
 
 #ifdef NACL
 #include "ppapi/cpp/url_loader.h"
@@ -151,7 +154,6 @@ private:
 
 #endif
 
-
 shared_ptr<IO> IO::instance;
 IO& IO::getInstance() {
     if(instance==NULL) {
@@ -164,4 +166,14 @@ IO& IO::getInstance() {
     return *instance;
 }
 
-}} // namespace
+}} // namespace lau::utils
+
+// TODO make this an operator<< on ostream
+void printJson(const rapidjson::Value& v) {
+    rapidjson::StringBuffer buffer;
+    rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
+    v.Accept(writer);
+    const char* json = buffer.GetString();
+    lau::lout << json << endl;
+}
+

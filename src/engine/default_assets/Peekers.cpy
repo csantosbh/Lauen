@@ -26,11 +26,6 @@ ComponentPeeker<Transform>::ComponentPeeker(shared_ptr<Transform> actualComp) : 
 { }
 
 template<>
-void ComponentPeeker<Transform>::update(float dt) {
-	impl->update(dt);
-}
-
-template<>
 const pp::VarDictionary& ComponentPeeker<Transform>::getCurrentState() {
 	// TODO figure out how the eulerangles are being returned (in which order?), and make sure it is consistent with the order in the Editor
 	Eigen::Vector3f rotation = impl->rotation.toRotationMatrix().eulerAngles(0, 1, 2);
@@ -51,9 +46,26 @@ const pp::VarDictionary& ComponentPeeker<Transform>::getCurrentState() {
 	return currentState;
 }
 
+///// Mesh
 template<>
-int ComponentPeeker<Transform>::getComponentId() {
-	return ${default_components['transform']['id']};
+ComponentPeeker<Mesh>::ComponentPeeker(shared_ptr<Mesh> actualComp) : impl(actualComp)
+{ }
+
+template<>
+const pp::VarDictionary& ComponentPeeker<Mesh>::getCurrentState() {
+	currentState.Set("mesh", "tmp");
+
+	return currentState;
+}
+
+///// MeshRenderer
+template<>
+ComponentPeeker<MeshRenderer>::ComponentPeeker(shared_ptr<MeshRenderer> actualComp) : impl(actualComp)
+{ }
+
+template<>
+const pp::VarDictionary& ComponentPeeker<MeshRenderer>::getCurrentState() {
+	return currentState;
 }
 
 /////////
@@ -97,7 +109,7 @@ void GameObjectPeeker::addComponent(const shared_ptr<Component>& actualComp) {
 	pp::VarDictionary gameObjectInfo;
 	gameObjectInfo.Set("instanceId", gameObjectId);
 	pp::VarDictionary componentInfo;
-	componentInfo.Set("componentId", compWrapper->getComponentId());
+	componentInfo.Set("componentId", compWrapper->getId());
 	componentInfo.Set("instanceId", compWrapper->getInstanceId());
 	gameObjectInfo.Set("component", componentInfo);
 	NaCl::getInstance()->addComponent(gameObjectInfo);

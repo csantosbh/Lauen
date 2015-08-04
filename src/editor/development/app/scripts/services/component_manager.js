@@ -14,11 +14,13 @@ angular.module('lauEditor')
     var componentFlyweights = {
       transform: {menu_label: 'Transform', flyweight: null},
       mesh: {menu_label: 'Mesh', flyweight: null},
+      mesh_renderer: {menu_label: 'Mesh Renderer', flyweight: null},
       script: [],
     };
     var componentMenu = [
       componentFlyweights.transform,
       componentFlyweights.mesh,
+      componentFlyweights.mesh_renderer,
       {menu_label: 'Scripts', children: componentFlyweights.script}
     ];
     lau = componentMenu;

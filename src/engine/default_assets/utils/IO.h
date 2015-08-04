@@ -6,6 +6,8 @@
 #include <memory>
 #include <initializer_list>
 
+#include <rapidjson/document.h>
+
 namespace lau { namespace utils {
 
 class IO {
@@ -27,14 +29,6 @@ private:
     static std::shared_ptr<IO> instance;
 };
 
-/*
-namespace io {
-
-void requestFile(const std::string& filename);
-// Data is destroyed afterwards
-void onLoad(const std::function<void(std::queue<std::vector<uint8_t>>&)>& callback);
-//void onLoad(void(*cbk)(std::queue<std::vector<uint8_t>>&));
-}
-*/
-
 }} // namespace
+
+void printJson(const rapidjson::Value& v);

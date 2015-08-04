@@ -214,7 +214,7 @@ class _Project:
                     pass
                 pass
 
-            if Utils.IsHeaderFile(assetPath):
+            if Utils.IsHeaderFile(assetPath) and self.isUserAsset(assetPath):
                 fname = Utils.GetFileNameFromPath(assetPath)
                 assetId = self.assets[assetPath]['id']
 
@@ -390,6 +390,10 @@ def isFileOlderThanDependency(filePath, assetPath):
 def isCPYTemplateOutdated(cpyFilePath):
     global _currentProject
     return _currentProject.isCPYTemplateOutdated(cpyFilePath)
+
+def isUserAsset(filePath):
+    global _currentProject
+    return _currentProject.isUserAsset(filePath)
 
 # Load last opened project
 if len(Config.get('runtime', 'recent_projects')) > 0:
