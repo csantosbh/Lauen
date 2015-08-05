@@ -370,6 +370,14 @@ This module exposes the following functions:
    * If ``filePath`` refers to a file that doesn't exist;
    * If ``assetPath`` itself was modified after ``filePath``.
 
+.. function:: removeAsset(assetPath, saveProject)
+
+   Removes all references to the asset specified by ``assetPath`` from the
+   current project, including all temporary files generated for that asset.
+
+   :param assetPath: Full asset path.
+   :param saveProject: If ``True``, the project will be saved after the removal is performed.
+
 .. function:: isCPYTemplateOutdated(cpyFilePath) -> bool
 
     Given a path to a CPY template, returns ``True`` if the C++ file produced
@@ -378,6 +386,11 @@ This module exposes the following functions:
     * If the C++ file doesn't exist; or
     * If the CPY file was modified after the C++ file was generated; or
     * If any of the C++ dependencies were modified after the C++ file was generated.
+
+.. function:: isUserAsset(filePath) -> bool
+
+    Given a path to an asset, returns ``True`` if it is located inside the
+    ``assets`` folder.
 
 ---------
 Asset Folder Watcher

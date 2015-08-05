@@ -7,6 +7,42 @@ instantiation, scene loading, automatic game state serialization and
 deserialization, and much more.
 
 =====
+Components
+=====
+
+Every component must inherit from the base ``Component`` class. It defines the
+lowest common denominator interface that all components must have, with the
+following methods:
+
+.. cpp:function:: int getId()
+
+   Returns the :ref:`unique numeric id <define-unique-component-id>` associated
+   with the component type. Every component of that particular type will return
+   the same id whenever this function is called.
+
+.. cpp:function:: void setId(int id)
+
+   Sets the id of this component. Do not call this function; it is used by the
+   component factory to set up its id.
+
+.. cpp:function:: virtual void update(float dt)
+
+   Update step. This is component specific and must be implemented by the child
+   classes.
+
+   :param dt: The fixed update time step.
+
+-----
+Static methods
+-----
+
+.. cpp:function:: int getComponentId<T>()
+
+   Returns the unique, numeric id associated with the component of type ``T``.
+   All components of this type will return this value when their ``getId()``
+   method is called.
+
+=====
 Factories
 =====
 
@@ -17,12 +53,13 @@ engine server.
 
 The ``Factories`` class contains factory methods for Components and GameObjects:
 
-.. cpp:function:: shared_ptr<Component> Factories::componentFactory(const rapidjson::Value& serializedComponent)
+.. cpp:function:: shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent)
 
-    Given a serialized version of the component, creates an instance of the
-    corresponding component class and initializes its public fields with the
-    serialized data.
+    Given a serialized version of the component and the game object to which it
+    will belong, this function creates an instance of the corresponding
+    component class and initializes its public fields with the serialized data.
 
+    :param gameObj: Reference to a shared_ptr pointing to the parent game object.
     :param serializedComponent: A serialized object with values for all public fields of the component.
 
 .. cpp:function:: vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Document& objects)
@@ -69,12 +106,6 @@ following methods:
 
    Returns the current state of the component wrapped by the peeker (that is,
    the current values of all its public fields).
-
-.. cpp:function:: int getComponentId()
-
-   Returns the :ref:`unique numeric id <define-unique-component-id>` associated
-   with the component type. Every component of that particular type will return
-   the same id whenever this function is called.
 
 .. cpp:function:: int getInstanceId()
 
@@ -177,11 +208,35 @@ The function ``double lau::utils::time::now()`` returns the number of seconds,
 down to microseconds precision, since the Epoch, and is used by the ``Game``
 class in the game loop.
 
-====
-Default Components
-====
+=====
+OpenGL
+=====
 
-----
-Transform
-----
+-----
+VBO
+-----
+
+Vertex Buffer Object manager. Handles creation and removal of VBOs from the GPU.
+
+.. cpp:function:: VBO()
+
+   Default constructor. Does not create a VBO on the GPU.
+
+.. cpp:function:: VBO(uint8_t dimensions, std::vector<float>& vertices, std::vector<int>& indices)
+
+   Creates a VBO on the GPU.
+
+   :param dimensions: Number of dimensions of each vertex. Must be 1, 2, 3 or 4.
+   :param vertices: Collection of vertices tightly packed.
+   :param indices: Collection of vertex indices, used to draw polygon primitives.
+
+.. cpp:function:: void bindVertexToAttribute(GLuint attributeId)
+
+   Given a shader attribute id, bind the vertex buffer to that attribute.
+
+   :param attributeId: TODO linkar com funcao da classe shader que retorna attrids
+
+.. cpp:function:: void bindForDrawing(GLuint attributeId)
+
+   Binds the VBO so it can be rendered by a shader program.
 

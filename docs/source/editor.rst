@@ -85,9 +85,9 @@ currently selected game object (the one highlighted in the hierarchy). If no
 game object is selected, then this variable is set to -1.
 
 Each game object is an instance of a prototype defined in
-``scripts/services/lau_game_object.js``. It has an array of components, whose prototypes
-are defined in ``scripts/services/lau_components.js``. It has the following
-fields:
+``scripts/services/lau_game_object.js``. It has an array of components, whose
+prototypes are defined in ``scripts/services/lau_components.js``. It has the
+following fields:
 
 
 .. code-block:: javascript
@@ -101,8 +101,10 @@ fields:
                          // linking the editor game object with its NaCl
                          // equivalent.
       constructor: function(scope, name='unnamed', components=[], instanceId=undefined),
-      getComponentById: function(id), // Returns the first component whose id equals the
-                                      // parameter id.
+      getComponentsById: function(id), // Returns all components whose id equals the
+                                       // parameter id.
+      getComponentsByType: function(type), // Returns all components whose type string
+                                           // identifier equals the parameter "type".
       getComponentByInstanceId: function(id), // Returns the first component whose instance
                                               // id equals id.
       updateStates: function(currentStates), // Updates all components within the provided
@@ -561,9 +563,10 @@ identifier of that field, and returns the default value associated with it.
 Canvas Manager
 =======
 
-The canvas manager is a service that provides access to the internals of the
-edit canvas (WebGL). This is useful when developing standard components that
-have a visual representation that must be shown in the edit canvas.
+The canvas manager, implemented in ``services/edit_canvas_manager.js``, is a
+service that provides access to the internals of the edit canvas (WebGL). This
+is useful when developing standard components that have a visual representation
+that must be shown in the edit canvas.
 
 The exposed fields are the following:
 
@@ -573,8 +576,13 @@ The exposed fields are the following:
    isEditMode: function(), // Return true if the frontend is in editmode,
                            // or false if it is in preview mode.
    scene: THREE.Scene, // The ThreeJS scene object singleton.
-   getBoundingBox: function(), // Returns a new THREE.Mesh object containing a
-                               // wireframe rendered box.
+   createBoundingBox: function(), // Returns a new THREE.Mesh object containing a
+                                  // wireframe rendered box.
+   createGroup: function(), // Returns a new THREE.Group object. Can be used to
+                            // create object hierarchies.
+   createMesh: function(modelPath), // Returns a new THREE.Mesh object containing
+                                    // a wireframe rendered model specified by
+                                    // modelPath.
    disableEditMode: function(), // Disables edit mode, entering in preview mode
    enableEditMode: function() // Enables edit mode, exiting preview mode
 
@@ -587,9 +595,11 @@ The component manager holds the list of all user defined assets, such as
 scripts and shader programs. It is implemented as a service of name
 ``componentManager``, and provides the following functions:
 
-.. function:: pushComponent(comp)
+.. function:: pushComponent(compWrapper)
 
-   Adds the asset ``comp`` to the list of all assets.
+   Adds the asset ``compWrapper.flyweight`` to the list of all assets.
+
+   :param compWrapper: Component wrapper object. Must have a ``flyweight`` field pointing to the component flyweight, and a ``menu_label`` field if the component belongs to a menu subsection.
 
 .. function:: getComponent() -> list
 
