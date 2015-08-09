@@ -23,27 +23,20 @@ def translateFieldType(typeName):
 # Iterate over the source file, retrieving all classes and their
 # public fields and methods
 def parseCPPFileChildren(output, node, pragmaList, context):
-    childNodes = []
     for child in node.get_children():
         childNode = parseCPPFileRec(child, pragmaList, context)
-        childNodes += childNode['symbols']
-        output['dependencies'].update(childNode['dependencies'])
-
-    if len(childNodes)>0:
-        output['symbols']+=childNodes
-        pass
+        output += childNode
     pass
 
 def parseCPPFileRec(node, pragmaList, context=dict()):
     from clang.cindex import Cursor, CursorKind, AccessSpecifier
-    output={'symbols': [], 'dependencies': set()}
+    output=[]
 
 
     if node.kind != CursorKind.TRANSLATION_UNIT:
         fileNameStr = str(node.location.file)
     
         if fileNameStr != context['requestedFileName']:
-            output['dependencies'].add(os.path.abspath(fileNameStr))
             return output
 
     if node.kind == CursorKind.NAMESPACE:
@@ -66,9 +59,7 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
             subContext['depth'] = context['depth']+1
             subContext['withinClassContext'] = True
             for child in node.get_children():
-                childNode = parseCPPFileRec(child, pragmaList, subContext)
-                childNodes+=childNode['symbols']
-                output['dependencies'].update(childNode['dependencies'])
+                childNodes += parseCPPFileRec(child, pragmaList, subContext)
                 pass
 
             node = {
@@ -78,7 +69,7 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
                 'pragmas': childPragmas,
                 'namespace': context['currentNameSpace'],
             }
-            output['symbols'].append(node)
+            output.append(node)
     elif node.kind == CursorKind.FIELD_DECL or (node.kind == CursorKind.FUNCTION_DECL and context['withinClassContext']):
         childPragmas = []
         if len(pragmaList) > 0:
@@ -102,7 +93,7 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
         elif node.access_specifier == AccessSpecifier.PRIVATE:
             dictNode['visibility'] = 2
 
-        output['symbols'].append(dictNode)
+        output.append(dictNode)
     else:
         subContext = context.copy()
         subContext['depth'] = context['depth']+1
@@ -144,6 +135,7 @@ def parseCPPFile(fileName):
             ####
             tu = _clangIndex.parse(fileName, ['-std=c++11',
                                         '-Wall',
+                                        '-x', 'c++',
                                         '-DLINUX',
                                         '-DDESKTOP',
                                         '-DDEBUG',
@@ -170,6 +162,8 @@ def parseCPPFile(fileName):
         pass
 
     # Get list of pragmas
+    dependencies = set()
+    parseResult = dict(symbols=[])
     if success:
         prevToken = None
         nextIsPragma = False
@@ -184,14 +178,21 @@ def parseCPPFile(fileName):
             prevToken = token
 
         parseContext=dict(depth=0,withinClassContext=False,requestedFileName=fileName,currentNameSpace='')
-        parseResult=parseCPPFileRec(tu.cursor, pragmaList, parseContext)
-    else:
-        parseResult=dict(dependencies=[])
+        parseResult['symbols'] = parseCPPFileRec(tu.cursor, pragmaList, parseContext)
+
+        # Get dependencies
+        for dep in tu.get_includes():
+            dependency = os.path.normpath(str(dep.include))
+            if Utils.IsSubdir(dependency, Project.getProjectFolder()):
+                dependencies.add(dependency)
+                pass
+            pass
         pass
     _parserLock.release()
 
     parseResult['diagnostics'] = diagnostics
     parseResult['success'] = success
+    parseResult['dependencies'] = list(dependencies)
 
     return parseResult
 

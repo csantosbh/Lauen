@@ -70,26 +70,6 @@ def RenderFactorySources(componentFiles):
         pass
     return outputPaths
 
-def RenderStandardFactorySources():
-    from mako.template import Template
-
-    projectFolder = Project.getProjectFolder()
-
-    # TODO have one .o per standard_asset maybe?
-    renderParameters = dict(default_components=DefaultComponentManager.getDefaultComponents(), vecIterations=dict(v4f=4, v3f=3, v2f=2))
-    templatePath = projectFolder+'/default_assets/Factories.cpy'
-    outputPath = projectFolder+'/default_assets/Factories.cpp'
-
-    # Only update the auto-generated files when their CPY sources have been
-    # updated, or when one of its dependencies have been updated.
-    print 'Updating template Factories.cpp from its CPY'
-    componentFactoryTemplate = open(templatePath).read()
-    with open(outputPath, 'w') as outputHandle:
-        outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
-        pass
-
-    return outputPath
-
 def _runGame(path, workFolder):
     from subprocess import Popen, PIPE
     from time import sleep
@@ -137,7 +117,6 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
     try:
         # Generate component factory
         #RenderFactorySources(Project.getAssetList())
-        #RenderStandardFactorySources()
         
         # Generate build list
         sourceFiles = []

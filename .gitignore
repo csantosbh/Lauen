@@ -2,4 +2,4 @@
 bin/
 build/
 *.swp
-Factories\.cpp
+src/engine/default_assets/factories/*.cpp

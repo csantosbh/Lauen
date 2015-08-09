@@ -1,3 +1,4 @@
+#include "Factories.hpp"
 #include "Mesh.hpp"
 #include "utils/IO.h"
 
@@ -51,5 +52,39 @@ void Mesh::onLoadMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string fname
         vbo = shared_ptr<VBO>(new VBO(3, vertices, indices));
     }
 }
+
+//////
+// Factory
+#define MESH_ID 1
+template<>
+int Component::getComponentId<lau::Mesh>() {
+	return MESH_ID;
+}
+
+template<>
+shared_ptr<Component> Factories::componentInternalFactory<lau::Mesh>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
+	lau::Mesh* ptr = new lau::Mesh(fields);
+
+	shared_ptr<Component> result;
+#ifndef PREVIEW_MODE
+	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
+#else
+	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<lau::Mesh>(shared_ptr<lau::Mesh>(ptr))));
+#endif
+
+	result->setId(MESH_ID);
+
+	return result;
+}
+
+template<>
+struct Initializer<lau::Mesh> {
+	Initializer() {
+		Factories::componentInstanceFactories[MESH_ID] = &Factories::componentInternalFactory<lau::Mesh>;
+	}
+	static Initializer<lau::Mesh> instance;
+};
+Initializer<lau::Mesh> Initializer<lau::Mesh>::instance;
+
 
 } // namespace lau

@@ -30,7 +30,7 @@ const pp::VarDictionary& ComponentPeeker<${component['namespace']}::${component[
 		currentState.Set("${f}", vec);
 	}
 		% else: # all remaining components
-		currentState.Set("${f}", impl->${f});
+	currentState.Set("${f}", impl->${f});
 		% endif
 	% endfor
 

@@ -2,8 +2,9 @@
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
 
-#ifndef URL_LOADER_HANDLER_H_
-#define URL_LOADER_HANDLER_H_
+#pragma once
+
+#ifdef NACL
 
 #include <string>
 #include "ppapi/cpp/completion_callback.h"
@@ -87,4 +88,4 @@ class URLLoaderHandler {
   void operator=(const URLLoaderHandler&);
 };
 
-#endif  // URL_LOADER_HANDLER_H_
+#endif  // NACL

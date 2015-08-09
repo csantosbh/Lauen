@@ -1,4 +1,5 @@
 import os
+import time
 import json
 
 from server.io import Utils
@@ -42,6 +43,23 @@ class AssetProcessor(object):
     def dependencies(self):
         return self.persistent_fields['dependencies']
 
+    def mostRecentDependencyTime(self):
+        mostRecentTime = os.path.getmtime(self.path)
+        for dependency in self.persistent_fields['dependencies']:
+            if Utils.FileExists(dependency):
+                depTime = os.path.getmtime(dependency)
+                if depTime > mostRecentTime:
+                    print '\tFile '+dependency+' is newer than '+self.path
+                    mostRecentTime = depTime
+                    pass
+            else:
+                # The dependency was removed! Since we dont know when, lets
+                # just assumed it happened right now
+                print '\tDependency '+dependency+' was removed while the engine was closed!'
+                mostRecentTime = time.gmtime()
+                pass
+            pass
+        return mostRecentTime
     pass
 
 # Responsible for processing script file events (add, remove, update).
@@ -87,7 +105,8 @@ class ScriptProcessor(AssetProcessor):
         from server.build import BuildEventHandler
         # Check if the asset is up to date, so we dont need to update it
         #if self.persistent_fields['mtime'] >= os.path.getmtime(self.path) and not self.isBroken:
-        if self.persistent_fields['mtime'] >= os.path.getmtime(self.path) and (not Project.isFileOlderThanDependency(self.path, self.path)) and not self.isBroken:
+        mostRecentDepTime = self.mostRecentDependencyTime()
+        if self.persistent_fields['mtime'] >= mostRecentDepTime and not self.isBroken:
             fileSymbols = self.loadAssetInfoCache(self.path)
         else:
             fileInfo = CppParser.GetSimpleClass(self.path)
@@ -108,19 +127,16 @@ class ScriptProcessor(AssetProcessor):
             if Utils.IsHeaderFile(self.path):
                 if Project.isUserAsset(self.path):
                     outPaths = BuildEventHandler.RenderFactorySources([fileSymbols])
-                else:
-                    outPaths = [BuildEventHandler.RenderStandardFactorySources()]
-                    pass
-
-                # Re-build the factory corresponding .o file
-                for path in outPaths:
-                    status = BuildEventHandler.BuildPreviewObject(path)
+                    # Re-build the factories corresponding .o files
+                    for path in outPaths:
+                        status = BuildEventHandler.BuildPreviewObject(path)
+                        pass
                     pass
                 pass
 
-            print 'updating dependencies for '+self.path
+            print '\tUpdating dependencies for '+self.path
             self.persistent_fields['dependencies'] = list(fileInfo['dependencies'])
-            self.persistent_fields['mtime'] = os.path.getmtime(self.path)
+            self.persistent_fields['mtime'] = mostRecentDepTime
 
             self.saveAssetInfoCache(self.path, fileSymbols)
             pass
@@ -184,7 +200,7 @@ class UserFactoriesProcessor(AssetProcessor):
     def update(self):
         from server.build import BuildEventHandler
         if self.persistent_fields['mtime'] < os.path.getmtime(self.path):
-            print 'User factory updated'
+            print 'Updating user factory'
             # Re-generate all factory files
             for asset in Project.getAssetList():
                 if Utils.IsHeaderFile(asset['path']) and Project.isUserAsset(asset['path']):
@@ -201,34 +217,7 @@ class UserFactoriesProcessor(AssetProcessor):
         pass
 
     def remove(self):
-        Utils.Console.error('Error: FactoryTemplates.cpy file is missing!')
-        pass
-
-    pass
-
-class StandardFactoriesProcessor(AssetProcessor):
-    def __init__(self, path, persistent_fields):
-        super(StandardFactoriesProcessor, self).__init__(path, persistent_fields)
-        pass
-
-    def dependsOn(self, path):
-        # Factories.cpy only depends on itself, as Factories.cpp is generated
-        # by ScriptProcessor.
-        return False
-
-    def getMetadata(self):
-        return None
-
-    def update(self):
-        from server.build import BuildEventHandler
-        if self.persistent_fields['mtime'] < os.path.getmtime(self.path):
-            BuildEventHandler.RenderStandardFactorySources()
-            self.persistent_fields['mtime'] = os.path.getmtime(self.path)
-            pass
-        pass
-
-    def remove(self):
-        print 'Error: Factories.cpy file is missing!'
+        Utils.Console.error('FactoryTemplates.cpy file is missing!')
         pass
 
     pass
@@ -237,13 +226,10 @@ def CreateAssetProcessor(assetPath, persistent_fields=None):
     if Utils.IsScriptFile(assetPath) and not Project.isUserScriptFactory(assetPath):
         return ScriptProcessor(assetPath, persistent_fields)
     elif Utils.IsCpyFile(assetPath):
-        # TODO rename factories.cpy to standardfactories.cpy and factorytemplates to userfactories.cpy
-        if assetPath.endswith('Factories.cpy'):
-            return StandardFactoriesProcessor(assetPath, persistent_fields)
-        elif assetPath.endswith('FactoryTemplates.cpy'):
+        if assetPath.endswith('FactoryTemplates.cpy'):
             return UserFactoriesProcessor(assetPath, persistent_fields)
         else:
-            print 'Error: unsupported cpy file detected: '+assetPath
+            Utils.Console.error('Unsupported cpy file detected: '+assetPath)
             return None
         pass
     else:

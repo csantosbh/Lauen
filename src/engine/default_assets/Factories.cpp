@@ -1,57 +1,17 @@
-// Do NOT edit!
-// Automatically generated!
-
 #include <Eigen>
 #include <rapidjson/stringbuffer.h>
 #include <rapidjson/prettywriter.h>
 
-// TODO make this a regular cpp file
 #include "Factories.hpp"
 
-% for type,default_component in default_components.iteritems():
-#include "${default_component['path']}"
-% endfor
+#include "default_components/MeshRenderer.hpp"
+#include "default_components/Mesh.hpp"
+#include "default_components/Transform.hpp"
 
 
 namespace lau {
 
-////
-// Factories
-////
 std::map<int, std::shared_ptr<Component>(*)(shared_ptr<GameObject>&, const rapidjson::Value&)> Factories::componentInstanceFactories;
-
-% for type, default_component in default_components.iteritems():
-template<>
-int Component::getComponentId<${default_component['full_class_name']}>() {
-	return ${default_component['id']};
-}
-
-template<>
-shared_ptr<Component> Factories::componentInternalFactory<${default_component['full_class_name']}>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
-	${default_component['full_class_name']}* ptr = new ${default_component['full_class_name']}(fields);
-
-	shared_ptr<Component> result;
-#ifndef PREVIEW_MODE
-	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#else
-	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<${default_component['full_class_name']}>(shared_ptr<${default_component['full_class_name']}>(ptr))));
-#endif
-
-	result->setId(${default_component['id']});
-
-	return result;
-}
-
-template<>
-struct Initializer<${default_component['full_class_name']}> {
-	Initializer() {
-		Factories::componentInstanceFactories[${default_component['id']}] = &Factories::componentInternalFactory<${default_component['full_class_name']}>;
-	}
-	static Initializer<${default_component['full_class_name']}> instance;
-};
-Initializer<${default_component['full_class_name']}> Initializer<${default_component['full_class_name']}>::instance;
-
-% endfor
 
 shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent) {
 	if(serializedComponent.HasMember("id")) {

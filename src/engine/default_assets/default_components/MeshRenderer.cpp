@@ -1,3 +1,4 @@
+#include "Factories.hpp"
 #include "GameObject.hpp"
 #include "Mesh.hpp"
 #include "MeshRenderer.hpp"
@@ -99,5 +100,38 @@ void MeshRenderer::checkShaderCompilation(GLuint shaderId) {
 #endif
     }
 }
+
+/////
+// Factory
+#define MESH_RENDERER_ID 2
+template<>
+int Component::getComponentId<lau::MeshRenderer>() {
+	return MESH_RENDERER_ID;
+}
+
+template<>
+shared_ptr<Component> Factories::componentInternalFactory<lau::MeshRenderer>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
+	lau::MeshRenderer* ptr = new lau::MeshRenderer(fields);
+
+	shared_ptr<Component> result;
+#ifndef PREVIEW_MODE
+	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
+#else
+	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<lau::MeshRenderer>(shared_ptr<lau::MeshRenderer>(ptr))));
+#endif
+
+	result->setId(MESH_RENDERER_ID);
+
+	return result;
+}
+
+template<>
+struct Initializer<lau::MeshRenderer> {
+	Initializer() {
+		Factories::componentInstanceFactories[MESH_RENDERER_ID] = &Factories::componentInternalFactory<lau::MeshRenderer>;
+	}
+	static Initializer<lau::MeshRenderer> instance;
+};
+Initializer<lau::MeshRenderer> Initializer<lau::MeshRenderer>::instance;
 
 } // namespace lau

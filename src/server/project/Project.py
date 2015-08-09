@@ -1,4 +1,5 @@
 import os
+import threading
 
 from server import Config
 from server.io import Utils
@@ -45,12 +46,12 @@ class _Project:
                 pass
 
             # Add new files created while the engine was closed
-            newFiles = Utils.ListFilesFromFolder(self.project_path)
+            newFiles = Utils.ListFilesFromFolder(self.getProjectFolder())
             for asset in newFiles:
                 if asset in self.assets:
                     continue
 
-                assetProc = AssetProcessor.CreateAssetProcessor(asset, asset)
+                assetProc = AssetProcessor.CreateAssetProcessor(asset)
                 if assetProc != None:
                     self.assets[asset] = assetProc
                     Utils.Console.info('Adding file to project: '+asset)
@@ -134,7 +135,27 @@ class _Project:
             f = open(fname, 'r')
             sceneJson = f.read()
             f.close()
-            return json.loads(sceneJson)
+            scene = json.loads(sceneJson)
+            # Make sure that all component ids are correct -- they might have
+            # changed due to the user updating files with the engine closed
+            inconsistencyDetected = False
+            for gameObj in scene:
+                for component in gameObj['components']:
+                    if 'path' in component:
+                        if component['id'] != self.assets[component['path']].id():
+                            component['id'] = self.assets[component['path']].id()
+                            inconsistencyDetected = True
+                            pass
+                        pass
+                    pass
+                pass
+            if inconsistencyDetected:
+                f = open(fname, 'w')
+                f.write(json.dumps(scene))
+                f.close()
+                pass
+
+            return scene
         except IOError:
             # TODO do something if scene file is gone
             return None
@@ -146,6 +167,7 @@ class _Project:
             self.assets[fname].getMetadata()
             self.assets[fname].update()
             pass
+        self.saveProject()
         pass
 
     def getAssetList(self):
@@ -236,19 +258,21 @@ class _Project:
 
         # If any of the asset dependencies are newer than the filePath, return true
         if assetPath in self.assets:
-            for dependency in self.assets[assetPath].dependencies():
-                if os.path.getmtime(dependency) > queryFileMTime:
-                    print '\tFile '+dependency+' is newer than '+filePath
-                    return True
-                pass
+            if self.assets[assetPath].mostRecentDependencyTime() > queryFileMTime:
+                return True
             pass
 
         return False
     pass
 
+_projectLock = threading.Lock()
+
 def updateAllAssets():
     global _currentProject
+    global _projectLock
+    _projectLock.acquire()
     _currentProject.updateAllAssets()
+    _projectLock.release()
     pass
 
 def getAssetList():
@@ -282,11 +306,18 @@ def loadProject(path):
 
 def processAsset(assetPath, saveProject):
     global _currentProject
-    return _currentProject.processAsset(assetPath, saveProject)
+    global _projectLock
+    _projectLock.acquire()
+    assetData = _currentProject.processAsset(assetPath, saveProject)
+    _projectLock.release()
+    return assetData
 
 def removeAsset(assetPath, saveProject):
     global _currentProject
-    return _currentProject.removeAsset(assetPath, saveProject)
+    global _projectLock
+    _projectLock.acquire()
+    _currentProject.removeAsset(assetPath, saveProject)
+    _projectLock.release()
 
 def isFileOlderThanDependency(filePath, assetPath):
     global _currentProject
