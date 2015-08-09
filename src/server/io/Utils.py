@@ -24,8 +24,14 @@ def IsHeaderFile(assetPath):
 def IsImplementationFile(assetPath):
     return PathHasExtension(assetPath, ['.cpp', '.cxx'])
 
+def IsCpyFile(assetPath):
+    return PathHasExtension(assetPath, ['.cpy'])
+
 def IsScriptFile(assetPath):
     return IsHeaderFile(assetPath) or IsImplementationFile(assetPath)
+
+def IsProcessableFile(path):
+    return IsScriptFile(path) or IsCpyFile(path)
 
 def IsTrackableAsset(filePath):
     # TODO also check for other supported file type
@@ -99,3 +105,30 @@ def CopyFilesOfTypes(src, dst, types, baseSrcFolder=None):
         pass
     pass
 
+# Colors for terminal printing
+class Console:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+    @staticmethod
+    def error(msg):
+        print Console.BOLD+Console.FAIL+'Error: '+Console.ENDC+msg
+        pass
+
+    @staticmethod
+    def warning(msg):
+        print Console.BOLD+Console.WARNING+'Warning: '+Console.ENDC+msg
+        pass
+
+    @staticmethod
+    def info(msg):
+        print Console.BOLD+Console.OKBLUE+'Info: '+Console.ENDC+msg
+        pass
+
+    pass

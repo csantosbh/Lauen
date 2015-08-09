@@ -1,9 +1,9 @@
 // TODO make this a regular cpp file
 
 #include "Peekers.hpp"
-% for type,default_component in default_components.iteritems():
-#include "${default_component['path']}"
-% endfor
+#include "default_components/MeshRenderer.hpp"
+#include "default_components/Mesh.hpp"
+#include "default_components/Transform.hpp"
 
 #ifdef PREVIEW_MODE
 

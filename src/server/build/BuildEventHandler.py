@@ -1,4 +1,5 @@
-from server import RPC, WSServer, io, Config
+from server import RPC, WSServer, Config
+from server.io import Utils
 from server.project import Project
 from server.components import DefaultComponentManager
 
@@ -51,50 +52,43 @@ def RenderFactorySources(componentFiles):
 
     projectFolder = Project.getProjectFolder()
     templatePath = projectFolder+'/default_assets/factories/FactoryTemplates.cpy'
+    outputPaths = []
+
     for component in componentFiles:
         renderParameters = dict(component=component,
                                 isVecType=_isVecType,
                                 vecIterations=dict(v4f=4, v3f=3, v2f=2))
-        fname = io.Utils.GetFileNameFromPath(component['path'])
+        fname = Utils.GetFileNameFromPath(component['path'])
         outputPath = projectFolder+'/default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(component['id']) + '.cpp'
+        outputPaths.append(outputPath)
 
-        # Only update the auto-generated files when their CPY sources have been
-        # updated, or when one of its dependencies have been updated.
-        if Project.isFileOlderThanDependency(outputPath, outputPath):
-            print 'Updating template '+outputPath
-            componentFactoryTemplate = open(templatePath).read()
-            with open(outputPath, 'w') as outputHandle:
-                outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
-                pass
+        componentFactoryTemplate = open(templatePath).read()
+        with open(outputPath, 'w') as outputHandle:
+            print '\tUpdating template '+outputPath
+            outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
             pass
         pass
-    pass
+    return outputPaths
 
-def _renderTemplateSources(componentFiles):
+def RenderStandardFactorySources():
     from mako.template import Template
 
     projectFolder = Project.getProjectFolder()
-    RenderFactorySources(componentFiles)
 
-    # TODO deprecate these templates below, use regular cpp files instead
-    renderParameters = dict(default_components=DefaultComponentManager.getDefaultComponents(),
-                            vecIterations=dict(v4f=4, v3f=3, v2f=2))
-    templateFiles = ['Factories.cpy', 'Peekers.cpy']
-    for templateFile in templateFiles:
-        templatePath = projectFolder+'/default_assets/'+templateFile
-        outputPath = projectFolder+'/default_assets/'+templateFile[:templateFile.rfind('.')] + '.cpp'
+    # TODO have one .o per standard_asset maybe?
+    renderParameters = dict(default_components=DefaultComponentManager.getDefaultComponents(), vecIterations=dict(v4f=4, v3f=3, v2f=2))
+    templatePath = projectFolder+'/default_assets/Factories.cpy'
+    outputPath = projectFolder+'/default_assets/Factories.cpp'
 
-        # Only update the auto-generated files when their CPY sources have been
-        # updated, or when one of its dependencies have been updated.
-        if Project.isCPYTemplateOutdated(templatePath):
-            print 'Updating template '+templatePath
-            componentFactoryTemplate = open(templatePath).read()
-            with open(outputPath, 'w') as outputHandle:
-                outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
-                pass
-            pass
+    # Only update the auto-generated files when their CPY sources have been
+    # updated, or when one of its dependencies have been updated.
+    print 'Updating template Factories.cpp'
+    componentFactoryTemplate = open(templatePath).read()
+    with open(outputPath, 'w') as outputHandle:
+        outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
         pass
-    pass
+
+    return outputPath
 
 def _runGame(path, workFolder):
     from subprocess import Popen, PIPE
@@ -112,24 +106,22 @@ def _runGame(path, workFolder):
 
 def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags):
     import subprocess
-    outputFilePath = outputFolder+'/build/'+io.Utils.GetFileNameFromPath(sourceFile)+'.o'
-    success=True
+    outputFilePath = outputFolder+'/build/'+Utils.GetFileNameFromPath(sourceFile)+'.o'
     compilationMessage = ''
     returncode=0
 
     try:
         # Only build the object file if it is older than any of its dependencies
         if Project.isFileOlderThanDependency(outputFilePath, sourceFile):
-            print 'building '+outputFilePath
+            Utils.Console.info('Building '+outputFilePath)
             compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
             pass
     except subprocess.CalledProcessError as e:
+        Utils.Console.error('Error building '+outputFilePath)
         compilationMessage = e.output
         returncode = e.returncode
-        success = False
         pass
 
-    print compilationMessage
     return dict(output=outputFilePath, message=compilationMessage, returncode=returncode)
 
 def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
@@ -144,14 +136,15 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
     compilationStatus = dict(returncode=0, message='')
     try:
         # Generate component factory
-        _renderTemplateSources(Project.getAssetList())
+        #RenderFactorySources(Project.getAssetList())
+        #RenderStandardFactorySources()
         
         # Generate build list
         sourceFiles = []
-        componentScripts = io.Utils.ListFilesFromFolder(projectFolder)
+        componentScripts = Utils.ListFilesFromFolder(projectFolder)
         # Append component scripts to the list of build files
         for componentScript in componentScripts:
-            if io.Utils.IsImplementationFile(componentScript):
+            if Utils.IsImplementationFile(componentScript):
                 sourceFiles.append(componentScript)
                 pass
             pass
@@ -203,7 +196,7 @@ def _PostExportStep(platform, outputFolder):
     import subprocess
     if platform == 'windows':
         thirdPartyFolder = Config.get('export', 'third_party_folder')
-        io.Utils.CopyFilesOfTypes(thirdPartyFolder+'/cross_compiling/windows/redist', outputFolder, ['.dll'])
+        Utils.CopyFilesOfTypes(thirdPartyFolder+'/cross_compiling/windows/redist', outputFolder, ['.dll'])
         pass
     elif platform == 'preview' or platform == 'nacl':
         naclFolder = Config.get('export', 'nacl')['pepper_folder']
@@ -223,8 +216,8 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder, cleanObject
         projectFolder = Project.getProjectFolder()
         dir_util.copy_tree(projectFolder + '/scenes', outputFolder+'/scenes')
         # Copy assets to destination folder
-        io.Utils.CopyFilesOfTypes(projectFolder+'/assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
-        io.Utils.CopyFilesOfTypes(projectFolder+'/default_assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
+        Utils.CopyFilesOfTypes(projectFolder+'/assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
+        Utils.CopyFilesOfTypes(projectFolder+'/default_assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
         # Platform specific post-build steps
         _PostExportStep(platform, outputFolder)
         # Remove temporary build folder

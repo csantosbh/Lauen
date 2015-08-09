@@ -1,11 +1,13 @@
 #!/usr/bin/env python
 import sys
 import os
+import clang.cindex
 from clang.cindex import Index, TokenKind, TranslationUnit
 
 ###
 # Globals
-_clangIndex = Index.create()
+_clangIndex = Index(clang.cindex.conf.lib.clang_createIndex(False, 1))
+#_clangIndex = Index.create()
 _translationUnits = dict()
 
 def translateFieldType(typeName):
@@ -112,6 +114,8 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
 def parseCPPFile(fileName):
     import re
     from server import Config
+    from server.project import Project
+    from server.io import Utils
 
     global _clangIndex
     global _translationUnits
@@ -126,33 +130,59 @@ def parseCPPFile(fileName):
         tu.reparse([(fileName, open(fileName,'r'))])
     else:
         try :
+            # TODO maybe get the flags from BuildEventHandler?
+            ####
+            # TODO documentar q foi gerado com:
+            # clang++ -x c++-header -std=c++11 Eigen -relocatable-pch -o Eigen.pch
+            # (dentro da pasta Eigen)
+            ####
             tu = _clangIndex.parse(fileName, ['-std=c++11',
                                         '-Werror',
-                                        '-I',Config.get('export', 'third_party_folder')+'/Eigen',
-                                        '-include-pch',
-                                        Config.get('export', 'third_party_folder')+'/Eigen/Eigen.pch' ],
+                                        '-DLINUX',
+                                        '-DDESKTOP',
+                                        '-DDEBUG',
+                                        '-I',Config.get('export', 'third_party_folder')+'/rapidjson/include',
+                                        '-I',Project.getProjectFolder()+'/default_assets/',
+                                        '-include-pch',Config.get('export', 'third_party_folder')+'/Eigen/Eigen.pch'],
                                         options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
             _translationUnits[fileName] = tu
-        except:
-            return dict(symbols=[], dependencies=[])
+        except Exception as err:
+            Utils.Console.error('Error processing translation unit!')
+            return dict(symbols=[], success=False, diagnostics=[str(err)], dependencies=[])
             pass
         pass
 
-    # Get list of pragmas
-    prevToken = None
-    nextIsPragma = False
-    pragmaList = []
-    for token in tu.cursor.get_tokens():
-        if token.kind==TokenKind.IDENTIFIER and prevToken.kind == TokenKind.PUNCTUATION and token.spelling=='pragma':
-            nextIsPragma = True
-        elif nextIsPragma:
-            if token.kind==TokenKind.IDENTIFIER:
-                pragmaList.append(dict(line=token.extent.start.line, identifier=token.spelling))
-            nextIsPragma=False
-        prevToken = token
+    # Check for diagnostic messages
+    diagnostics = []
+    success = True
+    for diag in tu.diagnostics:
+        diagnostics.append(diag.spelling)
+        if diag.severity==clang.cindex.Diagnostic.Error or diag.severity==clang.cindex.Diagnostic.Fatal:
+            success = False
+        pass
 
-    parseContext=dict(depth=0,withinClassContext=False,requestedFileName=fileName,currentNameSpace='')
-    parseResult=parseCPPFileRec(tu.cursor, pragmaList, parseContext)
+    # Get list of pragmas
+    if success:
+        prevToken = None
+        nextIsPragma = False
+        pragmaList = []
+        for token in tu.cursor.get_tokens():
+            if token.kind==TokenKind.IDENTIFIER and prevToken.kind == TokenKind.PUNCTUATION and token.spelling=='pragma':
+                nextIsPragma = True
+            elif nextIsPragma:
+                if token.kind==TokenKind.IDENTIFIER:
+                    pragmaList.append(dict(line=token.extent.start.line, identifier=token.spelling))
+                nextIsPragma=False
+            prevToken = token
+
+        parseContext=dict(depth=0,withinClassContext=False,requestedFileName=fileName,currentNameSpace='')
+        parseResult=parseCPPFileRec(tu.cursor, pragmaList, parseContext)
+    else:
+        parseResult=dict(dependencies=[])
+        pass
+
+    parseResult['diagnostics'] = diagnostics
+    parseResult['success'] = success
 
     return parseResult
 
@@ -162,13 +192,13 @@ def GetSimpleClass(fileName):
     from server.components import DefaultComponentManager
     print 'parsing ' + fileName
     parsedFile = parseCPPFile(fileName)
-    fileSymbols = parsedFile['symbols']
     simpleClass = dict()
+    dependencies = []
 
-    if len(fileSymbols) > 0:
+    if parsedFile['success'] and len(parsedFile['symbols']) > 0:
+        fileSymbols = parsedFile['symbols']
         if fileSymbols[0]['kind'] == 'CLASS_DECL':
             simpleClass['class'] = fileSymbols[0]['name']
-            #simpleClass['id'] = Project.getScriptId(fileName)
             simpleClass['namespace']  = fileSymbols[0]['namespace']
 
             simpleClass['fields'] = {}
@@ -186,4 +216,10 @@ def GetSimpleClass(fileName):
             pass
         pass
 
-    return dict(symbols=simpleClass, dependencies=parsedFile['dependencies'])
+    dependencies = parsedFile['dependencies']
+
+    return dict(symbols=simpleClass,
+            success=parsedFile['success'],
+            diagnostics=parsedFile['diagnostics'],
+            dependencies=dependencies)
+
