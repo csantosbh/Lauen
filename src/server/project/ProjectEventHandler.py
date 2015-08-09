@@ -62,7 +62,11 @@ def exportGame(params):
     return False
     pass
 
+def updateAllAssets(params):
+    Project.updateAllAssets()
+
 RPC.listen(createNewProject)
 RPC.listen(getRecentProjects)
 RPC.listen(loadProject)
 RPC.listen(exportGame)
+RPC.listen(updateAllAssets)

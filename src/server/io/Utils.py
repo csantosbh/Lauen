@@ -82,6 +82,14 @@ def IsSubdir(path, directory):
         return False
     else:
         return True
+    pass
+
+def Touch(fname):
+    import os
+    with open(fname, 'a'):
+        os.utime(fname, None)
+        pass
+    pass
 
 # Copy all files of specified types to destination folder.
 # The destination folder will be created, so as to keep

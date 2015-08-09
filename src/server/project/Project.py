@@ -141,6 +141,13 @@ class _Project:
             pass
         pass
 
+    def updateAllAssets(self):
+        for fname in self.assets:
+            self.assets[fname].getMetadata()
+            self.assets[fname].update()
+            pass
+        pass
+
     def getAssetList(self):
         if self.project_path == None:
             return []
@@ -237,6 +244,11 @@ class _Project:
             pass
 
         return False
+    pass
+
+def updateAllAssets():
+    global _currentProject
+    _currentProject.updateAllAssets()
     pass
 
 def getAssetList():

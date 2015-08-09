@@ -123,7 +123,6 @@ class ScriptProcessor(AssetProcessor):
             self.persistent_fields['mtime'] = os.path.getmtime(self.path)
 
             self.saveAssetInfoCache(self.path, fileSymbols)
-
             pass
         return fileSymbols
 
@@ -184,13 +183,20 @@ class UserFactoriesProcessor(AssetProcessor):
 
     def update(self):
         from server.build import BuildEventHandler
-        print 'user factory update'
-        # Re-generate all factory files
-        for asset in Project.getAssetList():
-            print 'asseter',asset
-            if Utils.IsHeaderFile(asset['path']) and Project.isUserAsset(asset['path']):
-                BuildEventHandler.RenderFactorySources([asset])
+        if self.persistent_fields['mtime'] < os.path.getmtime(self.path):
+            print 'User factory updated'
+            # Re-generate all factory files
+            for asset in Project.getAssetList():
+                if Utils.IsHeaderFile(asset['path']) and Project.isUserAsset(asset['path']):
+                    outPaths = BuildEventHandler.RenderFactorySources([asset])
+                    # Re-generate its .o file
+                    for path in outPaths:
+                        BuildEventHandler.BuildPreviewObject(path)
+                        pass
+                    pass
                 pass
+
+            self.persistent_fields['mtime'] = os.path.getmtime(self.path)
             pass
         pass
 
@@ -215,7 +221,10 @@ class StandardFactoriesProcessor(AssetProcessor):
 
     def update(self):
         from server.build import BuildEventHandler
-        BuildEventHandler.RenderStandardFactorySources()
+        if self.persistent_fields['mtime'] < os.path.getmtime(self.path):
+            BuildEventHandler.RenderStandardFactorySources()
+            self.persistent_fields['mtime'] = os.path.getmtime(self.path)
+            pass
         pass
 
     def remove(self):
@@ -230,9 +239,9 @@ def CreateAssetProcessor(assetPath, persistent_fields=None):
     elif Utils.IsCpyFile(assetPath):
         # TODO rename factories.cpy to standardfactories.cpy and factorytemplates to userfactories.cpy
         if assetPath.endswith('Factories.cpy'):
-            return UserFactoriesProcessor(assetPath, persistent_fields)
-        elif assetPath.endswith('FactoryTemplates.cpy'):
             return StandardFactoriesProcessor(assetPath, persistent_fields)
+        elif assetPath.endswith('FactoryTemplates.cpy'):
+            return UserFactoriesProcessor(assetPath, persistent_fields)
         else:
             print 'Error: unsupported cpy file detected: '+assetPath
             return None

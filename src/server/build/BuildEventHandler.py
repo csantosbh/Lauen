@@ -82,7 +82,7 @@ def RenderStandardFactorySources():
 
     # Only update the auto-generated files when their CPY sources have been
     # updated, or when one of its dependencies have been updated.
-    print 'Updating template Factories.cpp'
+    print 'Updating template Factories.cpp from its CPY'
     componentFactoryTemplate = open(templatePath).read()
     with open(outputPath, 'w') as outputHandle:
         outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
