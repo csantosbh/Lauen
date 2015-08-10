@@ -30,21 +30,20 @@ class _AssetFolderWatcherThread(threading.Thread):
         self.isRunning = True
         while self.isRunning:
             notifier.process_events()
-            while notifier.check_events(timeout=1000):  #loop in case more events appear while we are processing
+            while notifier.check_events(timeout=10000):  #loop in case more events appear while we are processing
                 notifier.read_events()
                 notifier.process_events()
                 pass
             pass
         pass
-    pass
 
     def stop(self):
         self.isRunning = False
+        pass
+
+    pass
 
 watcherThread=_AssetFolderWatcherThread()
+watcherThread.daemon = True
 watcherThread.start()
 
-def stopWatcher():
-    watcherThread.stop()
-    watcherThread.join()
-    pass

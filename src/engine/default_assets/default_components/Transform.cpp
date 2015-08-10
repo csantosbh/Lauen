@@ -1,5 +1,6 @@
 #include "Factories.hpp"
 #include "Transform.hpp"
+#include "LauCommon.h"
 
 namespace lau {
 
@@ -57,6 +58,6 @@ struct Initializer<lau::Transform> {
 	}
 	static Initializer<lau::Transform> instance;
 };
-Initializer<lau::Transform> Initializer<lau::Transform>::instance;
+Initializer<lau::Transform> Initializer<lau::Transform>::instance STATIC_INITIALIZER_GROUP_C;
 
 } // namespace lau

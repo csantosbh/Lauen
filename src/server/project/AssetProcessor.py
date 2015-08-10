@@ -129,7 +129,7 @@ class ScriptProcessor(AssetProcessor):
                     outPaths = BuildEventHandler.RenderFactorySources([fileSymbols])
                     # Re-build the factories corresponding .o files
                     for path in outPaths:
-                        status = BuildEventHandler.BuildPreviewObject(path)
+                        BuildEventHandler.BuildPreviewObject(path)
                         pass
                     pass
                 pass
@@ -144,16 +144,18 @@ class ScriptProcessor(AssetProcessor):
 
     def update(self):
         from server.build import BuildEventHandler
-        # Generate its .o object if the path refers to a cpp file
-        if Utils.IsImplementationFile(self.path):
-            buildStatus = BuildEventHandler.BuildPreviewObject(self.path)
-
-            if buildStatus['returncode'] != 0:
+        def buildCallback(output, message, returncode):
+            if returncode != 0:
                 self.isBroken = True
                 Utils.Console.error('Failed building '+self.path)
             else:
                 self.isBroken = False
                 pass
+            pass
+
+        # Generate its .o object if the path refers to a cpp file
+        if Utils.IsImplementationFile(self.path):
+            BuildEventHandler.BuildPreviewObject(self.path, buildCallback)
             pass
 
         pass

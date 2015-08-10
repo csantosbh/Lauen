@@ -3,6 +3,7 @@
 
 #include "../Factories.hpp"
 #include "../Peekers.hpp"
+#include "../LauCommon.h"
 #include "${component['path']}"
 
 namespace lau {
@@ -83,7 +84,7 @@ struct Initializer<${component['namespace']}::${component['class']}> {
 	}
 	static Initializer<${component['namespace']}::${component['class']}> instance;
 };
-Initializer<${component['namespace']}::${component['class']}> Initializer<${component['namespace']}::${component['class']}>::instance;
+STATIC_INITIALIZER_GROUP_C(Initializer<${component['namespace']}::${component['class']}> Initializer<${component['namespace']}::${component['class']}>::instance);
 
 % endif
 

@@ -3,6 +3,7 @@
 #include <rapidjson/prettywriter.h>
 
 #include "Factories.hpp"
+#include "LauCommon.h"
 
 #include "default_components/MeshRenderer.hpp"
 #include "default_components/Mesh.hpp"
@@ -11,7 +12,7 @@
 
 namespace lau {
 
-std::map<int, std::shared_ptr<Component>(*)(shared_ptr<GameObject>&, const rapidjson::Value&)> Factories::componentInstanceFactories;
+std::map<int, std::shared_ptr<Component>(*)(shared_ptr<GameObject>&, const rapidjson::Value&)> Factories::componentInstanceFactories STATIC_INITIALIZER_GROUP_A;
 
 shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent) {
 	if(serializedComponent.HasMember("id")) {

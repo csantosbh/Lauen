@@ -1,6 +1,7 @@
 #include "Factories.hpp"
 #include "Mesh.hpp"
 #include "utils/IO.h"
+#include "LauCommon.h"
 
 using namespace std;
 using namespace rapidjson;
@@ -84,7 +85,7 @@ struct Initializer<lau::Mesh> {
 	}
 	static Initializer<lau::Mesh> instance;
 };
-Initializer<lau::Mesh> Initializer<lau::Mesh>::instance;
+Initializer<lau::Mesh> Initializer<lau::Mesh>::instance STATIC_INITIALIZER_GROUP_C;
 
 
 } // namespace lau

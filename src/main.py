@@ -13,6 +13,5 @@ try:
     WSServer.serve(blocking = False)
     HTTPServer.serve()
 except KeyboardInterrupt:
-    AssetFolderWatcher.stopWatcher()
     exit()
     pass

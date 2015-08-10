@@ -132,6 +132,6 @@ struct Initializer<lau::MeshRenderer> {
 	}
 	static Initializer<lau::MeshRenderer> instance;
 };
-Initializer<lau::MeshRenderer> Initializer<lau::MeshRenderer>::instance;
+Initializer<lau::MeshRenderer> Initializer<lau::MeshRenderer>::instance STATIC_INITIALIZER_GROUP_C;
 
 } // namespace lau

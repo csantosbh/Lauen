@@ -1,5 +1,10 @@
 #pragma once
 
+#define STATIC_INITIALIZER_GROUP_A __attribute__ ((init_priority (200)))
+#define STATIC_INITIALIZER_GROUP_B __attribute__ ((init_priority (300)))
+#define STATIC_INITIALIZER_GROUP_C __attribute__ ((init_priority (400)))
+#define STATIC_INITIALIZER_GROUP_D __attribute__ ((init_priority (500)))
+
 #ifdef NACL
 #include <sstream>
 

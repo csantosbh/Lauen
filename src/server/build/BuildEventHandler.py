@@ -1,3 +1,7 @@
+import threading
+import multiprocessing
+import Queue
+
 from server import RPC, WSServer, Config
 from server.io import Utils
 from server.project import Project
@@ -33,14 +37,14 @@ def _getFlags(compilationMode):
             # TODO check licenses of libraries so I can determine if I can install their binaries with the engine (which means these folders could be specified as relatives to the instalation folder instead of having to set them in the config)
             'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/lib/ -L '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/build/src/',
             # TODO Add the Native Client target to the export menu on the editor
-            'nacl': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
-            'preview': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm',
+            'nacl': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm -fms-extensions',
+            'preview': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm -fms-extensions',
         },
         'cxx_flags': {
             'linux': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/ ' + cxxModeFlags[compilationMode],
             'windows': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -I '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/include/ -I '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
-            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include ' + cxxModeFlags[compilationMode],
-            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include ' + cxxModeFlags[compilationMode],
+            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
+            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
         }
     }
 
@@ -72,7 +76,6 @@ def RenderFactorySources(componentFiles):
 
 def _runGame(path, workFolder):
     from subprocess import Popen, PIPE
-    from time import sleep
 
     process = Popen(path, stdout=PIPE, stderr=PIPE, cwd=workFolder)
     while process.returncode == None:
@@ -84,25 +87,10 @@ def _runGame(path, workFolder):
         pass
     pass
 
-def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags):
-    import subprocess
-    outputFilePath = outputFolder+'/build/'+Utils.GetFileNameFromPath(sourceFile)+'.o'
-    compilationMessage = ''
-    returncode=0
-
-    try:
-        # Only build the object file if it is older than any of its dependencies
-        if Project.isFileOlderThanDependency(outputFilePath, sourceFile):
-            Utils.Console.info('Building '+outputFilePath)
-            compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
-            pass
-    except subprocess.CalledProcessError as e:
-        Utils.Console.error('Error building '+outputFilePath)
-        compilationMessage = e.output
-        returncode = e.returncode
-        pass
-
-    return dict(output=outputFilePath, message=compilationMessage, returncode=returncode)
+def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags, callback):
+    global workQueue
+    workQueue.put(dict(sourceFile=sourceFile, outputFolder=outputFolder, platform=platform, compilationFlags=compilationFlags, callback=callback))
+    pass
 
 def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess, time
@@ -129,33 +117,41 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
             pass
 
         # Compile
-        precompiledFiles = ''
-        for sourceFile in sourceFiles:
-            buildStatus = _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags)
-            compilationStatus['returncode'] = buildStatus['returncode']
-            compilationStatus['message'] += buildStatus['message']
+        internalCompStatus = dict(precompiledFiles = '')
+        resultLock = threading.Lock()
+        def threadResult(output, message, returncode):
+            resultLock.acquire()
+            if compilationStatus['returncode'] == 0:
+                compilationStatus['returncode'] = returncode
+                compilationStatus['message'] += message
+                internalCompStatus['precompiledFiles'] += ' '+output
+                pass
 
+            resultLock.release()
+            pass
+
+        for sourceFile in sourceFiles:
+            _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags, threadResult)
             if compilationStatus['returncode'] != 0:
                 break
-
-            precompiledFiles += ' '+buildStatus['output']
-
             pass
+
+        workQueue.join()
 
         # Link
         # TODO only link if the final executable is older than any of the object files
         print 'linking...'
         startTime=time.time()
         if compilationStatus['returncode'] == 0:
-            print '...'+cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform]+'...'
-            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + precompiledFiles +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
-            print 'ok.'
+            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
             pass
-        print 'linking done ('+str(time.time()-startTime)+'s)'
+        Utils.Console.info('linking done ('+str(time.time()-startTime)+'s)')
 
     except subprocess.CalledProcessError as e:
         compilationStatus['message'] = e.output
         compilationStatus['returncode'] = e.returncode
+        print cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform]
+        Utils.Console.error('Could not link program')
         pass
 
     WSServer.send('compilationStatus', compilationStatus)
@@ -210,10 +206,62 @@ def previewGame(event_msg):
     ExportGame('preview', False, 'DEBUG', Project.getProjectFolder()+'/build/nacl/', cleanObjects=False)
     return True
 
-def BuildPreviewObject(inputFile):
-    buildStatus = _buildObjectFile(inputFile, Project.getProjectFolder()+'/build/nacl/', 'preview', _getFlags('DEBUG'))
-    WSServer.send('compilationStatus', buildStatus)
-    return buildStatus
+def BuildPreviewObject(inputFile, callback=None):
+    def buildResult(output, message, returncode):
+        WSServer.send('compilationStatus', dict(output=output, message=message, returncode=returncode))
+        if callback!=None:
+            callback(output, message, returncode)
+            pass
+        pass
+
+    _buildObjectFile(inputFile, Project.getProjectFolder()+'/build/nacl/', 'preview', _getFlags('DEBUG'), callback)
+    pass
+
+class ObjectBuilderThread(threading.Thread):
+    def buildObjectFile(self, sourceFile, outputFolder, platform, compilationFlags, callback):
+        import subprocess
+        outputFilePath = outputFolder+'/build/'+Utils.GetFileNameFromPath(sourceFile)+'.o'
+        compilationMessage = ''
+        returncode=0
+
+        try:
+            # Only build the object file if it is older than any of its dependencies
+            if Project.isFileOlderThanDependency(outputFilePath, sourceFile):
+                Utils.Console.info('Building '+outputFilePath)
+                compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+                pass
+        except subprocess.CalledProcessError as e:
+            Utils.Console.error('Error building '+outputFilePath)
+            compilationMessage = e.output
+            returncode = e.returncode
+            pass
+
+        if callback!=None:
+            callback(output=outputFilePath, message=compilationMessage, returncode=returncode)
+            pass
+        pass
+
+    def run(self):
+        global workQueue
+        self.isRunning = True
+        while self.isRunning:
+            request = workQueue.get()
+            self.buildObjectFile(**request)
+            workQueue.task_done()
+            pass
+        pass
+
+    def stop(self):
+        self.isRunning = False
+        pass
+    pass
+
+workQueue = Queue.Queue()
+for i in range(multiprocessing.cpu_count()):
+    builderThread = ObjectBuilderThread()
+    builderThread.daemon = True
+    builderThread.start()
+    pass
 
 RPC.listen(buildGame)
 RPC.listen(previewGame)
