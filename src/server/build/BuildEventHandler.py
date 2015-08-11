@@ -1,3 +1,4 @@
+import os
 import threading
 import multiprocessing
 import Queue
@@ -41,10 +42,10 @@ def _getFlags(compilationMode):
             'preview': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm -fms-extensions',
         },
         'cxx_flags': {
-            'linux': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/ ' + cxxModeFlags[compilationMode],
-            'windows': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -I '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/include/ -I '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+'/default_assets/',
-            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
-            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
+            'linux': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ ' + cxxModeFlags[compilationMode],
+            'windows': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -I '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/include/ -I '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/',
+            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
+            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
         }
     }
 
@@ -64,7 +65,7 @@ def RenderFactorySources(componentFiles):
                                 vecIterations=dict(v4f=4, v3f=3, v2f=2))
         fname = Utils.GetFileNameFromPath(component['path'])
         outputPath = projectFolder+'/default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(component['id']) + '.cpp'
-        outputPaths.append(outputPath)
+        outputPaths.append(Project.getRelProjFilePath(outputPath))
 
         componentFactoryTemplate = open(templatePath).read()
         with open(outputPath, 'w') as outputHandle:
@@ -89,7 +90,20 @@ def _runGame(path, workFolder):
 
 def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags, callback):
     global workQueue
-    workQueue.put(dict(sourceFile=sourceFile, outputFolder=outputFolder, platform=platform, compilationFlags=compilationFlags, callback=callback))
+    fileIsBeingBuilt = False
+    fileSetLock.acquire()
+    if sourceFile in fileSet:
+        fileIsBeingBuilt = True
+        fileCallbacks[sourceFile].append(callback)
+    else:
+        fileSet.add(sourceFile)
+        fileCallbacks[sourceFile] = [callback]
+        pass
+    fileSetLock.release()
+
+    if not fileIsBeingBuilt:
+        workQueue.put(dict(sourceFile=sourceFile, outputFolder=outputFolder, platform=platform, compilationFlags=compilationFlags))
+        pass
     pass
 
 def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
@@ -150,7 +164,6 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
     except subprocess.CalledProcessError as e:
         compilationStatus['message'] = e.output
         compilationStatus['returncode'] = e.returncode
-        print cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform]
         Utils.Console.error('Could not link program')
         pass
 
@@ -214,11 +227,11 @@ def BuildPreviewObject(inputFile, callback=None):
             pass
         pass
 
-    _buildObjectFile(inputFile, Project.getProjectFolder()+'/build/nacl/', 'preview', _getFlags('DEBUG'), callback)
+    _buildObjectFile(inputFile, Project.getProjectFolder()+'/build/nacl/', 'preview', _getFlags('DEBUG'), buildResult)
     pass
 
 class ObjectBuilderThread(threading.Thread):
-    def buildObjectFile(self, sourceFile, outputFolder, platform, compilationFlags, callback):
+    def buildObjectFile(self, sourceFile, outputFolder, platform, compilationFlags):
         import subprocess
         outputFilePath = outputFolder+'/build/'+Utils.GetFileNameFromPath(sourceFile)+'.o'
         compilationMessage = ''
@@ -228,16 +241,25 @@ class ObjectBuilderThread(threading.Thread):
             # Only build the object file if it is older than any of its dependencies
             if Project.isFileOlderThanDependency(outputFilePath, sourceFile):
                 Utils.Console.info('Building '+outputFilePath)
-                compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + sourceFile +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+                compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + Project.getAbsProjFilePath(sourceFile) +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
                 pass
         except subprocess.CalledProcessError as e:
             Utils.Console.error('Error building '+outputFilePath)
+            print e.output
             compilationMessage = e.output
             returncode = e.returncode
             pass
 
-        if callback!=None:
-            callback(output=outputFilePath, message=compilationMessage, returncode=returncode)
+        fileSetLock.acquire()
+        callbacks = fileCallbacks[sourceFile]
+        del fileCallbacks[sourceFile]
+        fileSet.remove(sourceFile)
+        fileSetLock.release()
+
+        for callback in callbacks:
+            if callback!=None:
+                callback(output=outputFilePath, message=compilationMessage, returncode=returncode)
+                pass
             pass
         pass
 
@@ -257,6 +279,9 @@ class ObjectBuilderThread(threading.Thread):
     pass
 
 workQueue = Queue.Queue()
+fileSetLock = threading.Lock()
+fileSet = set()
+fileCallbacks = dict()
 for i in range(multiprocessing.cpu_count()):
     builderThread = ObjectBuilderThread()
     builderThread.daemon = True

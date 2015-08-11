@@ -47,7 +47,8 @@ class _Project:
 
             # Add new files created while the engine was closed
             newFiles = Utils.ListFilesFromFolder(self.getProjectFolder())
-            for asset in newFiles:
+            for fullAssetPath in newFiles:
+                asset = os.path.relpath(fullAssetPath, self.getProjectFolder())
                 if asset in self.assets:
                     continue
 
@@ -65,7 +66,7 @@ class _Project:
         # Remove deleted assets from the project
         removedAssets=[]
         for asset in self.assets:
-            if not Utils.FileExists(asset):
+            if not Utils.FileExists(self.getAbsProjFilePath(asset)):
                 removedAssets.append(asset)
             else:
                 self._assetId2Path[self.assets[asset].id()] = asset
@@ -78,11 +79,15 @@ class _Project:
 
         pass
 
+    # Returns the absolute path of a file that belongs to a project
+    def getAbsProjFilePath(self, relativePath):
+        return self.getProjectFolder()+'/'+relativePath
+
     def isUserAsset(self, assetPath):
-        return Utils.IsSubdir(assetPath, self.getProjectFolder()+'/assets/')
+        return Utils.IsSubdir(assetPath, 'assets/')
 
     def isUserScriptFactory(self, assetPath):
-        return Utils.IsSubdir(assetPath, self.getProjectFolder()+'/default_assets/factories/')
+        return Utils.IsSubdir(assetPath, 'default_assets/factories/')
 
     def getProjectFolder(self):
         import os
@@ -142,6 +147,7 @@ class _Project:
             for gameObj in scene:
                 for component in gameObj['components']:
                     if 'path' in component:
+                        # TODO remove component if its source file is missing
                         if component['id'] != self.assets[component['path']].id():
                             component['id'] = self.assets[component['path']].id()
                             inconsistencyDetected = True
@@ -219,6 +225,9 @@ class _Project:
 
         # Process modified asset
         editorData = self.assets[assetPath].getMetadata()
+        print 'hue4',assetPath
+        import traceback
+        #traceback.print_stack()
         self.assets[assetPath].update()
 
         # Update all files that depend on assetPath
@@ -245,6 +254,7 @@ class _Project:
 
         return editorData
 
+    # filePath must be absolute, and assetPath, relative
     def isFileOlderThanDependency(self, filePath, assetPath):
         # If file doesnt even exist, then it must be touched to begin with
         if not Utils.FileExists(filePath):
@@ -252,7 +262,7 @@ class _Project:
             return True
         # If the asset itself is newer than the filePath, return true
         queryFileMTime = os.path.getmtime(filePath)
-        if os.path.getmtime(assetPath) > queryFileMTime:
+        if os.path.getmtime(self.getAbsProjFilePath(assetPath)) > queryFileMTime:
             print '\tFile '+assetPath+' is newer than '+filePath+'.'
             return True
 
@@ -282,6 +292,10 @@ def getAssetList():
 def getProjectFolder():
     global _currentProject
     return _currentProject.getProjectFolder()
+
+def getAbsProjFilePath(path):
+    global _currentProject
+    return _currentProject.getAbsProjFilePath(path)
 
 def createNewProject(path):
     global _currentProject
@@ -335,9 +349,21 @@ def isUserScriptFactory(filePath):
     global _currentProject
     return _currentProject.isUserScriptFactory(filePath)
 
+def fileExists(relativeFilePath):
+    return Utils.FileExists(getAbsProjFilePath(relativeFilePath))
+
+def getRelProjFilePath(absoluteFilePath):
+    return os.path.relpath(absoluteFilePath, getProjectFolder())
+
+def removeFile(relativeFilePath):
+    Utils.RemoveFile(getAbsProjFilePath(relativeFilePath))
+
 def getUniqueAssetId():
     global _currentProject
     return _currentProject.getUniqueAssetId()
+
+def getModificationTime(path):
+    return os.path.getmtime(getAbsProjFilePath(path))
 
 # Load last opened project
 if len(Config.get('runtime', 'recent_projects')) > 0:

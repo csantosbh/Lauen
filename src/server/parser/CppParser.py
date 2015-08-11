@@ -181,10 +181,11 @@ def parseCPPFile(fileName):
         parseResult['symbols'] = parseCPPFileRec(tu.cursor, pragmaList, parseContext)
 
         # Get dependencies
+        projFolder = Project.getProjectFolder()
         for dep in tu.get_includes():
             dependency = os.path.normpath(str(dep.include))
-            if Utils.IsSubdir(dependency, Project.getProjectFolder()):
-                dependencies.add(dependency)
+            if Utils.IsSubdir(dependency, projFolder):
+                dependencies.add(Project.getRelProjFilePath(dependency))
                 pass
             pass
         pass
@@ -197,10 +198,14 @@ def parseCPPFile(fileName):
     return parseResult
 
 # Get only what matters from the parseCPPFile function
-def GetSimpleClass(fileName):
+def GetSimpleClass(relativeFileName):
     from server.project import Project
     from server.components import DefaultComponentManager
-    print 'parsing ' + fileName
+    from server.io import Utils
+
+    Utils.Console.info('Parsing ' + relativeFileName)
+
+    fileName = Project.getAbsProjFilePath(relativeFileName)
     parsedFile = parseCPPFile(fileName)
     simpleClass = dict()
     dependencies = []

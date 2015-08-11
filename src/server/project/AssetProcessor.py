@@ -7,10 +7,10 @@ import Project
 
 # Helper functions
 def _removePreviewObjFiles(fname):
-    objectFilePaths = [Project.getProjectFolder()+'/build/'+fname+'.o',
-            Project.getProjectFolder()+'/build/nacl/build/'+fname+'.o']
+    objectFilePaths = ['build/'+fname+'.o',
+            'build/nacl/build/'+fname+'.o']
     for obj in objectFilePaths:
-        Utils.RemoveFile(obj)
+        Project.removeFile(obj)
         pass
     pass
 
@@ -40,14 +40,17 @@ class AssetProcessor(object):
     def id(self):
         return self.persistent_fields['id']
 
+    def getModificationTime(self):
+        return Project.getModificationTime(self.path)
+
     def dependencies(self):
         return self.persistent_fields['dependencies']
 
     def mostRecentDependencyTime(self):
-        mostRecentTime = os.path.getmtime(self.path)
+        mostRecentTime = self.getModificationTime()
         for dependency in self.persistent_fields['dependencies']:
-            if Utils.FileExists(dependency):
-                depTime = os.path.getmtime(dependency)
+            if Project.fileExists(dependency):
+                depTime = Project.getModificationTime(dependency)
                 if depTime > mostRecentTime:
                     print '\tFile '+dependency+' is newer than '+self.path
                     mostRecentTime = depTime
@@ -88,8 +91,8 @@ class ScriptProcessor(AssetProcessor):
             # If this is a user asset, remove its factory cpp file
             fname = Utils.GetFileNameFromPath(self.path)
 
-            factoryFilePath = Project.getProjectFolder()+'/default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(self.id()) + '.cpp'
-            Utils.RemoveFile(factoryFilePath)
+            factoryFilePath = 'default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(self.id()) + '.cpp'
+            Project.removeFile(factoryFilePath)
 
             # Remove its object files as well
             fname = Utils.GetFileNameFromPath(factoryFilePath)
@@ -162,8 +165,7 @@ class ScriptProcessor(AssetProcessor):
 
     # Private methods
     def getAssetInfoCachePath(self, assetPath):
-        relative = os.path.relpath(assetPath, Project.getProjectFolder())
-        return Project.getProjectFolder()+'/cache/'+relative+'.json'
+        return Project.getAbsProjFilePath('cache/'+assetPath+'.json')
 
     def saveAssetInfoCache(self, assetPath, assetSymbols):
         import json
@@ -175,7 +177,7 @@ class ScriptProcessor(AssetProcessor):
 
     def removeAssetInfoCache(self, assetPath):
         import json
-        Utils.RemoveFile(self.getAssetInfoCachePath(assetPath))
+        Project.removeFile(self.getAssetInfoCachePath(assetPath))
         pass
 
     def loadAssetInfoCache(self, assetPath):
@@ -201,7 +203,7 @@ class UserFactoriesProcessor(AssetProcessor):
 
     def update(self):
         from server.build import BuildEventHandler
-        if self.persistent_fields['mtime'] < os.path.getmtime(self.path):
+        if self.persistent_fields['mtime'] < self.getModificationTime():
             print 'Updating user factory'
             # Re-generate all factory files
             for asset in Project.getAssetList():
@@ -214,7 +216,7 @@ class UserFactoriesProcessor(AssetProcessor):
                     pass
                 pass
 
-            self.persistent_fields['mtime'] = os.path.getmtime(self.path)
+            self.persistent_fields['mtime'] = self.getModificationTime()
             pass
         pass
 
