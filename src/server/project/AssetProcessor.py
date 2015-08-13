@@ -6,9 +6,9 @@ from server.io import Utils
 import Project
 
 # Helper functions
-def _removePreviewObjFiles(fname):
-    objectFilePaths = ['build/'+fname+'.o',
-            'build/nacl/build/'+fname+'.o']
+def _removePreviewObjFiles(fpath):
+    objectFilePaths = ['build/'+fpath+'.o',
+            'build/nacl/build/'+fpath+'.o']
     for obj in objectFilePaths:
         Project.removeFile(obj)
         pass
@@ -52,13 +52,11 @@ class AssetProcessor(object):
             if Project.fileExists(dependency):
                 depTime = Project.getModificationTime(dependency)
                 if depTime > mostRecentTime:
-                    print '\tFile '+dependency+' is newer than '+self.path
                     mostRecentTime = depTime
                     pass
             else:
                 # The dependency was removed! Since we dont know when, lets
                 # just assumed it happened right now
-                print '\tDependency '+dependency+' was removed while the engine was closed!'
                 mostRecentTime = time.gmtime()
                 pass
             pass
@@ -83,23 +81,16 @@ class ScriptProcessor(AssetProcessor):
 
         if Utils.IsImplementationFile(self.path):
             # Remove preview .o files
-            fname = Utils.GetFileNameFromPath(self.path)
-            _removePreviewObjFiles(fname)
+            _removePreviewObjFiles(self.path)
             pass
 
         if Utils.IsHeaderFile(self.path) and Project.isUserAsset(self.path):
             # If this is a user asset, remove its factory cpp file
-            fname = Utils.GetFileNameFromPath(self.path)
-
-            factoryFilePath = 'default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(self.id()) + '.cpp'
+            factoryFilePath = 'default_assets/factories/'+self.path+'.cpp'
             Project.removeFile(factoryFilePath)
 
             # Remove its object files as well
-            fname = Utils.GetFileNameFromPath(factoryFilePath)
-            _removePreviewObjFiles(fname)
-
-            # Finally, remove its json symbol cache
-            self.removeAssetInfoCache(factoryFilePath)
+            _removePreviewObjFiles(factoryFilePath)
             pass
         pass
 
@@ -107,9 +98,8 @@ class ScriptProcessor(AssetProcessor):
         from server.parser import CppParser
         from server.build import BuildEventHandler
         # Check if the asset is up to date, so we dont need to update it
-        #if self.persistent_fields['mtime'] >= os.path.getmtime(self.path) and not self.isBroken:
         mostRecentDepTime = self.mostRecentDependencyTime()
-        if self.persistent_fields['mtime'] >= mostRecentDepTime and not self.isBroken:
+        if self.persistent_fields['mtime'] >= mostRecentDepTime and not self.isBroken and Utils.FileExists(self.getAssetInfoCachePath(self.path)):
             fileSymbols = self.loadAssetInfoCache(self.path)
         else:
             fileInfo = CppParser.GetSimpleClass(self.path)
@@ -126,18 +116,7 @@ class ScriptProcessor(AssetProcessor):
             fileSymbols['path'] = self.path
             fileSymbols['id'] = self.persistent_fields['id']
 
-            # The file was updated. Re-generate its Factory file.
-            if Utils.IsHeaderFile(self.path):
-                if Project.isUserAsset(self.path):
-                    outPaths = BuildEventHandler.RenderFactorySources([fileSymbols])
-                    # Re-build the factories corresponding .o files
-                    for path in outPaths:
-                        BuildEventHandler.BuildPreviewObject(path)
-                        pass
-                    pass
-                pass
-
-            print '\tUpdating dependencies for '+self.path
+            Utils.Console.step('Updating dependencies for '+self.path)
             self.persistent_fields['dependencies'] = list(fileInfo['dependencies'])
             self.persistent_fields['mtime'] = mostRecentDepTime
 
@@ -159,6 +138,15 @@ class ScriptProcessor(AssetProcessor):
         # Generate its .o object if the path refers to a cpp file
         if Utils.IsImplementationFile(self.path):
             BuildEventHandler.BuildPreviewObject(self.path, buildCallback)
+        elif Utils.IsHeaderFile(self.path) and Project.isUserAsset(self.path):
+            # The file was updated. Re-generate its Factory file.
+            if self.persistent_fields['mtime'] < self.mostRecentDependencyTime() or self.isBroken:
+                outPaths = BuildEventHandler.RenderFactorySources([self.getMetadata()])
+                # Re-build the factories corresponding .o files
+                for path in outPaths:
+                    BuildEventHandler.BuildPreviewObject(path)
+                    pass
+                pass
             pass
 
         pass
@@ -177,7 +165,7 @@ class ScriptProcessor(AssetProcessor):
 
     def removeAssetInfoCache(self, assetPath):
         import json
-        Project.removeFile(self.getAssetInfoCachePath(assetPath))
+        Utils.RemoveFile(self.getAssetInfoCachePath(assetPath))
         pass
 
     def loadAssetInfoCache(self, assetPath):

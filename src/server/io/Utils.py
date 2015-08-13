@@ -1,3 +1,7 @@
+import threading
+
+_utilsLock = threading.Lock()
+
 def GetFileNameFromPath(path):
     import ntpath
     return ntpath.basename(path)
@@ -17,6 +21,9 @@ def PathHasExtension(path, extensions):
             return True
         pass
     return False
+
+def IsObjectFile(assetPath):
+    return PathHasExtension(assetPath, ['.o'])
 
 def IsHeaderFile(assetPath):
     return PathHasExtension(assetPath, ['.hpp', '.h'])
@@ -59,9 +66,21 @@ def FileExists(filename):
 
 def RemoveFile(filename):
     import os
-    print 'Removing ' + filename
+    Console.info('Removing ' + filename)
+    _utilsLock.acquire()
     if FileExists(filename):
         os.remove(filename)
+        pass
+    _utilsLock.release()
+    pass
+
+def CreateFoldersRec(path):
+    import os
+    _utilsLock.acquire()
+    if not os.path.exists(path):
+        os.makedirs(path)
+        pass
+    _utilsLock.release()
     pass
 
 def OpenRec(filename, mode):
@@ -125,18 +144,45 @@ class Console:
     UNDERLINE = '\033[4m'
 
     @staticmethod
+    def ok(msg):
+        _utilsLock.acquire()
+        print Console.BOLD+Console.OKGREEN+'[ok] '+Console.ENDC+msg
+        _utilsLock.release()
+        pass
+
+    @staticmethod
     def error(msg):
+        _utilsLock.acquire()
         print Console.BOLD+Console.FAIL+'Error: '+Console.ENDC+msg
+        _utilsLock.release()
+        pass
+
+    @staticmethod
+    def fail(msg):
+        _utilsLock.acquire()
+        print Console.BOLD+Console.FAIL+'[fail] '+Console.ENDC+msg
+        _utilsLock.release()
         pass
 
     @staticmethod
     def warning(msg):
+        _utilsLock.acquire()
         print Console.BOLD+Console.WARNING+'Warning: '+Console.ENDC+msg
+        _utilsLock.release()
         pass
 
     @staticmethod
     def info(msg):
+        _utilsLock.acquire()
         print Console.BOLD+Console.OKBLUE+'Info: '+Console.ENDC+msg
+        _utilsLock.release()
+        pass
+
+    @staticmethod
+    def step(msg):
+        _utilsLock.acquire()
+        print '\t'+Console.BOLD+Console.OKBLUE+'[v] '+Console.ENDC+msg
+        _utilsLock.release()
         pass
 
     pass

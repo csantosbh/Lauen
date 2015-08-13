@@ -57,6 +57,18 @@ class _Project:
                     self.assets[asset] = assetProc
                     Utils.Console.info('Adding file to project: '+asset)
                     pass
+                elif self.isUserScriptFactory(asset):
+                    # TODO provavelmente nao preciso desse processamento aqui.
+                    # Remove automatically generated files that depend on user
+                    # generated assets, and whose original assets are no longer
+                    # present.
+                    parentAsset = os.path.relpath(asset, 'default_assets/factories')
+                    parentAsset = parentAsset[:parentAsset.rfind('.')]
+                    if not parentAsset in self.assets:
+                        # This asset doesnt have a parent. Remove it.
+                        removeFile(asset)
+                        pass
+                    pass
                 pass
 
             self.scenes = projInfo['scenes']
@@ -69,6 +81,8 @@ class _Project:
             if not Utils.FileExists(self.getAbsProjFilePath(asset)):
                 removedAssets.append(asset)
             else:
+                # This assest wont be removed. Add its id to the
+                # global id collection.
                 self._assetId2Path[self.assets[asset].id()] = asset
                 pass
             pass
@@ -103,7 +117,7 @@ class _Project:
 
     def saveProject(self):
         import json
-        print 'Saving project...'
+        Utils.Console.info('Saving project...')
         with open(self.project_path, 'w') as fhandle:
             fhandle.write(json.dumps(dict(
                 assets=self.assets,
@@ -170,11 +184,18 @@ class _Project:
 
     def updateAllAssets(self):
         for fname in self.assets:
-            self.assets[fname].getMetadata()
             self.assets[fname].update()
+            self.assets[fname].getMetadata()
             pass
         self.saveProject()
         pass
+
+    def getAssetNameList(self):
+        result = []
+        for asset in self.assets:
+            result.append(asset)
+            pass
+        return result
 
     def getAssetList(self):
         if self.project_path == None:
@@ -224,11 +245,8 @@ class _Project:
             pass
 
         # Process modified asset
-        editorData = self.assets[assetPath].getMetadata()
-        print 'hue4',assetPath
-        import traceback
-        #traceback.print_stack()
         self.assets[assetPath].update()
+        editorData = self.assets[assetPath].getMetadata()
 
         # Update all files that depend on assetPath
         if not self.assets[assetPath].isBroken:
@@ -239,7 +257,6 @@ class _Project:
                     pass
                 pass
             for asset in recurseDependencies:
-                print assetPath+' is dependency of '+ asset
                 self.processAsset(asset, False)
                 pass
             pass
@@ -249,7 +266,6 @@ class _Project:
         # After done processing all assets, save the project, if requested
         if (len(self._processAssetRecursionLock) == 0) and saveProject:
             self.saveProject()
-            print 'Done!\n\n'
             pass
 
         return editorData
@@ -258,12 +274,10 @@ class _Project:
     def isFileOlderThanDependency(self, filePath, assetPath):
         # If file doesnt even exist, then it must be touched to begin with
         if not Utils.FileExists(filePath):
-            print '\tFile '+filePath+' doesn\'t exist.'
             return True
         # If the asset itself is newer than the filePath, return true
         queryFileMTime = os.path.getmtime(filePath)
         if os.path.getmtime(self.getAbsProjFilePath(assetPath)) > queryFileMTime:
-            print '\tFile '+assetPath+' is newer than '+filePath+'.'
             return True
 
         # If any of the asset dependencies are newer than the filePath, return true
@@ -284,6 +298,10 @@ def updateAllAssets():
     _currentProject.updateAllAssets()
     _projectLock.release()
     pass
+
+def getAssetNameList():
+    global _currentProject
+    return _currentProject.getAssetNameList()
 
 def getAssetList():
     global _currentProject

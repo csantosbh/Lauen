@@ -63,13 +63,14 @@ def RenderFactorySources(componentFiles):
         renderParameters = dict(component=component,
                                 isVecType=_isVecType,
                                 vecIterations=dict(v4f=4, v3f=3, v2f=2))
-        fname = Utils.GetFileNameFromPath(component['path'])
-        outputPath = projectFolder+'/default_assets/factories/'+fname[:fname.rfind('.')] +'_'+str(component['id']) + '.cpp'
-        outputPaths.append(Project.getRelProjFilePath(outputPath))
+        fname = component['path'] + '.cpp'
+        outputRelativePath = 'default_assets/factories/'+fname
+        outputPath = projectFolder + '/' + outputRelativePath
+        outputPaths.append(outputRelativePath)
 
         componentFactoryTemplate = open(templatePath).read()
-        with open(outputPath, 'w') as outputHandle:
-            print '\tUpdating template '+outputPath
+        Utils.Console.step('Generating factory '+outputPath)
+        with Utils.OpenRec(outputPath, 'w') as outputHandle:
             outputHandle.write(Template(componentFactoryTemplate).render(**renderParameters))
             pass
         pass
@@ -117,16 +118,13 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
 
     compilationStatus = dict(returncode=0, message='')
     try:
-        # Generate component factory
-        #RenderFactorySources(Project.getAssetList())
-        
         # Generate build list
         sourceFiles = []
         componentScripts = Utils.ListFilesFromFolder(projectFolder)
         # Append component scripts to the list of build files
         for componentScript in componentScripts:
             if Utils.IsImplementationFile(componentScript):
-                sourceFiles.append(componentScript)
+                sourceFiles.append(Project.getRelProjFilePath(componentScript))
                 pass
             pass
 
@@ -154,7 +152,7 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
 
         # Link
         # TODO only link if the final executable is older than any of the object files
-        print 'linking...'
+        Utils.Console.info('Linking '+outputFolder+'...')
         startTime=time.time()
         if compilationStatus['returncode'] == 0:
             compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
@@ -233,18 +231,24 @@ def BuildPreviewObject(inputFile, callback=None):
 class ObjectBuilderThread(threading.Thread):
     def buildObjectFile(self, sourceFile, outputFolder, platform, compilationFlags):
         import subprocess
-        outputFilePath = outputFolder+'/build/'+Utils.GetFileNameFromPath(sourceFile)+'.o'
+        outputFilePath = os.path.normpath(outputFolder+'/build/'+sourceFile+'.o')
         compilationMessage = ''
         returncode=0
+
+        # Create recursive folders, if necessary
+        Utils.CreateFoldersRec(os.path.dirname(outputFilePath))
 
         try:
             # Only build the object file if it is older than any of its dependencies
             if Project.isFileOlderThanDependency(outputFilePath, sourceFile):
-                Utils.Console.info('Building '+outputFilePath)
+                Utils.Console.step('Building '+outputFilePath)
                 compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + Project.getAbsProjFilePath(sourceFile) +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+                if returncode == 0:
+                    Utils.Console.ok('Built '+outputFilePath)
+                    pass
                 pass
         except subprocess.CalledProcessError as e:
-            Utils.Console.error('Error building '+outputFilePath)
+            Utils.Console.fail('Error building '+outputFilePath)
             print e.output
             compilationMessage = e.output
             returncode = e.returncode

@@ -203,7 +203,7 @@ def GetSimpleClass(relativeFileName):
     from server.components import DefaultComponentManager
     from server.io import Utils
 
-    Utils.Console.info('Parsing ' + relativeFileName)
+    Utils.Console.step('Parsing ' + relativeFileName)
 
     fileName = Project.getAbsProjFilePath(relativeFileName)
     parsedFile = parseCPPFile(fileName)

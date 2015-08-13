@@ -1,9 +1,9 @@
 // Do NOT edit!
 // Automatically generated!
 
-#include "../Factories.hpp"
-#include "../Peekers.hpp"
-#include "../LauCommon.h"
+#include "default_assets/Factories.hpp"
+#include "default_assets/Peekers.hpp"
+#include "default_assets/LauCommon.h"
 #include "${component['path']}"
 
 namespace lau {
