@@ -1,5 +1,7 @@
 import os
 import threading
+import Queue
+import multiprocessing
 
 from server import Config
 from server.io import Utils
@@ -8,7 +10,6 @@ import AssetProcessor
 class _Project:
     def __init__(self):
         # Internal fields
-        self._processAssetRecursionLock = set()
         self._assetId2Path = dict()
         pass
 
@@ -91,6 +92,8 @@ class _Project:
             self.removeAsset(removedAsset, True)
             pass
 
+        self.updateAllAssets()
+        self.saveProject()
         pass
 
     # Returns the absolute path of a file that belongs to a project
@@ -183,11 +186,7 @@ class _Project:
         pass
 
     def updateAllAssets(self):
-        for fname in self.assets:
-            self.assets[fname].update()
-            self.assets[fname].getMetadata()
-            pass
-        self.saveProject()
+        self._parallelAssetUpdate(self.assets)
         pass
 
     def getAssetNameList(self):
@@ -216,56 +215,76 @@ class _Project:
         if assetPath in self.assets:
             self.assets[assetPath].remove()
             del self.assets[assetPath]
+            self._updateAssetAndDependencies(assetPath)
+
+            if saveProject:
+                self.saveProject()
         pass
 
-    # TODO nao! fazer busca em largura, sem recursividade, evitando ciclos
+    def _parallelAssetUpdate(self, filesToUpdate):
+        workQueue = Queue.Queue()
+        def assetUpdaterThread():
+            while not workQueue.empty():
+                work = workQueue.get()
+                work.update()
+                workQueue.task_done()
+                pass
+            pass
+
+        # Update all dependent assets
+        for f in filesToUpdate:
+            # Make sure f is still in self.assets
+            if f in self.assets:
+                workQueue.put(self.assets[f])
+                pass
+            pass
+
+        for i in range(max(1,multiprocessing.cpu_count()/2)):
+            thread = threading.Thread(target=assetUpdaterThread)
+            thread.start()
+            pass
+
+        workQueue.join()
+        pass
+
+    def _updateAssetAndDependencies(self, assetPath):
+        # List all files that depend directly or indirectly on this
+        searchQueue = set([assetPath])
+        filesToUpdate = set()
+        while len(searchQueue) > 0:
+            nextFile = searchQueue.pop()
+            filesToUpdate.add(nextFile)
+            for asset in self.assets:
+                if (self.assets[asset].dependsOn(nextFile) or self.assets[asset].isBroken) and not (asset in filesToUpdate):
+                    searchQueue.add(asset)
+                    pass
+                pass
+            pass
+
+        self._parallelAssetUpdate(filesToUpdate)
+        pass
+
     def processAsset(self, assetPath, saveProject):
         from server.parser import CppParser
         from server.build import BuildEventHandler
-
-        # Ignore irrelevant file formats
-        if not Utils.IsProcessableFile(assetPath) and not self.isUserScriptFactory(assetPath):
-            return None
-
-        # Avoid infinite loop
-        if assetPath in self._processAssetRecursionLock:
-            print '\tRequested processAsset('+assetPath+'); already processing this asset.'
-            return None
-
-        self._processAssetRecursionLock.add(assetPath)
 
         if not (assetPath in self.assets):
             # Handle CREATE cases
             assetProc = AssetProcessor.CreateAssetProcessor(assetPath)
 
             if assetProc == None:
-                self._processAssetRecursionLock.remove(assetPath)
                 return None
 
             self.assets[assetPath] = assetProc
+        else:
+            assetProc = self.assets[assetPath]
             pass
 
-        # Process modified asset
-        self.assets[assetPath].update()
-        editorData = self.assets[assetPath].getMetadata()
-
-        # Update all files that depend on assetPath
-        if not self.assets[assetPath].isBroken:
-            recurseDependencies = []
-            for asset in self.assets:
-                if self.assets[asset].dependsOn(assetPath):
-                    recurseDependencies.append(asset)
-                    pass
-                pass
-            for asset in recurseDependencies:
-                self.processAsset(asset, False)
-                pass
-            pass
-
-        self._processAssetRecursionLock.remove(assetPath)
+        self._updateAssetAndDependencies(assetPath)
+        editorData = assetProc.getMetadata()
 
         # After done processing all assets, save the project, if requested
-        if (len(self._processAssetRecursionLock) == 0) and saveProject:
+        if saveProject:
             self.saveProject()
             pass
 
@@ -291,14 +310,6 @@ class _Project:
     pass
 
 _projectLock = threading.Lock()
-
-def updateAllAssets():
-    global _currentProject
-    global _projectLock
-    _projectLock.acquire()
-    _currentProject.updateAllAssets()
-    _projectLock.release()
-    pass
 
 def getAssetNameList():
     global _currentProject
@@ -384,12 +395,16 @@ def getUniqueAssetId():
 def getModificationTime(path):
     return os.path.getmtime(getAbsProjFilePath(path))
 
-# Load last opened project
-if len(Config.get('runtime', 'recent_projects')) > 0:
-    _currentProject = _Project()
-    _currentProject.initialize(Config.get('runtime', 'recent_projects')[0])
-else:
-    _currentProject = _Project()
-    _currentProject.initialize()
-    pass
+_currentProject = None
+def initialize():
+    global _currentProject
+    if len(Config.get('runtime', 'recent_projects')) > 0:
+        # Load last opened project
+        _currentProject = _Project()
+        _currentProject.initialize(Config.get('runtime', 'recent_projects')[0])
+    else:
+        # Just create an empty project
+        _currentProject = _Project()
+        _currentProject.initialize()
+        pass
 

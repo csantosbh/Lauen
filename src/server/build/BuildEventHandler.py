@@ -203,7 +203,6 @@ def _PostExportStep(platform, outputFolder):
         unfinalizedFile = outputFolder+'/game'
         finalizedFile = outputFolder+'/lau_canvas.pexe'
         if isOutputOutdated(finalizedFile, [unfinalizedFile]):
-            print 'finalizing',outputFolder+'/lau_canvas.pexe'
             subprocess.check_output(naclFolder+'/toolchain/linux_pnacl/bin/pnacl-finalize '+unfinalizedFile + ' -o '+finalizedFile, shell=True)
             pass
         pass

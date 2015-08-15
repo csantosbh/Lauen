@@ -47,19 +47,17 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
         projectFiles: getProjectFiles,
       };
 
-      $rpc.call('updateAllAssets', null, function() {
-        $rpc.call('getAssetList', null, function(fileList) {
-          $timeout(function() {
-            for(var i=0; i < fileList.length; ++i) {
-              fileList[i].type = 'script';
-              $cm.pushComponent({
-                menu_label: LAU.IO.getFileNameFromPath(fileList[i].path),
-                flyweight: fileList[i]
-              });
-            }
-            $rpc.call('loadCurrentScene', null, function(data) {
-              handleIOEvents(data, scope);
+      $rpc.call('getAssetList', null, function(fileList) {
+        $timeout(function() {
+          for(var i=0; i < fileList.length; ++i) {
+            fileList[i].type = 'script';
+            $cm.pushComponent({
+              menu_label: LAU.IO.getFileNameFromPath(fileList[i].path),
+              flyweight: fileList[i]
             });
+          }
+          $rpc.call('loadCurrentScene', null, function(data) {
+            handleIOEvents(data, scope);
           });
         });
       });

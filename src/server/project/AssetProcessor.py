@@ -104,7 +104,7 @@ class ScriptProcessor(AssetProcessor):
         else:
             fileInfo = CppParser.GetSimpleClass(self.path)
             if not fileInfo['success']:
-                Utils.Console.warning('Stop: File '+self.path+' has an error.')
+                Utils.Console.warning('Script '+self.path+' has error(s):\n  '+('\n  '.join(fileInfo['diagnostics']))+'\n\n')
                 self._diagnosticMessages = fileInfo['diagnostics']
                 self.isBroken = True
                 return None
@@ -138,13 +138,18 @@ class ScriptProcessor(AssetProcessor):
         # Generate its .o object if the path refers to a cpp file
         if Utils.IsImplementationFile(self.path):
             BuildEventHandler.BuildPreviewObject(self.path, buildCallback)
+            # Update dependency list
+            self.getMetadata()
         elif Utils.IsHeaderFile(self.path) and Project.isUserAsset(self.path):
             # The file was updated. Re-generate its Factory file.
             if self.persistent_fields['mtime'] < self.mostRecentDependencyTime() or self.isBroken:
-                outPaths = BuildEventHandler.RenderFactorySources([self.getMetadata()])
-                # Re-build the factories corresponding .o files
-                for path in outPaths:
-                    BuildEventHandler.BuildPreviewObject(path)
+                assetMetadata = self.getMetadata()
+                if assetMetadata != None:
+                    outPaths = BuildEventHandler.RenderFactorySources([self.getMetadata()])
+                    # Re-build the factories corresponding .o files
+                    for path in outPaths:
+                        BuildEventHandler.BuildPreviewObject(path)
+                        pass
                     pass
                 pass
             pass
@@ -197,7 +202,6 @@ class UserFactoriesProcessor(AssetProcessor):
     def update(self):
         from server.build import BuildEventHandler
         if self.persistent_fields['mtime'] < self.getModificationTime():
-            print 'Updating user factory'
             # Re-generate all factory files
             for asset in Project.getAssetList():
                 if Utils.IsHeaderFile(asset['path']) and Project.isUserAsset(asset['path']):

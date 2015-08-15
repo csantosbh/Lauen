@@ -7,8 +7,9 @@ from clang.cindex import Index, TokenKind, TranslationUnit
 
 ###
 # Globals
-_clangIndex = Index(clang.cindex.conf.lib.clang_createIndex(False, 1))
-#_clangIndex = Index.create()
+# Use the following index, if you want clang to print its diagnostic messages
+#_clangIndex = Index(clang.cindex.conf.lib.clang_createIndex(False, 1))
+_clangIndex = Index.create()
 _translationUnits = dict()
 
 def translateFieldType(typeName):
