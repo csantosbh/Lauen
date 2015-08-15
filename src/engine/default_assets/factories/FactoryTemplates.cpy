@@ -1,6 +1,9 @@
 // Do NOT edit!
 // Automatically generated!
 
+// Whenever changing these includes, make sure to update the dependencies of
+// the UserFactoriesProcessor class in server/project/AssetProcessor.py
+// accordingly.
 #include "default_assets/Factories.hpp"
 #include "default_assets/Peekers.hpp"
 #include "default_assets/LauCommon.h"
@@ -15,11 +18,11 @@ namespace lau {
 // Script component peekers
 /////
 template<>
-ComponentPeeker<${component['namespace']}::${component['class']}>::ComponentPeeker(shared_ptr<${component['namespace']}::${component['class']}> actualComp) : impl(actualComp)
-{ }
+ComponentPeekerImpl<${component['namespace']}::${component['class']}>::ComponentPeekerImpl(std::shared_ptr<Component> actualComponent) : impl(std::dynamic_pointer_cast<${component['namespace']}::${component['class']}>(actualComponent)) {
+}
 
 template<>
-const pp::VarDictionary& ComponentPeeker<${component['namespace']}::${component['class']}>::getCurrentState() {
+void ComponentPeekerImpl<${component['namespace']}::${component['class']}>::update() {
 	// Peek class fields
 	% for f in component['fields']:
 		% if isVecType(component['types'][f]):
@@ -34,13 +37,6 @@ const pp::VarDictionary& ComponentPeeker<${component['namespace']}::${component[
 	currentState.Set("${f}", impl->${f});
 		% endif
 	% endfor
-
-	return currentState;
-}
-
-template<>
-void ComponentPeeker<${component['namespace']}::${component['class']}>::update(float dt) {
-	impl->update(dt);
 }
 #endif
 
@@ -67,10 +63,9 @@ shared_ptr<Component> Factories::componentInternalFactory<${component['namespace
 	% endfor
 
 	shared_ptr<Component> result;
-#ifndef PREVIEW_MODE
 	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#else
-	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<${component['namespace']}::${component['class']}>(shared_ptr<${component['namespace']}::${component['class']}>(ptr))));
+#ifdef PREVIEW_MODE
+	result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<${component['namespace']}::${component['class']}>(result)));
 #endif
 
 	result->setId(${component['id']});

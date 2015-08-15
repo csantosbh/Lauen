@@ -1,3 +1,4 @@
+#include <iostream>
 #include <stdlib.h>
 #include <errno.h>
 #include <string.h>
@@ -57,7 +58,6 @@ private:
 
     void onLoadDoneImpl(bool success, const string& data) {
         filesRead.push_back(make_pair(success, vector<uint8_t>(data.begin(), data.end())));
-        auto tst = vector<uint8_t>(data.begin(), data.end());
         if(!pendingRequests.front().empty()) {
             // We still have files to load
             handler = URLLoaderHandler::Create(NaCl::getInstance(), pendingRequests.front().front());
@@ -90,9 +90,9 @@ private:
     void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)>& callback)
     {
         queue<string> pendingFiles;
-        for(const auto& file: requestedFiles)//const auto &file = firstFile; file != lastFile; ++file)
+        for(const auto& file: requestedFiles)
         {
-            pendingFiles.push(file);
+            pendingFiles.push("http://localhost:9002/"+file);
         }
 
         if(!pendingFiles.empty()) {

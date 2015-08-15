@@ -179,6 +179,11 @@ class ScriptProcessor(AssetProcessor):
 class UserFactoriesProcessor(AssetProcessor):
     def __init__(self, path, persistent_fields):
         super(UserFactoriesProcessor, self).__init__(path, persistent_fields)
+        self.persistent_fields['dependencies'] = [
+            "default_assets/Factories.hpp",
+            "default_assets/Peekers.hpp",
+            "default_assets/LauCommon.h"
+        ]
         pass
 
     def dependsOn(self, path):

@@ -48,11 +48,6 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     vsFull[1] = (char*)(&shaderFiles.begin()->second[0]);
     fsFull[1] = (char*)(&(++shaderFiles.begin())->second[0]);
 
-    lerr << "vs:"<<endl;
-    lerr << vsFull[1] << endl;
-    lerr << "fs:"<<endl;
-    lerr << fsFull[1] << endl;
-
     glShaderSource(vsId, 2, vsFull, NULL);
     glShaderSource(fsId, 2, fsFull, NULL);
 
@@ -74,14 +69,16 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
 void MeshRenderer::draw(float alpha) {
 	auto mesh = gameObject->getComponent<Mesh>();
 	if(mesh != nullptr) {
-		if(!wasInitialized) {
-			mesh->getVBO().bindVertexToAttribute(vertexAttribId);
+		if(!wasInitialized && mesh->getVBO() != nullptr) {
+			mesh->getVBO()->bindVertexToAttribute(vertexAttribId);
 			wasInitialized = true;
 		}
 
-		auto& vbo = mesh->getVBO();
-		vbo.bindForDrawing(vertexAttribId);
-		glDrawElements(GL_TRIANGLE_STRIP, vbo.vertexCount(), GL_UNSIGNED_INT, 0);
+		auto vbo = mesh->getVBO();
+        if(vbo != nullptr) {
+            vbo->bindForDrawing(vertexAttribId);
+            glDrawElements(GL_TRIANGLE_STRIP, vbo->vertexCount(), GL_UNSIGNED_INT, 0);
+        }
 	}
 }
 
@@ -114,10 +111,9 @@ shared_ptr<Component> Factories::componentInternalFactory<lau::MeshRenderer>(sha
 	lau::MeshRenderer* ptr = new lau::MeshRenderer(fields);
 
 	shared_ptr<Component> result;
-#ifndef PREVIEW_MODE
 	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#else
-	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<lau::MeshRenderer>(shared_ptr<lau::MeshRenderer>(ptr))));
+#ifdef PREVIEW_MODE
+    result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<lau::MeshRenderer>(result)));
 #endif
 
 	result->setId(MESH_RENDERER_ID);

@@ -17,7 +17,7 @@ public:
 	Mesh(const rapidjson::Value& fields);
 
 	void update(float dt);
-    VBO& getVBO();
+    VBO* getVBO();
 
 private:
     void onLoadMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);

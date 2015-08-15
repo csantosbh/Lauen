@@ -156,6 +156,7 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
         startTime=time.time()
         if compilationStatus['returncode'] == 0:
             compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+            print cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform]
             pass
         Utils.Console.info('linking done ('+str(time.time()-startTime)+'s)')
 
@@ -249,7 +250,6 @@ class ObjectBuilderThread(threading.Thread):
                 pass
         except subprocess.CalledProcessError as e:
             Utils.Console.fail('Error building '+outputFilePath)
-            print e.output
             compilationMessage = e.output
             returncode = e.returncode
             pass

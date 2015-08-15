@@ -17,8 +17,8 @@ Mesh::Mesh(const rapidjson::Value& fields) {
 void Mesh::update(float dt) {
 }
 
-VBO& Mesh::getVBO() {
-	return *this->vbo.get();
+VBO* Mesh::getVBO() {
+	return this->vbo.get();
 }
 
 void Mesh::onLoadMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string fname) {
@@ -67,10 +67,9 @@ shared_ptr<Component> Factories::componentInternalFactory<lau::Mesh>(shared_ptr<
 	lau::Mesh* ptr = new lau::Mesh(fields);
 
 	shared_ptr<Component> result;
-#ifndef PREVIEW_MODE
 	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#else
-	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<lau::Mesh>(shared_ptr<lau::Mesh>(ptr))));
+#ifdef PREVIEW_MODE
+	result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<lau::Mesh>(result)));
 #endif
 
 	result->setId(MESH_ID);

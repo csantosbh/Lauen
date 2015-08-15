@@ -9,7 +9,7 @@
 angular.module('lauEditor')
 .directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'componentManager', 'editCanvasManager', function ($timeout, $gom, $lauGameObj, $cm, $editCanvas) {
   return {
-    template: '<embed class="inner-canvas" src="lau_canvas.nmf" type="application/x-pnacl" />',
+    template: '<embed class="inner-canvas" src="http://localhost:9002/lau_canvas.nmf" type="application/x-pnacl" />',
     restrict: 'E',
     link: function postLink(scope, element, attrs) {
 

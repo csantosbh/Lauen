@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include "Peekers.hpp"
 
 namespace lau {
 class GameObject;
@@ -22,6 +23,10 @@ public:
     virtual void setId(int id) {
         this->_id = id;
     }
+
+#ifdef PREVIEW_MODE
+    std::shared_ptr<ComponentPeeker> lau_peeker__;
+#endif
 
 protected:
     int _id;

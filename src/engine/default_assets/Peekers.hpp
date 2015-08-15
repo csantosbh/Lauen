@@ -2,68 +2,45 @@
 
 #ifdef PREVIEW_MODE
 
+#include "ppapi/cpp/instance.h"
+#include "ppapi/cpp/var_dictionary.h"
 #include <rapidjson/document.h>
-
-#include "Component.hpp"
-#include "window/NaCl.hpp"
+#include <memory>
 
 namespace lau {
 
 extern int generateInstanceId();
+class Component;
+class GameObject;
 
-class ComponentPeekerBase: public Component {
+class ComponentPeeker {
 public:
-	ComponentPeekerBase() : instanceId(generateInstanceId())
-	{}
-	virtual const pp::VarDictionary& getCurrentState() = 0;
-	int getInstanceId() {
-		return instanceId;
-	}
-	virtual ~ComponentPeekerBase() {}
+    ComponentPeeker() : instanceId(generateInstanceId())
+    {}
+    const pp::VarDictionary& getCurrentState() {
+        return currentState;
+    }
+    int getInstanceId() {
+        return instanceId;
+    }
+    virtual void update() = 0;
+    virtual ~ComponentPeeker() {}
 
 protected:
-	pp::VarDictionary currentState;
-	int instanceId;
+    pp::VarDictionary currentState;
+    int instanceId;
 };
 
 template<class T>
-class ComponentPeeker: public ComponentPeekerBase {
+class ComponentPeekerImpl: public ComponentPeeker {
 public:
-	ComponentPeeker(shared_ptr<T> actualComponent);
-	const pp::VarDictionary& getCurrentState();
+    ComponentPeekerImpl(std::shared_ptr<Component> actualComponent);
+    void update();
 
-    void setGameObject(std::shared_ptr<GameObject>& gameObj) {
-		impl->setGameObject(gameObj);
-	}
-
-	void setId(int id) {
-		impl->setId(id);
-	}
-	int getId() {
-		return impl->getId();
-	}
-	void update(float dt) {
-		impl->update(dt);
-	}
-
-	virtual ~ComponentPeeker() {}
+    virtual ~ComponentPeekerImpl() {}
 
 private:
-	shared_ptr<T> impl;
-};
-
-class GameObjectPeeker : public GameObject {
-public:
-	GameObjectPeeker(const rapidjson::Value& serializedObject);
-	~GameObjectPeeker();
-
-	void update(float dt);
-
-	void addComponent(const shared_ptr<Component>& actualComp);
-
-private:
-	int gameObjectId;
-	std::string gameObjectName;
+    std::shared_ptr<T> impl;
 };
 
 } // namespace lau

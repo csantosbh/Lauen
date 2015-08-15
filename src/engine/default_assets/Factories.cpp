@@ -8,6 +8,7 @@
 #include "default_components/MeshRenderer.hpp"
 #include "default_components/Mesh.hpp"
 #include "default_components/Transform.hpp"
+#include "Component.hpp"
 
 
 namespace lau {
@@ -38,11 +39,7 @@ shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameOb
 vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Document& objects) {
 	vector<shared_ptr<GameObject>> result;
 	for(int i = 0; i < objects.Size(); ++i) {
-#ifndef PREVIEW_MODE
-		shared_ptr<GameObject> obj(new GameObject());
-#else
-		shared_ptr<GameObject> obj(new GameObjectPeeker(objects[i]));
-#endif
+		shared_ptr<GameObject> obj(new GameObject(objects[i]));
 		const rapidjson::Value& components = objects[i]["components"];
 
 		for(int c = 0; c < components.Size(); ++c) {
@@ -51,11 +48,7 @@ vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Doc
 			// TODO assert that component cant be null?
 			if(component != NULL) {
 				component->setGameObject(obj);
-#ifndef PREVIEW_MODE
 				obj->addComponent(component);
-#else
-				obj->addComponent(component);
-#endif
 			}
 		}
 

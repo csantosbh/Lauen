@@ -97,7 +97,7 @@ void NaCl::DidChangeView(const pp::View& view) {
     int32_t new_width = view.GetRect().width() * view.GetDeviceScale();
     int32_t new_height = view.GetRect().height() * view.GetDeviceScale();
 
-    lout << "change view!" << endl;
+    lout << "change view." << endl;
 
     if(context.is_null()) {
         if(!init(new_width,new_height)) {

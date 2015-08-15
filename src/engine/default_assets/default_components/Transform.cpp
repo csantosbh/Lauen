@@ -40,10 +40,9 @@ shared_ptr<Component> Factories::componentInternalFactory<lau::Transform>(shared
 	lau::Transform* ptr = new lau::Transform(fields);
 
 	shared_ptr<Component> result;
-#ifndef PREVIEW_MODE
 	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#else
-	result = shared_ptr<Component>(dynamic_cast<Component*>(new ComponentPeeker<lau::Transform>(shared_ptr<lau::Transform>(ptr))));
+#ifdef PREVIEW_MODE
+	result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<lau::Transform>(result)));
 #endif
 
 	result->setId(TRANSFORM_ID);

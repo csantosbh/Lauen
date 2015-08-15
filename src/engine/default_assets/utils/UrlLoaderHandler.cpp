@@ -4,7 +4,6 @@
 
 #ifdef NACL
 
-#include <iostream>
 #include <stdlib.h>
 #include <algorithm>
 #include "ppapi/c/pp_errors.h"
@@ -13,6 +12,7 @@
 #include "ppapi/cpp/var.h"
 
 #include "UrlLoaderHandler.h"
+#include "LauCommon.h"
 
 #ifdef WIN32
 #undef min
@@ -38,14 +38,13 @@ URLLoaderHandler::URLLoaderHandler(pp::Instance* instance,
     url_loader_(instance),
     buffer_(new char[READ_BUFFER_SIZE]),
     cc_factory_(this) {
-        cout << "Fala! Criando novo handler!" << endl;
         url_request_.SetURL(url);
         url_request_.SetMethod("GET");
         url_request_.SetRecordDownloadProgress(true);
     }
 
 URLLoaderHandler::~URLLoaderHandler() {
-    cout << "OK! Deletando handler!" << endl;
+    lau::lout << "OK! Deletando handler!" << endl;
         delete[] buffer_;
     buffer_ = NULL;
 }
