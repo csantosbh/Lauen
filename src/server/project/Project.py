@@ -218,6 +218,7 @@ class _Project:
             del self.assets[assetPath]
         pass
 
+    # TODO nao! fazer busca em largura, sem recursividade, evitando ciclos
     def processAsset(self, assetPath, saveProject):
         from server.parser import CppParser
         from server.build import BuildEventHandler

@@ -127,8 +127,10 @@ def CopyFilesOfTypes(src, dst, types, baseSrcFolder=None):
         outputFilePath = os.path.join(dst, nameSuffix)
         # Make sure the containing folder will exist
         dir_util.mkpath(os.path.dirname(outputFilePath))
-        # Copy file to destination
-        shutil.copy(f, outputFilePath)
+        # Copy file to destination, if it doesnt exist or is outdated
+        if not FileExists(outputFilePath) or os.path.getmtime(outputFilePath) < os.path.getmtime(f):
+            shutil.copy(f, outputFilePath)
+            pass
         pass
     pass
 

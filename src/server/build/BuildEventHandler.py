@@ -107,6 +107,17 @@ def _buildObjectFile(sourceFile, outputFolder, platform, compilationFlags, callb
         pass
     pass
 
+def isOutputOutdated(outputFile, dependencies):
+    if not Utils.FileExists(outputFile):
+        return True
+
+    baseMTime = os.path.getmtime(outputFile)
+    for dep in dependencies:
+        if os.path.getmtime(dep) > baseMTime:
+            return True
+        pass
+    return False
+
 def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', outputFolder = None):
     import subprocess, time
     compilationFlags=_getFlags(compilationMode)
@@ -129,14 +140,14 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
             pass
 
         # Compile
-        internalCompStatus = dict(precompiledFiles = '')
+        internalCompStatus = dict(precompiledFiles = [])
         resultLock = threading.Lock()
         def threadResult(output, message, returncode):
             resultLock.acquire()
             if compilationStatus['returncode'] == 0:
                 compilationStatus['returncode'] = returncode
                 compilationStatus['message'] += message
-                internalCompStatus['precompiledFiles'] += ' '+output
+                internalCompStatus['precompiledFiles'].append(output)
                 pass
 
             resultLock.release()
@@ -154,11 +165,13 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
         # TODO only link if the final executable is older than any of the object files
         Utils.Console.info('Linking '+outputFolder+'...')
         startTime=time.time()
-        if compilationStatus['returncode'] == 0:
-            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
-            print cxx_compiler[platform] + ' ' + internalCompStatus['precompiledFiles'] +' -o '+outputFolder+'/game ' + compilationFlags['link_flags'][platform]
+        outputFile = outputFolder+'/game'
+        if compilationStatus['returncode'] == 0 and isOutputOutdated(outputFile, internalCompStatus['precompiledFiles']):
+            compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + (' '.join(internalCompStatus['precompiledFiles'])) +' -o '+outputFile+' ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
+            Utils.Console.info('Linking done ('+str(time.time()-startTime)+'s)')
+        else:
+            Utils.Console.info('Linking not necessary')
             pass
-        Utils.Console.info('linking done ('+str(time.time()-startTime)+'s)')
 
     except subprocess.CalledProcessError as e:
         compilationStatus['message'] = e.output
@@ -187,7 +200,12 @@ def _PostExportStep(platform, outputFolder):
         pass
     elif platform == 'preview' or platform == 'nacl':
         naclFolder = Config.get('export', 'nacl')['pepper_folder']
-        subprocess.check_output(naclFolder+'/toolchain/linux_pnacl/bin/pnacl-finalize '+outputFolder+'/game -o '+outputFolder+'/lau_canvas.pexe', shell=True)
+        unfinalizedFile = outputFolder+'/game'
+        finalizedFile = outputFolder+'/lau_canvas.pexe'
+        if isOutputOutdated(finalizedFile, [unfinalizedFile]):
+            print 'finalizing',outputFolder+'/lau_canvas.pexe'
+            subprocess.check_output(naclFolder+'/toolchain/linux_pnacl/bin/pnacl-finalize '+unfinalizedFile + ' -o '+finalizedFile, shell=True)
+            pass
         pass
     pass
 
@@ -201,7 +219,8 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder, cleanObject
     else:
         # Copy scenes to destination folder
         projectFolder = Project.getProjectFolder()
-        dir_util.copy_tree(projectFolder + '/scenes', outputFolder+'/scenes')
+        #dir_util.copy_tree(projectFolder + '/scenes', outputFolder+'/scenes')
+        Utils.CopyFilesOfTypes(projectFolder+'/scenes', outputFolder, ['.json'], projectFolder)
         # Copy assets to destination folder
         Utils.CopyFilesOfTypes(projectFolder+'/assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
         Utils.CopyFilesOfTypes(projectFolder+'/default_assets', outputFolder, Config.env('exportable_asset_extensions'), projectFolder)
