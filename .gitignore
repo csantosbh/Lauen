@@ -1,5 +1,6 @@
 *.pyc
 bin/
-build/
 *.swp
-src/engine/default_assets/factories/*.cpp
+docs/build/
+/build/
+src/engine/default_assets/factories/**/*.cpp
