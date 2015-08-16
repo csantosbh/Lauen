@@ -69,32 +69,37 @@ angular.module('lauEditor')
       }
 
       element.find('embed')[0].addEventListener('message', handleNaClMessage, true);
-      var _editRequested = false;
+      var _toggleRequested = false;
       scope.previewCanvas = {
         toggleEditMode: function() {
-          if(!_editRequested) {
+          if(!_toggleRequested) {
             if($editCanvas.isEditMode() == true) {
-              _editRequested = true;
+              _toggleRequested = true;
               $rpc.call('previewGame', null, function(status) {
                 $timeout(function() {
                   $event.broadcast('togglePreviewMode', true);
                   console.log('build status: ' + status);
                   $editCanvas.disableEditMode();
-                  _editRequested = false;
+                  _toggleRequested = false;
                 });
               });
             } else {
-              _editRequested = true;
+              _toggleRequested = true;
               $timeout(function() {
                 $event.broadcast('togglePreviewMode', false);
-                _editRequested = false;
+                _toggleRequested = false;
                 $editCanvas.enableEditMode();
               });
             }
           }
         }
       }
-
+      Object.defineProperty(scope.previewCanvas, '_previewToggleMode', {
+        get: function() {
+          return !$editCanvas.isEditMode();
+        },
+        set: function(v) {},
+      });
     }
   };
 }]);
