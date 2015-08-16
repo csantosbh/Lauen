@@ -9,33 +9,42 @@ import AssetProcessor
 
 class _Project:
     def __init__(self):
+        self.project_path = None
         # Internal fields
         self._assetId2Path = dict()
+        self._assetUpdaterQueue = Queue.Queue()
+        pass
+
+    def bootstrap(self, project_path):
+        import shutil
+        from distutils import dir_util
+        self.project_path = project_path
+        project_folder = os.path.dirname(self.project_path)
+        exePath = Config.env('install_location')
+        # Copy template project
+        dir_util.copy_tree(exePath + '/template_project', project_folder)
+        # Copy default assets
+        shutil.copytree(exePath + '/engine/default_assets', project_folder + '/default_assets')
+        # Create assets folder
+        dir_util.mkpath(project_folder + '/assets')
+        # Create build folder
+        dir_util.mkpath(project_folder + '/build')
+        # Remaining initialization
+        self.initialize(project_path)
         pass
 
     def initialize(self, project_path = None):
-        import json, shutil
-        from distutils import dir_util
-        self.project_path = project_path
+        import json
+        import AssetFolderWatcher
+
         # TODO support projects of arbitrary names (low priority)
         self.assets = {}
-        if self.project_path == None:
+        if project_path == None or not Utils.FileExists(project_path):
+            self.project_path = None
             self.scenes = ['scenes/scene0.json']
             self.currentScene = 0
         else:
-            if not os.path.isfile(self.project_path):
-                project_folder = os.path.dirname(self.project_path)
-                exePath = Config.env('install_location')
-                # Copy template project
-                dir_util.copy_tree(exePath + '/template_project', project_folder)
-                # Copy default assets
-                shutil.copytree(exePath + '/engine/default_assets', project_folder + '/default_assets')
-                # Create assets folder
-                dir_util.mkpath(project_folder + '/assets')
-                # Create build folder
-                dir_util.mkpath(project_folder + '/build')
-                pass
-
+            self.project_path = project_path
             projInfo = json.loads(open(self.project_path, 'r').read())
 
             # Add files from the project json file
@@ -74,26 +83,28 @@ class _Project:
 
             self.scenes = projInfo['scenes']
             self.currentScene = projInfo['currentScene']
-            pass
 
-        # Remove deleted assets from the project
-        removedAssets=[]
-        for asset in self.assets:
-            if not Utils.FileExists(self.getAbsProjFilePath(asset)):
-                removedAssets.append(asset)
-            else:
-                # This assest wont be removed. Add its id to the
-                # global id collection.
-                self._assetId2Path[self.assets[asset].id()] = asset
+            # Remove deleted assets from the project
+            removedAssets=[]
+            for asset in self.assets:
+                if not Utils.FileExists(self.getAbsProjFilePath(asset)):
+                    removedAssets.append(asset)
+                else:
+                    # This assest wont be removed. Add its id to the
+                    # global id collection.
+                    self._assetId2Path[self.assets[asset].id()] = asset
+                    pass
                 pass
-            pass
 
-        for removedAsset in removedAssets:
-            self.removeAsset(removedAsset, True)
-            pass
+            for removedAsset in removedAssets:
+                self.removeAsset(removedAsset, True)
+                pass
 
-        self.updateAllAssets()
-        self.saveProject()
+            self.updateAllAssets()
+            self.saveProject()
+
+            AssetFolderWatcher.WatchFolder(self.getProjectFolder())
+            pass
         pass
 
     # Returns the absolute path of a file that belongs to a project
@@ -108,6 +119,10 @@ class _Project:
 
     def getProjectFolder(self):
         import os
+
+        if self.project_path == None:
+            return None
+
         return os.path.dirname(self.project_path)
 
     def getUniqueAssetId(self):
@@ -196,9 +211,15 @@ class _Project:
             pass
         return result
 
+    def getAssetProcessors(self):
+        return self.assets
+
     def getAssetList(self):
         if self.project_path == None:
             return []
+
+        # Update all outdated assets in parallel
+        self.updateAllAssets()
 
         project_folder = os.path.dirname(self.project_path)
         assetFiles = []
@@ -222,12 +243,14 @@ class _Project:
         pass
 
     def _parallelAssetUpdate(self, filesToUpdate):
-        workQueue = Queue.Queue()
+        # If a job was dispatched previously, wait for it to finish
+        self._assetUpdaterQueue.join()
+
         def assetUpdaterThread():
-            while not workQueue.empty():
-                work = workQueue.get()
+            while not self._assetUpdaterQueue.empty():
+                work = self._assetUpdaterQueue.get()
                 work.update()
-                workQueue.task_done()
+                self._assetUpdaterQueue.task_done()
                 pass
             pass
 
@@ -235,7 +258,7 @@ class _Project:
         for f in filesToUpdate:
             # Make sure f is still in self.assets
             if f in self.assets:
-                workQueue.put(self.assets[f])
+                self._assetUpdaterQueue.put(self.assets[f])
                 pass
             pass
 
@@ -244,7 +267,7 @@ class _Project:
             thread.start()
             pass
 
-        workQueue.join()
+        self._assetUpdaterQueue.join()
         pass
 
     def _updateAssetAndDependencies(self, assetPath):
@@ -319,6 +342,10 @@ def getAssetList():
     global _currentProject
     return _currentProject.getAssetList()
 
+def getAssetProcessors():
+    global _currentProject
+    return _currentProject.getAssetProcessors()
+
 def getProjectFolder():
     global _currentProject
     return _currentProject.getProjectFolder()
@@ -331,7 +358,7 @@ def createNewProject(path):
     global _currentProject
     global _currentProject
     _currentProject = _Project()
-    _currentProject.initialize(path)
+    _currentProject.bootstrap(path)
     pass
 
 def saveCurrentScene(sceneData):

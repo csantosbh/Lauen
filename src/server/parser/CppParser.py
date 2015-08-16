@@ -2,6 +2,7 @@
 import sys
 import os
 import threading
+import time
 import clang.cindex
 from clang.cindex import Index, TokenKind, TranslationUnit
 
@@ -107,6 +108,7 @@ def parseCPPFileRec(node, pragmaList, context=dict()):
 # TODO instead of this, I should make sure that the watcher and the WSServer
 # are using the same thread
 _parserLock = threading.Lock()
+_filesBeingParsed = set()
 def parseCPPFile(fileName):
     import re
     from server import Config
@@ -116,13 +118,23 @@ def parseCPPFile(fileName):
     global _clangIndex
     global _translationUnits
     global _parserLock
+    global _filesBeingParsed
 
     # Remove #include's from source files, to prevent clang
     # from parsing them. I know this is a horrible solution,
     # but clang will take forever to parse the files if they
     # have headers, and it doesn't have an option for disabling
     # recursive parsing.
-    _parserLock.acquire()
+    while True:
+        _parserLock.acquire()
+        if not fileName in _filesBeingParsed:
+            _filesBeingParsed.add(fileName)
+            _parserLock.release()
+            break
+        _parserLock.release()
+        time.sleep(0.1)
+        pass
+
     if fileName in _translationUnits:
         tu = _translationUnits[fileName]
         tu.reparse([(fileName, open(fileName,'r'))])
@@ -148,9 +160,8 @@ def parseCPPFile(fileName):
             _translationUnits[fileName] = tu
         except Exception as err:
             Utils.Console.error('Error processing translation unit!')
-            _parserLock.release()
+            _filesBeingParsed.remove(fileName)
             return dict(symbols=[], success=False, diagnostics=[str(err)], dependencies=[])
-            pass
         pass
 
     # Check for diagnostic messages
@@ -190,11 +201,12 @@ def parseCPPFile(fileName):
                 pass
             pass
         pass
-    _parserLock.release()
 
     parseResult['diagnostics'] = diagnostics
     parseResult['success'] = success
     parseResult['dependencies'] = list(dependencies)
+
+    _filesBeingParsed.remove(fileName)
 
     return parseResult
 

@@ -23,16 +23,25 @@ class _AssetFolderWatcher(pyinotify.ProcessEvent):
     pass
 
 class _AssetFolderWatcherThread(threading.Thread):
+    def __init__(self, watchPath):
+        super(_AssetFolderWatcherThread, self).__init__()
+        self.watchPath = watchPath
+        self.isRunning = True
+        pass
+
+    def stop(self):
+        self.isRunning = False
+        pass
+
     def run(self):
         wm = pyinotify.WatchManager()  # Watch Manager
         mask = pyinotify.IN_DELETE | pyinotify.IN_CLOSE_WRITE  # watched events
         notifier = pyinotify.Notifier(wm, _AssetFolderWatcher(), timeout=10)
-        path = Project.getProjectFolder()
-        wdd = wm.add_watch(path, mask, rec=True)
+        wdd = wm.add_watch(self.watchPath, mask, rec=True)
 
-        while True:
+        while self.isRunning:
             notifier.process_events()
-            while notifier.check_events(timeout=10000):  #loop in case more events appear while we are processing
+            while notifier.check_events(timeout=1000):  #loop in case more events appear while we are processing
                 notifier.read_events()
                 notifier.process_events()
                 pass
@@ -41,7 +50,18 @@ class _AssetFolderWatcherThread(threading.Thread):
 
     pass
 
-watcherThread=_AssetFolderWatcherThread()
-watcherThread.daemon = True
-watcherThread.start()
+_watcherThread=None
+
+def WatchFolder(path):
+    global _watcherThread
+
+    if _watcherThread != None:
+        _watcherThread.stop()
+        _watcherThread.join()
+        pass
+
+    _watcherThread=_AssetFolderWatcherThread(path)
+    _watcherThread.daemon = True
+    _watcherThread.start()
+    pass
 

@@ -1,6 +1,7 @@
 import os
 import time
 import json
+import threading
 
 from server.io import Utils
 import Project
@@ -67,6 +68,7 @@ class AssetProcessor(object):
 class ScriptProcessor(AssetProcessor):
     def __init__(self, path, persistent_fields):
         super(ScriptProcessor, self).__init__(path, persistent_fields)
+        self._metadataLock = threading.Lock()
         pass
 
     def dependsOn(self, path):
@@ -97,39 +99,44 @@ class ScriptProcessor(AssetProcessor):
     def getMetadata(self):
         from server.parser import CppParser
         from server.build import BuildEventHandler
-        # Check if the asset is up to date, so we dont need to update it
-        mostRecentDepTime = self.mostRecentDependencyTime()
-        if self.persistent_fields['mtime'] >= mostRecentDepTime and not self.isBroken and Utils.FileExists(self.getAssetInfoCachePath(self.path)):
-            fileSymbols = self.loadAssetInfoCache(self.path)
-        else:
-            fileInfo = CppParser.GetSimpleClass(self.path)
-            if not fileInfo['success']:
-                Utils.Console.warning('Script '+self.path+' has error(s):\n  '+('\n  '.join(fileInfo['diagnostics']))+'\n\n')
-                self._diagnosticMessages = fileInfo['diagnostics']
-                self.isBroken = True
-                return None
+
+        with self._metadataLock:
+            # Check if the asset is up to date, so we dont need to update it
+            mostRecentDepTime = self.mostRecentDependencyTime()
+            if self.persistent_fields['mtime'] >= mostRecentDepTime and not self.isBroken and Utils.FileExists(self.getAssetInfoCachePath(self.path)):
+                fileSymbols = self.loadAssetInfoCache(self.path)
             else:
-                self.isBroken = False
+                fileInfo = CppParser.GetSimpleClass(self.path)
+                if not fileInfo['success']:
+                    Utils.Console.warning('Script '+self.path+' has error(s):\n  '+('\n  '.join(fileInfo['diagnostics']))+'\n\n')
+                    self._diagnosticMessages = fileInfo['diagnostics']
+                    self.isBroken = True
+                    return None
+                else:
+                    self.isBroken = False
+                    pass
+
+                fileSymbols = fileInfo['symbols']
+                fileSymbols['path'] = self.path
+                fileSymbols['id'] = self.persistent_fields['id']
+
+                Utils.Console.step('Updating dependencies for '+self.path)
+                self.persistent_fields['dependencies'] = list(fileInfo['dependencies'])
+
+                # Recalculate the most recent dep time, since my dependencies
+                # were updated
+                self.persistent_fields['mtime'] = self.mostRecentDependencyTime()
+
+                self.saveAssetInfoCache(self.path, fileSymbols)
                 pass
-
-            fileSymbols = fileInfo['symbols']
-            fileSymbols['path'] = self.path
-            fileSymbols['id'] = self.persistent_fields['id']
-
-            Utils.Console.step('Updating dependencies for '+self.path)
-            self.persistent_fields['dependencies'] = list(fileInfo['dependencies'])
-            self.persistent_fields['mtime'] = mostRecentDepTime
-
-            self.saveAssetInfoCache(self.path, fileSymbols)
-            pass
-        return fileSymbols
+            return fileSymbols
+        pass
 
     def update(self):
         from server.build import BuildEventHandler
         def buildCallback(output, message, returncode):
             if returncode != 0:
                 self.isBroken = True
-                Utils.Console.error('Failed building '+self.path)
             else:
                 self.isBroken = False
                 pass
@@ -140,11 +147,11 @@ class ScriptProcessor(AssetProcessor):
             BuildEventHandler.BuildPreviewObject(self.path, buildCallback)
             # Update dependency list
             self.getMetadata()
-        elif Utils.IsHeaderFile(self.path) and Project.isUserAsset(self.path):
+        elif Utils.IsHeaderFile(self.path):
             # The file was updated. Re-generate its Factory file.
             if self.persistent_fields['mtime'] < self.mostRecentDependencyTime() or self.isBroken:
                 assetMetadata = self.getMetadata()
-                if assetMetadata != None:
+                if assetMetadata != None and Project.isUserAsset(self.path):
                     outPaths = BuildEventHandler.RenderFactorySources([self.getMetadata()])
                     # Re-build the factories corresponding .o files
                     for path in outPaths:
@@ -203,9 +210,11 @@ class UserFactoriesProcessor(AssetProcessor):
         from server.build import BuildEventHandler
         if self.persistent_fields['mtime'] < self.getModificationTime():
             # Re-generate all factory files
-            for asset in Project.getAssetList():
-                if Utils.IsHeaderFile(asset['path']) and Project.isUserAsset(asset['path']):
-                    outPaths = BuildEventHandler.RenderFactorySources([asset])
+            assetProcessors = Project.getAssetProcessors()
+            for key in assetProcessors:
+                asset = assetProcessors[key]
+                if Utils.IsHeaderFile(asset.path) and Project.isUserAsset(asset.path):
+                    outPaths = BuildEventHandler.RenderFactorySources([asset.getMetadata()])
                     # Re-generate its .o file
                     for path in outPaths:
                         BuildEventHandler.BuildPreviewObject(path)
