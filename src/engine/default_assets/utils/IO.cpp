@@ -1,3 +1,5 @@
+#include <unistd.h>
+
 #include <iostream>
 #include <stdlib.h>
 #include <errno.h>
@@ -18,6 +20,7 @@
 
 #include "window/NaCl.hpp"
 #include "utils/IO.h"
+#include "utils/ThreadPool.hpp"
 
 using namespace std;
 
@@ -123,18 +126,15 @@ public:
     virtual void requestFiles(const std::vector<std::string>& filenames,
             const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
     {
-        requestFiles<const vector<string>&>(filenames, callback);
+        ThreadPool::startJob(bind(&DesktopIO::requestFiles<const vector<string>&>, this, filenames, callback));
     }
 
     DesktopIO()
     {}
 
 private:
-    queue<queue<string>> pendingRequests;
-    queue<std::function<void(std::deque<std::pair<bool,std::vector<uint8_t>>>&)>> pendingCallbacks;
-
     template<class Container>
-    void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)>& callback)
+    void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)> callback)
     {
         // TODO make this procedure asynchronous
         deque<pair<bool, vector<uint8_t>>> filesRead;

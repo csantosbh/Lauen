@@ -1,5 +1,3 @@
-#include <unistd.h>
-
 #include "LauCommon.h"
 #include "ThreadPool.hpp"
 
@@ -9,12 +7,34 @@ namespace lau {
 
 ThreadPool ThreadPool::singleton_;
 bool ThreadPool::isRunning_ = true;
+mutex ThreadPool::mtx_;
+condition_variable ThreadPool::cond_var_;
+queue<function<void()>> ThreadPool::work_queue_;
+
+void ThreadPool::startJob(const function<void()>& job) {
+    singleton_.startJob_(job);
+}
+
+void ThreadPool::startJob_(const function<void()>& job) {
+    unique_lock<mutex> lock(mtx_);
+    work_queue_.push(job);
+    cond_var_.notify_one();
+}
 
 void ThreadPool::worker() {
-    while(ThreadPool::isRunning_) {
-        // TODO usar condition variables: http://stackoverflow.com/questions/21414933/c11-non-blocking-producer-consumer
-        lout << "weee! thread!" << endl;
-        sleep(1);
+    for(;;) {
+        std::function<void()> job;
+        {
+            unique_lock<mutex> lock(mtx_);
+            cond_var_.wait(lock);
+
+            if(!ThreadPool::isRunning_)
+                return;
+
+            job = work_queue_.front();
+            work_queue_.pop();
+        }
+        job();
     }
 }
 
@@ -27,6 +47,7 @@ ThreadPool::ThreadPool() {
 
 ThreadPool::~ThreadPool() {
     isRunning_ = false;
+    cond_var_.notify_all();
     for(auto& t: this->pool_)
         t.join();
 }
