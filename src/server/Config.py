@@ -24,6 +24,7 @@ defaults={
 }
 
 config = defaults
+laurc_path = os.path.expanduser('~/.laurc')
 
 def setDefaults(defaults, preservedData):
     for k, v in preservedData.iteritems():
@@ -36,12 +37,12 @@ def setDefaults(defaults, preservedData):
 
 def _initialize():
     try:
-        user_config = json.loads(open(os.path.expanduser('~/.laurc'), 'r').read())
+        user_config = json.loads(open(laurc_path, 'r').read())
     except IOError:
         user_config = {}
         pass
     config = setDefaults(defaults, user_config)
-    open(os.path.expanduser('~/.laurc'), 'w').write(json.dumps(config, indent=2))
+    open(laurc_path, 'w').write(json.dumps(config, indent=2))
     pass
 
 def get(section, field):
@@ -49,12 +50,12 @@ def get(section, field):
 
 def set(section, field, value):
     config[section][field] = value
-    open(os.path.expanduser('~/.laurc'), 'w').write(json.dumps(config, indent=2))
+    open(laurc_path, 'w').write(json.dumps(config, indent=2))
     pass
 
 _env={
     'install_location': os.path.dirname(os.path.realpath(sys.argv[0])),
-    'exportable_asset_extensions': ['.vs', '.fs']
+    'exportable_asset_extensions': ['.vs', '.fs', '.lmf']
 }
 def env(section):
     return _env[section]
