@@ -155,7 +155,7 @@ def parseCPPFile(fileName):
                                         '-I',Config.get('export', 'third_party_folder')+'/rapidjson/include',
                                         '-I',Config.get('export', 'third_party_folder')+'/Eigen',
                                         '-I',Project.getProjectFolder()+'/default_assets/',
-                                        '-include-pch',Config.get('export', 'third_party_folder')+'/Eigen/Eigen.pch'],
+                                        '-include-pch',Config.get('export', 'third_party_folder')+'/Eigen/Eigen/Eigen.pch'],
                                         options=TranslationUnit.PARSE_SKIP_FUNCTION_BODIES)
             _translationUnits[fileName] = tu
         except Exception as err:

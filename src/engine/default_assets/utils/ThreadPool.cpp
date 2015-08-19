@@ -1,5 +1,12 @@
+#include <unistd.h>
+
 #include "LauCommon.h"
 #include "ThreadPool.hpp"
+
+#if defined(WINDOWS)
+#include <windows.h>
+#elif defined(LINUX)
+#endif
 
 using namespace std;
 
@@ -38,8 +45,26 @@ void ThreadPool::worker() {
     }
 }
 
+int getNumberAvailableCores() {
+    // Got it from:
+    // stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
+#if defined(WINDOWS)
+    SYSTEM_INFO sysinfo;
+    GetSystemInfo(&sysinfo);
+    return sysinfo.dwNumberOfProcessors;
+#elif defined(LINUX)
+    return sysconf(_SC_NPROCESSORS_ONLN);
+#else
+    int num_cores = std::thread::hardware_concurrency();
+    if(num_cores == 0)
+        num_cores = 4;
+    return num_cores;
+#endif
+}
+
 ThreadPool::ThreadPool() {
-    int number_cores = 4; // TODO: implementar isso http://stackoverflow.com/questions/150355/programmatically-find-the-number-of-cores-on-a-machine
+    int number_cores = getNumberAvailableCores();
+    lout << "Got " << number_cores << " cores!" << endl;
     for(int i = 0; i < number_cores; ++i) {
         this->pool_.push_back(thread(worker));
     }

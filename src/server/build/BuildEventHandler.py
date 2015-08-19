@@ -10,7 +10,7 @@ from server.components import DefaultComponentManager
 
 platform_preprocessors={
     'linux': '-DLINUX -DDESKTOP',
-    'windows': '-DLINUX -DDESKTOP',
+    'windows': '-DWINDOWS -DDESKTOP',
     'nacl': '-DNACL',
     'preview': '-DNACL -DPREVIEW_MODE',
 }

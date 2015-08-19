@@ -1,6 +1,6 @@
 #pragma once
 
-#include <Eigen>
+#include <Eigen/Eigen>
 #include <rapidjson/document.h>
 
 #include "Component.hpp"
