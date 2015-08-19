@@ -77,9 +77,10 @@ def RenderFactorySources(componentFiles):
     return outputPaths
 
 def _runGame(path, workFolder):
+    import subprocess
     from subprocess import Popen, PIPE
 
-    process = Popen(path, stdout=PIPE, stderr=PIPE, cwd=workFolder)
+    process = Popen(path, stdout=PIPE, stderr=subprocess.STDOUT, cwd=workFolder)
     while process.returncode == None:
         process.poll()
         strMsg = process.stdout.readline()

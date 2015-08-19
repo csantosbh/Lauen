@@ -27,7 +27,7 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : di
     {
     GLenum err = glGetError();
     if(err != GL_NO_ERROR) {
-        lout << "[VBO] Error pushing vertex data. OpenGL error code: " << err << endl;
+        lerr << "[VBO] Error pushing vertex data. OpenGL error code: " << err << endl;
     }
     }
 #endif
@@ -42,7 +42,7 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : di
     {
     GLenum err = glGetError();
     if(err != GL_NO_ERROR) {
-        lout << "[VBO] Error pushing index data. OpenGL error code: " << err << endl;
+        lerr << "[VBO] Error pushing index data. OpenGL error code: " << err << endl;
     }
     }
 #endif
@@ -61,7 +61,7 @@ void VBO::bindVertexToAttribute(GLuint attributeId) {
     {
     GLenum err = glGetError();
     if(err != GL_NO_ERROR) {
-        lout << "[VBO] Error bind vertex attribute. OpenGL error code: " << err << endl;
+        lerr << "[VBO] Error bind vertex attribute. OpenGL error code: " << err << endl;
     }
     }
 #endif

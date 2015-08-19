@@ -5,15 +5,18 @@ using namespace std;
 
 int main(void)
 {
+    try {
 #if defined(DESKTOP)
-    lau::Desktop window;
+        lau::Desktop window;
 #endif
+        // Initialize window
+        window.init(640, 480);
 
-    // Initialize window
-    window.init(640, 480);
-
-    // Run game
-    window.loop();
+        // Run game
+        window.loop();
+    } catch(...) {
+        lau::lerr << "[error] Unhandled exception thrown." << endl;
+    }
 
     return 0;
 }

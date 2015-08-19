@@ -23,7 +23,7 @@ VBO* Mesh::getVBO() {
 
 void Mesh::onLoadMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string fname) {
     if(!meshFile.begin()->first) {
-        lout << "[Mesh] Error loading mesh file \"" << fname << "\"" << endl;
+        lerr << "[Mesh] Error loading mesh file \"" << fname << "\"" << endl;
     } else {
         meshFile.begin()->second.push_back('\0');
         rapidjson::Document serializedMesh;

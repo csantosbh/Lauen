@@ -19,8 +19,7 @@ shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameOb
 	if(serializedComponent.HasMember("id")) {
 #ifdef DEBUG
 		if(componentInstanceFactories.find(serializedComponent["id"].GetInt()) == componentInstanceFactories.end()) {
-			// TODO change this to lerr once it is working with the editor
-			lout << "Could not find component of id " << serializedComponent["id"].GetInt() << endl;
+			lerr << "Could not find component of id " << serializedComponent["id"].GetInt() << endl;
 		}
 #endif
 		return componentInstanceFactories[serializedComponent["id"].GetInt()](gameObj, serializedComponent["fields"]);
@@ -30,9 +29,7 @@ shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameOb
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
 	serializedComponent.Accept(writer);
 	const char* str = buffer.GetString();
-	// TODO URGENT lerr is not being redirected to the editor in x86_linux mode
-	// TODO change this to lerr once it is working with the editor
-	lout << "Serialized component has no <id>: " << buffer.GetString() << endl;
+	lerr << "Serialized component has no <id>: " << buffer.GetString() << endl;
 	return nullptr;
 }
 
@@ -50,6 +47,11 @@ vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Doc
 				component->setGameObject(obj);
 				obj->addComponent(component);
 			}
+#ifdef DEBUG
+            else {
+                lerr << "[error] Could not create requested component: {id="<< components[c]["id"].GetInt() << ", type=" << components[c]["type"].GetString() <<"}" << endl;
+            }
+#endif
 		}
 
 		result.push_back(obj);

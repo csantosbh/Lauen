@@ -16,8 +16,10 @@ std::ostream& lerr = std::cerr;
 class Desktop : public Window {
 public:
     void init(int winWidth, int winHeight) {
-        if (!glfwInit())
-            throw 1; // TODO properly handle errors
+        if (!glfwInit()) {
+            lerr << "[error] Could not initialize GLFW." << endl;
+            throw 1; // TODO 
+        }
         glfwSetErrorCallback(&windowErrorCallback);
 
         /* Create a windowed mode window and its OpenGL context */
@@ -25,6 +27,7 @@ public:
         this->window = glfwCreateWindow(640, 480, "Hello World", NULL, NULL);
         if (!this->window)
         {
+            lerr << "[error] Could not create window." << endl;
             glfwTerminate();
             throw 1;
         }
@@ -36,7 +39,7 @@ public:
             GLenum err=glewInit();
             if(err!=GLEW_OK) {
                 // Problem: glewInit failed, something is seriously wrong.
-                cerr<<"glewInit failed, aborting due to:"<<glewGetErrorString(err)<<endl;
+                lerr<<"[error] glewInit failed, aborting due to: "<<glewGetErrorString(err)<<endl;
                 throw 1;
             }
         }
@@ -64,8 +67,6 @@ public:
                 lag -= MS_PER_FRAME;
             }
 
-            //cout << "lag = " <<lag<< "/" << MAXIMUM_LAG<< endl;
-
             /* Render here */
             game.draw(lag/MS_PER_FRAME);
             /* Swap front and back buffers */
@@ -84,7 +85,7 @@ public:
 
 private:
     static void windowErrorCallback(int error, const char* description) {
-        cerr << "[ERROR] " << description << endl;
+        lerr << "[error] GLFW error: " << description << endl;
     }
 
     GLFWwindow* window;

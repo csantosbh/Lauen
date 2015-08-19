@@ -196,6 +196,7 @@ class _Project:
             return scene
         except IOError:
             # TODO do something if scene file is gone
+            Utils.Console.error('Could not load scene file '+fname)
             return None
             pass
         pass
