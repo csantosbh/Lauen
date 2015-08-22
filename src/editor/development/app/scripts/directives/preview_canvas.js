@@ -7,7 +7,7 @@
  * # previewCanvas
  */
 angular.module('lauEditor')
-.directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'componentManager', 'editCanvasManager', function ($timeout, $gom, $lauGameObj, $cm, $editCanvas) {
+.directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'componentManager', 'editCanvasManager', function ($timeout, $gom, $lgo, $cm, $editCanvas) {
   return {
     template: '<embed class="inner-canvas" src="http://localhost:9002/lau_canvas.nmf" type="application/x-pnacl" />',
     restrict: 'E',
@@ -25,9 +25,7 @@ angular.module('lauEditor')
           // Add new game objects
           if(msg.newGameObjects.length > 0) {
             for(var i = 0; i < msg.newGameObjects.length; ++i) {
-              // TODO retrieve game object name
-              var newGameObject = new $lauGameObj.GameObject(msg.newGameObjects[i].name, msg.newGameObjects[i].instanceId);
-              $gom.pushGameObject(newGameObject);
+              $gom.pushGameObject(new $lgo.GameObject(msg.newGameObjects[i], msg.newGameObjects[i].instanceId));
             }
           }
           // Add new components
@@ -45,7 +43,7 @@ angular.module('lauEditor')
           if(msg.deletedGameObjects.length > 0) {
             for(var i = 0; i < msg.deletedGameObjects.length; ++i) {
               var deletedObj = msg.deletedGameObjects[i];
-              $gom.removeGameObjectByInstanceId(deletedObj.instanceId);
+              $gom.removeGameObject(deletedObj.instanceId);
             }
           }
           // Update states

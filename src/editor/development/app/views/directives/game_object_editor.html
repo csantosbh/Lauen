@@ -1,2 +1,2 @@
-<component-editor ng-repeat="component in gameObjectEditor.gameObjects()[gameObjectEditor.selectedGameObject()].components"></component-editor>
+<component-editor ng-repeat="component in gameObjectEditor.selectedGameObject().components"></component-editor>
 <div style="width: 100%; position: relative; height: 200px; display: inline-block;"><mmenu elements="gameObjectEditor.componentMenu" callback="gameObjectEditor._menuPickup"></mmenu></div>

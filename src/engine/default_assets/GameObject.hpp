@@ -12,8 +12,6 @@
 
 namespace lau {
 
-using namespace std;
-
 class GameObject {
 public:
     GameObject(const rapidjson::Value& serializedObject);
@@ -27,7 +25,7 @@ public:
     T* getComponent() {
         int id = Component::getComponentId<T>();
         // TODO create a map of int->component to speed up this search
-        for(auto& component: this->updateableComponents) {
+        for(auto& component: this->updateableComponents_) {
             // TODO rename this getComponentId to getId()
             if(component->getId() == id)
                 return dynamic_cast<T*>(component.get());
@@ -36,11 +34,13 @@ public:
         return nullptr;
     }
 
-    void addComponent(const shared_ptr<Component>& component);
+    void addComponent(const std::shared_ptr<Component>& component);
+    void addChild(const std::shared_ptr<GameObject>& gameObj);
 
 protected:
-    vector<shared_ptr<Component>> updateableComponents;
-    vector<shared_ptr<DrawableComponent>> drawableComponents;
+    std::vector<std::shared_ptr<Component>> updateableComponents_;
+    std::vector<std::shared_ptr<DrawableComponent>> drawableComponents_;
+    std::vector<std::shared_ptr<GameObject>> children_;
 #ifdef PREVIEW_MODE
 	int gameObjectId;
 	std::string gameObjectName;

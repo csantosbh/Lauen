@@ -10,17 +10,16 @@
 angular.module('lauEditor').service('gameObjectManager', function () {
   // AngularJS will instantiate a singleton by calling "new" on this function
 
-  var currentGameObjectId = -1;
+  var currentlySelectedGameObj = null;
   var gameObjects = [];
   var gameObjectManager = {
     getGameObjects: getGameObjects,
     selectGameObject: selectGameObject,
     selectedGameObject: selectedGameObject,
     pushGameObject: pushGameObject,
-    removeGameObjectByIndex: removeGameObjectByIndex,
-    removeGameObjectByInstanceId: removeGameObjectByInstanceId,
+    removeGameObject: removeGameObject,
     addComponentToSelectedGameObject: addComponentToSelectedGameObject,
-    getGameObjectByInstanceId: getGameObjectByInstanceId,
+    getGameObject: getGameObject,
     serializeGameObjects: serializeGameObjects,
     removeScriptFromGameObjects: removeScriptFromGameObjects,
   };
@@ -31,62 +30,75 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     return gameObjects;
   }
 
-  function selectGameObject(i) {
-    currentGameObjectId = i;
+  function selectGameObject(gameObj) {
+    currentlySelectedGameObj = gameObj;
   }
   function selectedGameObject() {
-    return currentGameObjectId;
+    return currentlySelectedGameObj;
   }
   function pushGameObject(go) {
     gameObjects.push(go);
 
     // TODO remove line below when the hierarchy panel is correctly created (with blur events to un-select game objects)
-    currentGameObjectId = gameObjects.length-1;
+    currentlySelectedGameObj = gameObjects[gameObjects.length-1];
   }
 
-  function removeGameObjectByIndex(scope, idx) {
-    // Look for deleted game object
-    gameObjects[idx].destroy(scope);
-    gameObjects.splice(idx, 1);
-  }
+  function removeGameObject(instanceId) {
+    function _recurse(objs) {
+      // Look for game object
+      for(var i = 0; i < objs.length; ++i) {
+        if(objs[i].instanceId == instanceId) {
+          // Unselect game object, if it is selected
+          if(currentlySelectedGameObj != null &&
+             currentlySelectedGameObj.instanceId == instanceId) {
+            currentlySelectedGameObj = null;
+          }
 
-  function removeGameObjectByInstanceId(scope, instanceId) {
-    // Look for deleted game object
-    var gameObjs = gameObjects;
-    for(var j = 0; j < gameObjs.length; ++j) {
-      if(gameObjs[j].instanceId == instanceId) {
-        gameObjs[j].destroy(scope);
-        gameObjs.splice(j, 1);
-        return;
+          objs[i].destroy();
+          objs.splice(i, 1);
+          return true;
+        } else if(_recurse(objs[i].children)) {
+          return true;
+        }
       }
+      return false;
+    }
+
+    if(!_recurse(gameObjects)) {
+      console.error("No game object of instance id ["+instanceId+"] to remove.");
     }
   }
 
   function addComponentToSelectedGameObject(component) {
-    gameObjects[currentGameObjectId].components.push(component);
+    currentlySelectedGameObj.components.push(component);
   }
 
-  function getGameObjectByInstanceId(id) {
-    for(var i = 0; i < gameObjects.length; ++i) {
-      if(gameObjects[i].instanceId == id)
-        return gameObjects[i];
+  function getGameObject(id) {
+    function _recurse(objs) {
+      // Look for game object
+      for(var i = 0; i < objs.length; ++i) {
+        if(objs[i].instanceId == instanceId) {
+          return objs[i];
+        } else if(objs[i].children.length > 0) {
+          let go = _recurse(objs[i].children);
+          if(go != null)
+            return go;
+        }
+      }
+      return null;
     }
-    console.error("No game object of instance id ["+id+"] was found.");
-    return null;
+
+    let go = _recurse(gameObjects);
+    if(go == null) {
+      console.error("Could not get game object of instance id ["+id+"].");
+    }
+    return go;
   }
 
   function serializeGameObjects() {
     var exportedObjs = [];
     for(var g = 0; g < gameObjects.length; ++g) {
-      var gameObjComps = gameObjects[g].components;
-      var exportedComps = [];
-      for(var c = 0; c < gameObjComps.length; ++c) {
-        exportedComps.push(gameObjComps[c].export());
-      }
-      exportedObjs.push({
-        name: gameObjects[g].name,
-        components: exportedComps
-      });
+      exportedObjs.push(gameObjects[g].export());
     }
     return exportedObjs;
   }
@@ -99,15 +111,6 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
   ////
   // Internal functions
-  var _editIds = new Set();
-  function generateEditId() {
-    var rnd = Math.floor(Math.random()*100000000);
-    while(_editIds.has(rnd))
-      rnd = Math.floor(Math.random()*100000000);
-    _editIds.add(rnd);
-    return rnd;
-  }
-
   $event.listen('togglePreviewMode', function(isPreviewing) {
     if(isPreviewing) {
       _editorGameObjects = gameObjects;

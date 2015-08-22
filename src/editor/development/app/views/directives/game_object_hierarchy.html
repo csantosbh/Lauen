@@ -1,2 +1,2 @@
-<div ng-repeat="gameObject in gameObjectHierarchy.gameObjects()" ng-click="gameObjectHierarchy.selectGameObject($index)">{{gameObject.name}} <span class="glyphicon glyphicon-remove-circle pull-right" ng-click="gameObjectHierarchy.removeGameObject($index)"></span></div>
+<hierarchy-level level="0" ng-repeat="obj in gameObjectHierarchy.gameObjects()" game-object="obj"></hierarchy-level>
 <input type="button" ng-click="gameObjectHierarchy.createGameObject()" value="+game object" />

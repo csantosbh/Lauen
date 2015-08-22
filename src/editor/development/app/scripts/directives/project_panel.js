@@ -14,19 +14,7 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
     $timeout(function() {
       // Setup game objects
       for(var i = 0; i < sceneData.length; ++i) {
-        var gameObj = new $lgo.GameObject(sceneData[i].name);
-        var comps = sceneData[i].components;
-        for(var c = 0; c < comps.length; ++c) {
-          var component = $cm.createComponentFromId(gameObj, comps[c].id);
-          if(component == null) {
-            console.log('[warning] could not create component from id ' + comps[c].id);
-            continue;
-          }
-          component.setValues(comps[c]);
-          gameObj.components.push(component);
-        }
-
-        $gom.pushGameObject(gameObj);
+        $gom.pushGameObject(new $lgo.GameObject(sceneData[i]));
       }
     });
   }

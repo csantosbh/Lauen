@@ -33,28 +33,39 @@ shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameOb
 	return nullptr;
 }
 
+shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& serializedObj) {
+    shared_ptr<GameObject> obj(new GameObject(serializedObj));
+
+    // Add components
+    const rapidjson::Value& components = serializedObj["components"];
+    for(int c = 0; c < components.Size(); ++c) {
+        shared_ptr<Component> component = componentFactory(obj, components[c]);
+
+        // TODO assert that component cant be null?
+        if(component != NULL) {
+            component->setGameObject(obj);
+            obj->addComponent(component);
+        }
+#ifdef DEBUG
+        else {
+            lerr << "[error] Could not create requested component: {id="<< components[c]["id"].GetInt() << ", type=" << components[c]["type"].GetString() <<"}" << endl;
+        }
+#endif
+    }
+
+    // Add children objects
+    const rapidjson::Value& children = serializedObj["children"];
+    for(int g = 0; g < children.Size(); ++g) {
+        obj->addChild(assembleGameObject(children[g]));
+    }
+
+    return obj;
+}
+
 vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Document& objects) {
 	vector<shared_ptr<GameObject>> result;
 	for(int i = 0; i < objects.Size(); ++i) {
-		shared_ptr<GameObject> obj(new GameObject(objects[i]));
-		const rapidjson::Value& components = objects[i]["components"];
-
-		for(int c = 0; c < components.Size(); ++c) {
-			shared_ptr<Component> component = componentFactory(obj, components[c]);
-
-			// TODO assert that component cant be null?
-			if(component != NULL) {
-				component->setGameObject(obj);
-				obj->addComponent(component);
-			}
-#ifdef DEBUG
-            else {
-                lerr << "[error] Could not create requested component: {id="<< components[c]["id"].GetInt() << ", type=" << components[c]["type"].GetString() <<"}" << endl;
-            }
-#endif
-		}
-
-		result.push_back(obj);
+		result.push_back(assembleGameObject(objects[i]));
 	}
 
 	return result;

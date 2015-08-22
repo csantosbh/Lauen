@@ -8,14 +8,56 @@
  * Service in the lauEditor.
  */
 angular.module('lauEditor')
-.service('lauGameObject', ['editCanvasManager', function ($editCanvas) {
-  // AngularJS will instantiate a singleton by calling "new" on this function
-  function GameObject(name, instanceId) {
-    this.name = name ? name : 'unnamed';
-    this.components = [];
+.service('lauGameObject', ['editCanvasManager', 'componentManager', function ($editCanvas, $cm) {
+  var _gameObjIds = new Set();
+  function _allocGameObjectId() {
+    function genId() {
+      return Math.pow(2,32)*Math.random();
+    }
 
-    if(instanceId != undefined)
-      this.instanceId = instanceId;
+    let id = genId();
+    while(_gameObjIds.has(id))
+      id = genId();
+    _gameObjIds.add(id);
+
+    return id;
+  }
+  function _freeGameObjectId(id) {
+    _gameObjIds.delete(id);
+  }
+
+  // AngularJS will instantiate a singleton by calling "new" on this function
+  function GameObject(fields, uniqueNumericId) {
+    this.name = fields.name;
+    this.components = [];
+    this.children = [];
+
+    if(fields.components != undefined) {
+      // Initialize components
+      var comps = fields.components;
+      for(var c = 0; c < comps.length; ++c) {
+        var component = $cm.createComponentFromId(this, comps[c].id);
+        if(component == null) {
+          console.log('[warning] could not create component from id ' + comps[c].id);
+          continue;
+        }
+        component.setValues(comps[c]);
+        this.components.push(component);
+      }
+      // Initialize children game objects
+      var child = fields.children;
+      for(var g = 0; g < child.length; ++g) {
+        this.children.push(new GameObject(child[g]));
+      }
+    }
+
+    if(uniqueNumericId != undefined) {
+      this.instanceId = uniqueNumericId;
+      this._managedId = false;
+    } else {
+      this.instanceId = _allocGameObjectId();
+      this._managedId = true;
+    }
   }
 
   GameObject.prototype = {
@@ -64,10 +106,35 @@ angular.module('lauEditor')
         }
       }
     },
+    export: function() {
+      // Export components
+      var exportedComps = [];
+      for(var c = 0; c < this.components.length; ++c) {
+        exportedComps.push(this.components[c].export());
+      }
+
+      // Export children
+      var children = [];
+      for(var g = 0; g < this.children.length; ++g) {
+        children.push(this.children[g].export());
+      }
+
+      return {
+        name: this.name,
+        components: exportedComps,
+        children: children
+      };
+    },
     destroy: function() {
       for(var i = 0; i < this.components.length; ++i) {
         this.components[i].destroy();
       }
+      for(var i = 0; i < this.children.length; ++i) {
+        this.children[i].destroy();
+      }
+
+      if(this._managedId)
+        _freeGameObjectId(this.instanceId);
     }
   };
 

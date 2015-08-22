@@ -3,6 +3,8 @@
 #include "Peekers.hpp"
 #include "window/NaCl.hpp"
 
+using namespace std;
+
 namespace lau {
 
 extern int generateInstanceId();
@@ -35,7 +37,7 @@ void GameObject::update(float dt) {
 	currentState.Set("instanceId", gameObjectId);
 #endif
 
-    for(auto& updateableComponent: this->updateableComponents) {
+    for(auto& updateableComponent: this->updateableComponents_) {
         updateableComponent->update(dt);
 #ifdef PREVIEW_MODE
         updateableComponent->lau_peeker__->update();
@@ -46,6 +48,12 @@ void GameObject::update(float dt) {
 #endif
     }
 
+    // Update child game objects
+    for(auto& child: this->children_) {
+        // TODO pass stacked transform
+        child->update(dt);
+    }
+
 #ifdef PREVIEW_MODE
 	currentState.Set("components", componentStates);
 	NaCl::getInstance()->publishState(currentState);
@@ -53,17 +61,21 @@ void GameObject::update(float dt) {
 }
 
 void GameObject::draw(float alpha) {
-    for(auto& drawableComponent: this->drawableComponents) {
+    for(auto& drawableComponent: this->drawableComponents_) {
         drawableComponent->draw(alpha);
     }
 }
 
+void GameObject::addChild(const shared_ptr<GameObject>& gameObj) {
+    this->children_.push_back(gameObj);
+}
+
 void GameObject::addComponent(const shared_ptr<Component>& component) {
-    this->updateableComponents.push_back(component);
+    this->updateableComponents_.push_back(component);
 
     // If component is drawable, add it to the drawable list
     if(dynamic_cast<DrawableComponent*>(component.get()) != nullptr) {
-        this->drawableComponents.push_back(dynamic_pointer_cast<DrawableComponent>(component));
+        this->drawableComponents_.push_back(dynamic_pointer_cast<DrawableComponent>(component));
     }
 
 #ifdef PREVIEW_MODE
