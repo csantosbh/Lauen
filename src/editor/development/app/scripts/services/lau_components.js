@@ -71,11 +71,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     destroy: function() {
       if($editCanvas.isEditMode()) {
         // Remove this mesh from the hierarchy that groups everything from this game object
-        var transform = this.parent.getComponentsByType('transform');
-        if(transform.length != 0) {
-          transform = transform[0];
-          transform.hierarchyGroup.remove(this.meshGeometry);
-        }
+        this.parent.transform.hierarchyGroup.remove(this.meshGeometry);
       }
     }
   };
@@ -109,13 +105,10 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       }
     },
     updateModels: function() {
-      var transformComponent = this.parent.getComponentsByType('transform');
-      if(transformComponent.length > 0) {
-        transformComponent = transformComponent[0];
-        var meshComponents = this.parent.getComponentsByType('mesh');
-        for(var i = 0; i < meshComponents.length; ++i) {
-          transformComponent.hierarchyGroup.add(meshComponents[i].meshGeometry);
-        }
+      var transform = this.parent.transform;
+      var meshComponents = this.parent.getComponentsByType('mesh');
+      for(var i = 0; i < meshComponents.length; ++i) {
+        transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
       }
     }
   };
