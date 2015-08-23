@@ -6,8 +6,8 @@ namespace lau {
 
 Transform::Transform(const rapidjson::Value& fields) : rotation(Eigen::Quaternionf::Identity()) {
     const auto& pos = fields["position"];
-    const auto& rot = fields["scale"];
-    const auto& scale = fields["rotation"];
+    const auto& rot = fields["rotation"];
+    const auto& scale = fields["scale"];
     float eulerAngles[3];
 
     for(int i = 0; i < 3; ++i) {
@@ -21,42 +21,38 @@ Transform::Transform(const rapidjson::Value& fields) : rotation(Eigen::Quaternio
             Eigen::AngleAxisf(eulerAngles[1], Eigen::Vector3f::UnitY()) *
             Eigen::AngleAxisf(eulerAngles[2], Eigen::Vector3f::UnitZ())
             );
+
+#ifdef PREVIEW_MODE
+    serializeState();
+#endif
 }
 
 void Transform::update(float dt) {
     rotation = rotation*Eigen::AngleAxisf(0.1 * M_PI/180.0f, Eigen::Vector3f::UnitZ());
-}
 
-////
-// Factories
-#define TRANSFORM_ID 0
-template<>
-int Component::getComponentId<lau::Transform>() {
-	return TRANSFORM_ID;
-}
-
-template<>
-shared_ptr<Component> Factories::componentInternalFactory<lau::Transform>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
-	lau::Transform* ptr = new lau::Transform(fields);
-
-	shared_ptr<Component> result;
-	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
 #ifdef PREVIEW_MODE
-	result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<lau::Transform>(result)));
+    serializeState();
 #endif
-
-	result->setId(TRANSFORM_ID);
-
-	return result;
 }
 
-template<>
-struct Initializer<lau::Transform> {
-	Initializer() {
-		Factories::componentInstanceFactories[TRANSFORM_ID] = &Factories::componentInternalFactory<lau::Transform>;
+#ifdef PREVIEW_MODE
+void Transform::serializeState() {
+	// TODO figure out how the eulerangles are being returned (in which order?), and make sure it is consistent with the order in the Editor
+	Eigen::Vector3f rotation = this->rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+
+	pp::VarArray pos;
+	pp::VarArray rot;
+	pp::VarArray scale;
+	for(int i = 0; i < 3; ++i) {
+		pos.Set(i, this->position[i]);
+		rot.Set(i, rotation[i]);
+		scale.Set(i, this->scale[i]);
 	}
-	static Initializer<lau::Transform> instance;
-};
-Initializer<lau::Transform> Initializer<lau::Transform>::instance STATIC_INITIALIZER_GROUP_C;
+
+	currentState.Set("position", pos);
+	currentState.Set("scale", scale);
+	currentState.Set("rotation", rot);
+}
+#endif
 
 } // namespace lau

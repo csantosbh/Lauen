@@ -5,11 +5,7 @@
 #include "Factories.hpp"
 #include "LauCommon.h"
 
-#include "default_components/MeshRenderer.hpp"
-#include "default_components/Mesh.hpp"
-#include "default_components/Transform.hpp"
 #include "Component.hpp"
-
 
 namespace lau {
 

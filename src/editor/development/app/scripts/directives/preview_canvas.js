@@ -31,7 +31,7 @@ angular.module('lauEditor')
           // Add new components
           if(msg.newComponents.length > 0) {
             for(var i = 0; i < msg.newComponents.length; ++i) {
-              var gameObj = $gom.getGameObjectByInstanceId(msg.newComponents[i].instanceId);
+              var gameObj = $gom.getGameObject(msg.newComponents[i].instanceId);
               var componentData = $cm.createComponentFromId(gameObj,
                 msg.newComponents[i].component.componentId,
                 msg.newComponents[i].component.instanceId);
@@ -50,7 +50,7 @@ angular.module('lauEditor')
           if(msg.currentStates.length > 0) {
             for(var i = 0; i < msg.currentStates.length; ++i) {
               var state = msg.currentStates[i];
-              var gameObj = $gom.getGameObjectByInstanceId(state.instanceId);
+              var gameObj = $gom.getGameObject(state.instanceId);
               // Update its components
               gameObj.updateStates(state);
             }

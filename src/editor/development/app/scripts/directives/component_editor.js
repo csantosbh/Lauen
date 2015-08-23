@@ -22,8 +22,11 @@ angular.module('lauEditor')
     }
     return {
       restrict: 'E',
+      scope: {
+        component: '=',
+      },
       link: function postLink(scope, element) {
-        $templateRequest(getTemplateName(scope.component.type)).then(function(template){
+        $templateRequest(getTemplateName(scope.component.type)).then(function(template) {
           element.html(template);
           $compile(element.contents())(scope);
         });

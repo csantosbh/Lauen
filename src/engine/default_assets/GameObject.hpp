@@ -7,6 +7,7 @@
 #include <rapidjson/document.h>
 
 #include "Component.hpp"
+#include "default_components/Transform.hpp"
 #include "DrawableComponent.hpp"
 #include "LauCommon.h" // TODO tirar isso
 
@@ -37,10 +38,13 @@ public:
     void addComponent(const std::shared_ptr<Component>& component);
     void addChild(const std::shared_ptr<GameObject>& gameObj);
 
+    Transform transform;
+
 protected:
     std::vector<std::shared_ptr<Component>> updateableComponents_;
     std::vector<std::shared_ptr<DrawableComponent>> drawableComponents_;
     std::vector<std::shared_ptr<GameObject>> children_;
+
 #ifdef PREVIEW_MODE
 	int gameObjectId;
 	std::string gameObjectName;

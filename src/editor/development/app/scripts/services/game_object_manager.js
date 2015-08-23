@@ -100,7 +100,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     currentlySelectedGameObj.components.push(component);
   }
 
-  function getGameObject(id) {
+  function getGameObject(instanceId) {
     function _recurse(objs) {
       // Look for game object
       for(var i = 0; i < objs.length; ++i) {
@@ -117,7 +117,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
     let go = _recurse(gameObjects);
     if(go == null) {
-      console.error("Could not get game object of instance id ["+id+"].");
+      console.error("Could not get game object of instance id ["+instanceId+"].");
     }
     return go;
   }
@@ -139,10 +139,15 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   ////
   // Internal functions
   $event.listen('togglePreviewMode', function(isPreviewing) {
+    currentlySelectedGameObj = null;
     if(isPreviewing) {
       _editorGameObjects = gameObjects;
       gameObjects = [];
     } else {
+      for(var i = 0; i < gameObjects.length; ++i) {
+        gameObjects[i].destroy();
+      }
+
       gameObjects = _editorGameObjects;
     }
   });

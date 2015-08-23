@@ -9,11 +9,6 @@
 angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', function ($gom, $cm, $lauComps) {
   function setupComponentMenu($scope) {
     $scope.gameObjectEditor = {
-      /*
-       * Menu indices:
-       * 0 transform component
-       * 1 Scripts category
-       */
       componentMenu: $cm.getComponentMenu(),
       gameObjects: $gom.getGameObjects,
       selectedGameObject: $gom.selectedGameObject,
@@ -28,7 +23,7 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
       addComponent: function(eventData) {
         if($gom.selectedGameObject() < 0) return;
 
-        var currentGameObj = $gom.getGameObjects()[$gom.selectedGameObject()];
+        var currentGameObj = $gom.selectedGameObject();
         var componentData = $lauComps.createComponentFromFlyWeight(currentGameObj, eventData.flyweight);
         $gom.addComponentToSelectedGameObject(componentData);
       }

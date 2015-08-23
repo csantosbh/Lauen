@@ -14,89 +14,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
   // Component types
   ///
 
-  // Transform component
-  function TransformComponent(gameObject, componentFlyWeight) {
-    this.type = 'transform';
-    this.position = this.rotation = this.scale = null;
-    this.flyweight = componentFlyWeight;
-    this.parent = gameObject;
-
-    if($editCanvas.isEditMode()) {
-      ////
-      // Bind to edit canvas
-      var $this = this;
-      this.hierarchyGroup = $editCanvas.createGroup();
-      this.hierarchyGroup.add($editCanvas.createBoundingBox());
-      $editCanvas.scene.add(this.hierarchyGroup);
-
-      function updatePosition(newValue) {
-        if(newValue != null)
-          $this.hierarchyGroup.position.fromArray(newValue);
-      }
-      function positionObserver(changes) {
-        var newValue = changes[changes.length-1].object;
-        updatePosition(newValue);
-      }
-      function updateRotation(newValue) {
-        if(newValue != null)
-          $this.hierarchyGroup.rotation.fromArray(newValue);
-      }
-      function rotationObserver(changes) {
-        var newValue = changes[changes.length-1].object;
-        updateRotation(newValue);
-      }
-      function updateScale(newValue) {
-        if(newValue != null)
-          $this.hierarchyGroup.scale.fromArray(newValue);
-      }
-      function scaleObserver(changes) {
-        var newValue = changes[changes.length-1].object;
-        updateScale(newValue);
-      }
-      Object.observe(this, function(changes) {
-        // TODO investigate if this will leak memory (Im not-explicitly ceasing to observe the older position)
-        for(var i = 0; i < changes.length; ++i) {
-          var cng = changes[i];
-          if(cng.name == "position" && cng.type=="update") {
-            updatePosition($this.position);
-            Object.observe($this.position, positionObserver);
-          }
-          else if(cng.name == "rotation" && cng.type=="update") {
-            updateRotation($this.rotation);
-            Object.observe($this.rotation, rotationObserver);
-          }
-          else if(cng.name == "scale" && cng.type=="update") {
-            updateScale($this.scale);
-            Object.observe($this.scale, scaleObserver);
-          }
-        }
-      });
-    }
-  }
-  TransformComponent.prototype = {
-    export: function() {
-      return {
-        type: this.flyweight.type,
-        id: this.flyweight.id,
-        fields: {
-          position: this.position,
-          rotation: this.rotation,
-          scale: this.scale
-        }
-      };
-    },
-    setValues: function(flyweight) {
-      this.position = LAU.Utils.clone(flyweight.fields.position);
-      this.rotation = LAU.Utils.clone(flyweight.fields.rotation);
-      this.scale = LAU.Utils.clone(flyweight.fields.scale);
-    },
-    destroy: function() {
-      if($editCanvas.isEditMode()) {
-        $editCanvas.scene.remove(this.hierarchyGroup);
-      }
-    }
-  };
-
   // Mesh component
   function MeshComponent(gameObject, componentFlyWeight) {
     this.type = 'mesh';
@@ -245,9 +162,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     // The switch rules match the component menu label
     var result;
     switch(componentFlyWeight.type) {
-      case 'transform':
-        result = new TransformComponent(gameObject, componentFlyWeight);
-      break;
       case 'mesh':
         result = new MeshComponent(gameObject, componentFlyWeight);
       break;
@@ -268,7 +182,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
   }
 
   return {
-    TransformComponent: TransformComponent,
     createComponentFromFlyWeight: createComponentFromFlyWeight,
   };
 }]);

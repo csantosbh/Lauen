@@ -9,15 +9,17 @@ namespace lau {
 
 extern int generateInstanceId();
 
-GameObject::GameObject(const rapidjson::Value& serializedObject)
+GameObject::GameObject(const rapidjson::Value& serializedObject) :
+    transform(serializedObject["transform"])
 #ifdef PREVIEW_MODE
-	: gameObjectId(generateInstanceId()), gameObjectName(serializedObject["name"].GetString())
+	, gameObjectId(generateInstanceId()), gameObjectName(serializedObject["name"].GetString())
 #endif
 	{
 #ifdef PREVIEW_MODE
 	pp::VarDictionary gameObjectInfo;
 	gameObjectInfo.Set("instanceId", gameObjectId);
 	gameObjectInfo.Set("name", gameObjectName);
+    gameObjectInfo.Set("transform", transform.getCurrentState());
 	NaCl::getInstance()->createGameObject(gameObjectInfo);
 #endif
 }
@@ -37,6 +39,7 @@ void GameObject::update(float dt) {
 	currentState.Set("instanceId", gameObjectId);
 #endif
 
+    // Update components
     for(auto& updateableComponent: this->updateableComponents_) {
         updateableComponent->update(dt);
 #ifdef PREVIEW_MODE
@@ -48,6 +51,9 @@ void GameObject::update(float dt) {
 #endif
     }
 
+    // Update transform
+    transform.update(dt);
+
     // Update child game objects
     for(auto& child: this->children_) {
         // TODO pass stacked transform
@@ -55,6 +61,7 @@ void GameObject::update(float dt) {
     }
 
 #ifdef PREVIEW_MODE
+    currentState.Set("transform", transform.getCurrentState());
 	currentState.Set("components", componentStates);
 	NaCl::getInstance()->publishState(currentState);
 #endif
