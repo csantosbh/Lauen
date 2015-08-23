@@ -23,7 +23,6 @@ angular.module('lauEditor')
       componentFlyweights.mesh_renderer,
       {menu_label: 'Scripts', children: componentFlyweights.script}
     ];
-    lau = componentMenu;
 
     ////
     // Public functions

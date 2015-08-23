@@ -17,6 +17,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     selectGameObject: selectGameObject,
     selectedGameObject: selectedGameObject,
     pushGameObject: pushGameObject,
+    moveGameObjectTo: moveGameObjectTo,
     removeGameObject: removeGameObject,
     addComponentToSelectedGameObject: addComponentToSelectedGameObject,
     getGameObject: getGameObject,
@@ -43,29 +44,55 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     currentlySelectedGameObj = gameObjects[gameObjects.length-1];
   }
 
-  function removeGameObject(instanceId) {
+  // Removes `gameObj` from whatever container it is
+  function _popGameObject(instanceId) {
     function _recurse(objs) {
       // Look for game object
       for(var i = 0; i < objs.length; ++i) {
         if(objs[i].instanceId == instanceId) {
-          // Unselect game object, if it is selected
-          if(currentlySelectedGameObj != null &&
-             currentlySelectedGameObj.instanceId == instanceId) {
-            currentlySelectedGameObj = null;
-          }
-
-          objs[i].destroy();
+          var obj = objs[i];
           objs.splice(i, 1);
-          return true;
-        } else if(_recurse(objs[i].children)) {
-          return true;
+          return obj;
+        } else {
+          var obj = _recurse(objs[i].children);
+          if(obj != null)
+            return obj;
         }
       }
-      return false;
+      return null;
     }
 
-    if(!_recurse(gameObjects)) {
+    return _recurse(gameObjects);
+  }
+
+  function removeGameObject(instanceId) {
+    var obj = _popGameObject(instanceId);
+
+    if(obj == null) {
       console.error("No game object of instance id ["+instanceId+"] to remove.");
+    } else {
+      // Unselect game object, if it is selected
+      if(currentlySelectedGameObj != null &&
+         currentlySelectedGameObj.instanceId == instanceId) {
+        currentlySelectedGameObj = null;
+      }
+
+      obj.destroy();
+    }
+  }
+
+  // Makes `gameObj` child of `destination`
+  function moveGameObjectTo(gameObj, destination) {
+    // First, remove `gameObj` from whatever array it is
+    if(_popGameObject(gameObj.instanceId)) {
+      if(destination != null) {
+        destination.addChild(gameObj);
+      } else {
+        // Move gameObj to root node
+        gameObjects.push(gameObj);
+      }
+    } else {
+      console.error('Could not find game object ['+gameObj.name+'] parent.');
     }
   }
 

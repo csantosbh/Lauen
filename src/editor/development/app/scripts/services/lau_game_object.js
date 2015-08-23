@@ -106,6 +106,19 @@ angular.module('lauEditor')
         }
       }
     },
+    addChild: function(childGameObj) {
+      this.children.push(childGameObj);
+    },
+    isParentOf: function(gameObj) {
+      for(var g = 0; g < this.children.length; ++g) {
+        if(this.children[g].instanceId == gameObj.instanceId) {
+          return true;
+        } else if(this.children[g].isParentOf(gameObj)) {
+          return true;
+        }
+      }
+      return false;
+    },
     export: function() {
       // Export components
       var exportedComps = [];

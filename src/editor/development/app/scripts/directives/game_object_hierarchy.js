@@ -17,7 +17,17 @@ angular.module('lauEditor')
             $gom.pushGameObject(new $lgo.GameObject({name: 'Unnamed'}));
           },
           gameObjects: $gom.getGameObjects,
-          selectedGameObject: $gom.selectedGameObject
+          selectedGameObject: $gom.selectedGameObject,
+          droppableOptions: {
+            accept: function(draggedElement) {
+              var draggedGameObj = draggedElement.draggable().scope().gameObject;
+              return draggedGameObj != undefined;
+            }
+          },
+          onDrop: function(event, draggedElement) {
+            var draggedGameObj = draggedElement.draggable.scope().gameObject;
+            $gom.moveGameObjectTo(draggedGameObj, null);
+          }
         };
       }
     };
