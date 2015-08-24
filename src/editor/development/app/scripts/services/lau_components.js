@@ -14,6 +14,41 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
   // Component types
   ///
 
+  // Camera component
+  function CameraComponent(gameObject, componentFlyWeight) {
+    this.type = 'camera';
+
+    // TODO use Object.defineProperty with get() and set(), so I can have a FOV field
+    this.near = componentFlyWeight.fields.near;
+    this.far = componentFlyWeight.fields.far;
+    this.width = componentFlyWeight.fields.width;
+
+    this.flyweight = componentFlyWeight;
+    this.parent = gameObject;
+
+    // TODO add visual interpretation of camera
+  }
+  CameraComponent.prototype = {
+    export: function() {
+      return {
+        type: this.flyweight.type,
+        id: this.flyweight.id,
+        fields: {
+          near: this.near,
+          far: this.far,
+          width: this.width,
+        }
+      };
+    },
+    setValues: function(flyweight) {
+      this.near = LAU.Utils.clone(flyweight.fields.near);
+      this.far = LAU.Utils.clone(flyweight.fields.far);
+      this.width = LAU.Utils.clone(flyweight.fields.width);
+    },
+    destroy: function() {
+    }
+  };
+
   // Mesh component
   function MeshComponent(gameObject, componentFlyWeight) {
     this.type = 'mesh';
@@ -155,6 +190,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     // The switch rules match the component menu label
     var result;
     switch(componentFlyWeight.type) {
+      case 'camera':
+        result = new CameraComponent(gameObject, componentFlyWeight);
+      break;
       case 'mesh':
         result = new MeshComponent(gameObject, componentFlyWeight);
       break;

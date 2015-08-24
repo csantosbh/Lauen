@@ -13,6 +13,17 @@ def DefaultFieldValue(typename):
 # TODO investigate the possibility of generating this dict automatically
 # TODO if the "type" field is to be kept, then transform this into an array to avoid repeating it in the dict key
 _defaultComponents = {
+    'camera': {
+        'id': 0,
+        'type': 'camera', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
+        'path': 'default_components/Camera.hpp',
+        'full_class_name': 'lau::Camera',
+        'fields': {
+            'near': 1.0,
+            'far': 1000.0,
+            'width': 100.0
+        }
+    },
     'mesh': {
         'id': 1,
         'type': 'mesh', # TODO investigate the cost of dropping component string ids (which is what the type actually is)

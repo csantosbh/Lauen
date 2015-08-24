@@ -9,14 +9,17 @@
  */
 angular.module('lauEditor')
   .service('componentManager', ['$timeout', 'gameObjectManager', 'lauComponents', function ($timeout, $gom, $lauComps) {
+    // TODO rename this to componentMenuManager
     ////
     // Internal fields
     var componentFlyweights = {
+      camera: {menu_label: 'Camera', flyweight: null},
       mesh: {menu_label: 'Mesh', flyweight: null},
       mesh_renderer: {menu_label: 'Mesh Renderer', flyweight: null},
       script: [],
     };
     var componentMenu = [
+      componentFlyweights.camera,
       {menu_label: 'Meshes', children: [
         componentFlyweights.mesh,
         componentFlyweights.mesh_renderer,
