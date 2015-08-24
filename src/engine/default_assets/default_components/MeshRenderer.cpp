@@ -1,9 +1,11 @@
-#include "Factories.hpp"
-#include "GameObject.hpp"
-#include "Mesh.hpp"
-#include "MeshRenderer.hpp"
-#include "utils/IO.h"
 #include "LauCommon.h"
+#include "Factories.hpp"
+#include "utils/IO.h"
+#include "GameObject.hpp"
+
+#include "MeshRenderer.hpp"
+#include "Mesh.hpp"
+#include "Camera.hpp"
 
 using namespace std;
 
@@ -64,10 +66,22 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     glLinkProgram(program);
     glUseProgram(program);
 	lout << "shader OK!" << endl;
+
+    // Get uniform locations
+    projectionUniformLocation = glGetUniformLocation(program, "projection");
+    world2cameraUniformLocation = glGetUniformLocation(program, "world2camera");
+
+#ifdef DEBUG
+    if(projectionUniformLocation == -1 ||
+       world2cameraUniformLocation == -1) {
+        lerr << "[error] Could not get uniform location(s)!" << endl;
+    }
+#endif
 }
 
 void MeshRenderer::draw(float alpha) {
 	auto mesh = gameObject->getComponent<Mesh>();
+    auto camera = ...;
 	if(mesh != nullptr) {
 		if(!wasInitialized && mesh->getVBO() != nullptr) {
 			mesh->getVBO()->bindVertexToAttribute(vertexAttribId);
@@ -77,6 +91,9 @@ void MeshRenderer::draw(float alpha) {
 		auto vbo = mesh->getVBO();
         if(vbo != nullptr) {
             vbo->bindForDrawing(vertexAttribId);
+            // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
+            glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE, camera->projection.data());
+            glUniformMatrix4fv(world2cameraUniformLocation, 1, GL_FALSE, camera->world2camera.data());
             glDrawElements(GL_TRIANGLE_STRIP, vbo->vertexCount(), GL_UNSIGNED_INT, 0);
         }
 	}

@@ -6,7 +6,6 @@
 #include <rapidjson/document.h>
 
 #include "LauCommon.h"
-#include "opengl/VBO.h"
 #include "DrawableComponent.hpp"
 
 namespace lau {
@@ -27,6 +26,8 @@ private:
     GLuint program;
     const int vertexAttribId = 0;
     void checkShaderCompilation(GLuint shaderId);
+    GLint projectionUniformLocation;
+    GLint world2cameraUniformLocation;
 };
 
 } // namespace
