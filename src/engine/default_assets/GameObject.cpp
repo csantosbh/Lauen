@@ -2,6 +2,7 @@
 #include "Component.hpp"
 #include "Peekers.hpp"
 #include "window/NaCl.hpp"
+#include "Game.hpp" // TODO remove this from here after gameObjects_ are placed in the GameObject class
 
 using namespace std;
 
@@ -95,6 +96,10 @@ void GameObject::addComponent(const shared_ptr<Component>& component) {
 	gameObjectInfo.Set("component", componentInfo);
 	NaCl::getInstance()->addComponent(gameObjectInfo);
 #endif
+}
+
+const vector<shared_ptr<GameObject>>& GameObject::allGameObjects() {
+    return lau_internal::GameInstance->allGameObjects();
 }
 
 } // namespace lau

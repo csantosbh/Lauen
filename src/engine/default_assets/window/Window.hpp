@@ -9,6 +9,9 @@ using namespace std;
 
 class Window {
 public:
+    Window() {
+        lau_internal::GameInstance = &game;
+    }
     virtual void init(int winWidth, int winHeight) = 0;
     virtual void loop() = 0;
     virtual void terminate() = 0;

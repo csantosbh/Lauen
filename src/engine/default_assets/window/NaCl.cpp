@@ -3,7 +3,7 @@
 #include <iostream>
 
 #include "LauCommon.h"
-#include "NaCl.hpp"
+#include "window/NaCl.hpp"
 #include "Game.hpp"
 
 using namespace std;
@@ -13,7 +13,7 @@ namespace lau {
 std::stringstream lout;
 std::stringstream lerr;
 
-NaCl* NaCl::windowInstance;
+NaCl* NaCl::windowInstance = nullptr;
 
 NaCl::NaCl(PP_Instance instance) :
     pp::Instance(instance),
@@ -21,6 +21,7 @@ NaCl::NaCl(PP_Instance instance) :
 {
     windowInstance = this;
 	this->resetAccumulatedEvents();
+    lau_internal::GameInstance = &game;
 }
 
 bool NaCl::init(int32_t new_width, int32_t new_height) {

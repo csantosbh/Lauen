@@ -12,11 +12,11 @@ using namespace std;
 
 namespace lau {
 
-ThreadPool ThreadPool::singleton_;
 bool ThreadPool::isRunning_ = true;
 mutex ThreadPool::mtx_;
 condition_variable ThreadPool::cond_var_;
 queue<function<void()>> ThreadPool::work_queue_;
+ThreadPool ThreadPool::singleton_;
 
 void ThreadPool::startJob(const function<void()>& job) {
     singleton_.startJob_(job);

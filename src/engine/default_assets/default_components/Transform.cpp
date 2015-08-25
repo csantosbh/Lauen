@@ -7,8 +7,8 @@ using namespace Eigen;
 namespace lau {
 
 Transform::Transform(const rapidjson::Value& fields) :
-    rotation_(Quaternionf::Identity()),
-    rotationMatrixUpToDate_(false) {
+    rotation(Quaternionf::Identity()),
+    affineMatrixUpToDate_(false) {
     const auto& pos = fields["position"];
     const auto& rot = fields["rotation"];
     const auto& scale = fields["scale"];
@@ -20,36 +20,46 @@ Transform::Transform(const rapidjson::Value& fields) :
         this->scale[i] = scale[i].GetDouble();
     }
 
-    rotation_ = Quaternionf(
+    rotation = Quaternionf(
             AngleAxisf(eulerAngles[0], Vector3f::UnitX()) *
             AngleAxisf(eulerAngles[1], Vector3f::UnitY()) *
             AngleAxisf(eulerAngles[2], Vector3f::UnitZ())
             );
 
+    affineTransformMatrix_ << 0,0,0,0,
+                              0,0,0,0,
+                              0,0,0,0,
+                              0,0,0,1;
+
 #ifdef PREVIEW_MODE
     serializeState();
 #endif
 }
 
-const Matrix3f& Transform::getRotationMatrix() {
-    if(!rotationMatrixUpToDate_)
-        rotationMatrix_ = rotation_.matrix();
-
-    return rotationMatrix_;
+const Matrix3f Transform::getRotationMatrix() {
+    return getAffineTransformMatrix().block<3,3>(0,0);
 }
 
 void Transform::update(float dt) {
-    rotation_ = rotation_*AngleAxisf(0.1 * M_PI/180.0f, Vector3f::UnitZ());
+    //rotation = rotation*AngleAxisf(0.1 * M_PI/180.0f, Vector3f::UnitZ());
 
 #ifdef PREVIEW_MODE
     serializeState();
 #endif
+}
+
+const Matrix4f& Transform::getAffineTransformMatrix() {
+    if(!affineMatrixUpToDate_) {
+        affineTransformMatrix_.block<3,3>(0,0) = rotation.matrix();
+        affineTransformMatrix_.block<3,1>(0,3) = position;
+    }
+    return affineTransformMatrix_;
 }
 
 #ifdef PREVIEW_MODE
 void Transform::serializeState() {
 	// TODO figure out how the eulerangles are being returned (in which order?), and make sure it is consistent with the order in the Editor
-	Vector3f eulerAngles = this->rotation_.toRotationMatrix().eulerAngles(0, 1, 2);
+	Vector3f eulerAngles = this->rotation.toRotationMatrix().eulerAngles(0, 1, 2);
 
 	pp::VarArray pos;
 	pp::VarArray rot;

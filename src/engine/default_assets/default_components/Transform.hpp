@@ -12,11 +12,13 @@ public:
 
 	Eigen::Vector3f position;
 	Eigen::Vector3f scale;
+	Eigen::Quaternionf rotation;
 	Transform(const rapidjson::Value& fields);
 
     void update(float dt);
 
-    const Eigen::Matrix3f& getRotationMatrix();
+    const Eigen::Matrix3f getRotationMatrix();
+    const Eigen::Matrix4f& getAffineTransformMatrix();
 
 #ifdef PREVIEW_MODE
     const pp::VarDictionary& getCurrentState() {
@@ -25,9 +27,8 @@ public:
 #endif
 
 private:
-	Eigen::Quaternionf rotation_;
-    Eigen::Matrix3f rotationMatrix_;
-    bool rotationMatrixUpToDate_;
+    Eigen::Matrix4f affineTransformMatrix_;
+    bool affineMatrixUpToDate_;
 
 #ifdef PREVIEW_MODE
     pp::VarDictionary currentState_;

@@ -28,6 +28,7 @@ private:
     void checkShaderCompilation(GLuint shaderId);
     GLint projectionUniformLocation;
     GLint world2cameraUniformLocation;
+    GLint object2worldUniformLocation;
 };
 
 } // namespace

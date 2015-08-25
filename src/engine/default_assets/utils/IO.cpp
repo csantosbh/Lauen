@@ -154,7 +154,7 @@ private:
 
 #endif
 
-shared_ptr<IO> IO::instance;
+shared_ptr<IO> IO::instance STATIC_INITIALIZER_GROUP_A;
 IO& IO::getInstance() {
     if(instance==NULL) {
 #ifdef NACL

@@ -8,6 +8,7 @@
 #include "Camera.hpp"
 
 using namespace std;
+using namespace Eigen;
 
 namespace lau {
 
@@ -70,18 +71,22 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     // Get uniform locations
     projectionUniformLocation = glGetUniformLocation(program, "projection");
     world2cameraUniformLocation = glGetUniformLocation(program, "world2camera");
+    object2worldUniformLocation = glGetUniformLocation(program, "object2world");
 
 #ifdef DEBUG
     if(projectionUniformLocation == -1 ||
-       world2cameraUniformLocation == -1) {
+       world2cameraUniformLocation == -1 ||
+       object2worldUniformLocation == -1) {
         lerr << "[error] Could not get uniform location(s)!" << endl;
     }
 #endif
 }
 
+int tstlau = 0;
 void MeshRenderer::draw(float alpha) {
 	auto mesh = gameObject->getComponent<Mesh>();
-    auto camera = ...;
+    auto& transform = gameObject->transform;
+    auto camera = Camera::current;
 	if(mesh != nullptr) {
 		if(!wasInitialized && mesh->getVBO() != nullptr) {
 			mesh->getVBO()->bindVertexToAttribute(vertexAttribId);
@@ -92,8 +97,10 @@ void MeshRenderer::draw(float alpha) {
         if(vbo != nullptr) {
             vbo->bindForDrawing(vertexAttribId);
             // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
+            Eigen::Matrix4f I = Eigen::Matrix4f::Identity();
             glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE, camera->projection.data());
             glUniformMatrix4fv(world2cameraUniformLocation, 1, GL_FALSE, camera->world2camera.data());
+            glUniformMatrix4fv(object2worldUniformLocation, 1, GL_FALSE, transform.getAffineTransformMatrix().data());
             glDrawElements(GL_TRIANGLE_STRIP, vbo->vertexCount(), GL_UNSIGNED_INT, 0);
         }
 	}

@@ -40,6 +40,8 @@ public:
 
     Transform transform;
 
+    static const std::vector<std::shared_ptr<GameObject>>& allGameObjects();
+
 protected:
     std::vector<std::shared_ptr<Component>> updateableComponents_;
     std::vector<std::shared_ptr<DrawableComponent>> drawableComponents_;

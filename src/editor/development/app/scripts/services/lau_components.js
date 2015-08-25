@@ -22,6 +22,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     this.near = componentFlyWeight.fields.near;
     this.far = componentFlyWeight.fields.far;
     this.width = componentFlyWeight.fields.width;
+    this.priority = componentFlyWeight.fields.priority;
+
+    Object.defineProperty(this, 'fov', {
+      set: function(fov) {
+        let radFov = fov*Math.PI/180.0;
+        this.width = 2.0*this.near*Math.tan(radFov/2.0);
+      },
+      get: function() {
+        return Number((2.0*Math.atan2(this.width,2.0*this.near)*180.0/Math.PI).toFixed(2));
+      }
+    });
 
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
@@ -37,6 +48,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
           near: this.near,
           far: this.far,
           width: this.width,
+          priority: this.priority,
         }
       };
     },
