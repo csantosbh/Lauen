@@ -1,11 +1,12 @@
-#ifdef NACL
 #include <queue>
 #include <iostream>
 
 #include "LauCommon.h"
 #include "window/NaCl.hpp"
 #include "Game.hpp"
+#include "Screen.hpp"
 
+#ifdef NACL
 using namespace std;
 
 namespace lau {
@@ -98,7 +99,8 @@ void NaCl::DidChangeView(const pp::View& view) {
     int32_t new_width = view.GetRect().width() * view.GetDeviceScale();
     int32_t new_height = view.GetRect().height() * view.GetDeviceScale();
 
-    lout << "change view." << endl;
+    Screen::windowWidth = new_width;
+    Screen::windowHeight = new_height;
 
     if(context.is_null()) {
         if(!init(new_width,new_height)) {

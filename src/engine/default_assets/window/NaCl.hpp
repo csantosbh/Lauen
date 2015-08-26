@@ -43,6 +43,8 @@ private:
 	void resetAccumulatedEvents();
     void flushLogs();
     static NaCl* windowInstance;
+
+    void updateScreenData(int w, int h);
 };
 
 class NaClCanvasModule : public pp::Module {

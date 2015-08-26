@@ -40,6 +40,11 @@ public:
     void setNearPlaneWidth(float value);
     float getNearPlaneWidth();
 
+    // Aspect: width/height
+    void setAspect(float value);
+    float getAspect();
+    void resetAspect();
+
 private:
     static bool CameraPriorityComparison(const Camera* a, const Camera* b);
 
@@ -50,6 +55,8 @@ private:
     float farPlane_;
     float nearPlane_;
     float nearPlaneWidth_;
+    float aspect_;
+    bool customAspectProvided_;
 };
 
 } // namespace lau

@@ -1,3 +1,4 @@
+#include "../window/Screen.hpp"
 #include "Factories.hpp"
 #include "GameObject.hpp"
 #include "Camera.hpp"
@@ -17,7 +18,7 @@ Camera::Camera(const rapidjson::Value& fields) {
     farPlane_ = static_cast<float>(fields["far"].GetDouble());
     nearPlaneWidth_ = static_cast<float>(fields["width"].GetDouble());
 
-    recomputeProjectionMatrix();
+    resetAspect(); // This will also recompute the projection matrix
 
     world2camera <<
         0, 0, 0, 0,
@@ -55,8 +56,7 @@ bool Camera::CameraPriorityComparison(const Camera* a, const Camera* b) {
 }
 
 void Camera::recomputeProjectionMatrix() {
-    // TODO compute t as a function of r and the screen aspect ratio
-    float t = nearPlaneWidth_;
+    float t = nearPlaneWidth_/aspect_;
     projection <<
         2.0f*nearPlane_/nearPlaneWidth_, 0.0f, 0.0f, 0.0f,
         0.0f, 2.0f*nearPlane_/t, 0.0f, 0.0f,
@@ -110,6 +110,24 @@ void Camera::setNearPlaneWidth(float value) {
 float Camera::getNearPlaneWidth() {
     return nearPlaneWidth_;
 }
+
+void Camera::setAspect(float value) {
+    customAspectProvided_ = true;
+    aspect_ = value;
+    recomputeProjectionMatrix();
+}
+
+// TODO listen to window changes. Only update the aspect if customAspectProvided_==false
+float Camera::getAspect() {
+    return aspect_;
+}
+
+void Camera::resetAspect() {
+    customAspectProvided_ = false;
+    aspect_ = static_cast<float>(Screen::windowWidth)/static_cast<float>(Screen::windowHeight);
+    recomputeProjectionMatrix();
+}
+
 
 //////
 // Factory
