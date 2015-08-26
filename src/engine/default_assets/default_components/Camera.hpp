@@ -27,21 +27,29 @@ public:
 
     void draw(float temporalAlpha);
 
-#ifdef PREVIEW_MODE
-    const pp::VarDictionary& getCurrentState() {
-        return currentState_;
-    }
-#endif
+    void setPriority(float value);
+    float getPriority();
+    void setNearPlane(float value);
+    float getNearPlane();
+    void setFarPlane(float value);
+    float getFarPlane();
+    // In Radians
+    void setFOV(float value);
+    // In Radians
+    float getFOV();
+    void setNearPlaneWidth(float value);
+    float getNearPlaneWidth();
 
 private:
-#ifdef PREVIEW_MODE
-    pp::VarDictionary currentState_;
-    void serializeState();
-#endif
-
-    float priority;
     static bool CameraPriorityComparison(const Camera* a, const Camera* b);
+
+    void recomputeProjectionMatrix();
+
+    float priority_;
     static std::set<Camera*, bool(*)(const Camera*,const Camera*)> cameras_;
+    float farPlane_;
+    float nearPlane_;
+    float nearPlaneWidth_;
 };
 
 } // namespace lau

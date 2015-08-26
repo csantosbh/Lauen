@@ -23,8 +23,10 @@ int generateInstanceId() {
 ///// Camera
 template<>
 ComponentPeekerImpl<Camera>::ComponentPeekerImpl(std::shared_ptr<Component> actualComponent) : impl(std::dynamic_pointer_cast<Camera>(actualComponent)) {
-    // TODO set current state here
-	currentState.Set("camera", "TODO");
+	currentState_.Set("near", impl->getNearPlane());
+	currentState_.Set("far", impl->getFarPlane());
+	currentState_.Set("width", impl->getNearPlaneWidth());
+	currentState_.Set("priority", impl->getPriority());
 }
 
 template<>
@@ -35,7 +37,7 @@ void ComponentPeekerImpl<Camera>::update() {
 template<>
 ComponentPeekerImpl<Mesh>::ComponentPeekerImpl(std::shared_ptr<Component> actualComponent) : impl(std::dynamic_pointer_cast<Mesh>(actualComponent)) {
     // TODO set current state here
-	currentState.Set("mesh", "TODO");
+	currentState_.Set("mesh", "TODO");
 }
 
 template<>

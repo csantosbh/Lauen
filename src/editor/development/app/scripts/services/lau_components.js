@@ -56,6 +56,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       this.near = LAU.Utils.clone(flyweight.fields.near);
       this.far = LAU.Utils.clone(flyweight.fields.far);
       this.width = LAU.Utils.clone(flyweight.fields.width);
+      this.priority = LAU.Utils.clone(flyweight.fields.priority);
     },
     destroy: function() {
     }

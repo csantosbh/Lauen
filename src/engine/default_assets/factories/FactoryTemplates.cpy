@@ -31,10 +31,10 @@ void ComponentPeekerImpl<${component['namespace']}::${component['class']}>::upda
 		for(int i = 0; i < ${vecIterations[component['types'][f]]}; ++i) {
 			vec.Set(i, impl->${f}[i]);
 		}
-		currentState.Set("${f}", vec);
+		currentState_.Set("${f}", vec);
 	}
 		% else: # all remaining components
-	currentState.Set("${f}", impl->${f});
+	currentState_.Set("${f}", impl->${f});
 		% endif
 	% endfor
 }

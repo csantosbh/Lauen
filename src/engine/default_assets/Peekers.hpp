@@ -18,7 +18,7 @@ public:
     ComponentPeeker() : instanceId(generateInstanceId())
     {}
     const pp::VarDictionary& getCurrentState() {
-        return currentState;
+        return currentState_;
     }
     int getInstanceId() {
         return instanceId;
@@ -27,7 +27,7 @@ public:
     virtual ~ComponentPeeker() {}
 
 protected:
-    pp::VarDictionary currentState;
+    pp::VarDictionary currentState_;
     int instanceId;
 };
 

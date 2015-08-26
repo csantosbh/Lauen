@@ -13,16 +13,11 @@ std::set<Camera*, bool(*)(const Camera*,const Camera*)> Camera::cameras_ STATIC_
 const Camera* Camera::current;
 
 Camera::Camera(const rapidjson::Value& fields) {
-    float n = static_cast<float>(fields["near"].GetDouble());
-    float f = static_cast<float>(fields["far"].GetDouble());
-    float r = static_cast<float>(fields["width"].GetDouble())/2.0f;
-    // TODO compute t as a function of r and the screen aspect ratio
-    float t = r;
-    projection <<
-        n/r, 0.0f, 0.0f, 0.0f,
-        0.0f, n/t, 0.0f, 0.0f,
-        0.0f, 0.0f, -(f+n)/(f-n), -2.0f*f*n/(f-n),
-        0.0f, 0.0f, -1.0f, 0.0f;
+    nearPlane_ = static_cast<float>(fields["near"].GetDouble());
+    farPlane_ = static_cast<float>(fields["far"].GetDouble());
+    nearPlaneWidth_ = static_cast<float>(fields["width"].GetDouble());
+
+    recomputeProjectionMatrix();
 
     world2camera <<
         0, 0, 0, 0,
@@ -30,14 +25,10 @@ Camera::Camera(const rapidjson::Value& fields) {
         0, 0, 0, 0,
         0, 0, 0, 1.f;
 
-    priority = static_cast<float>(fields["priority"].GetDouble());
+    priority_ = static_cast<float>(fields["priority"].GetDouble());
 
     // Add this camera to the game's camera collection
     cameras_.insert(this);
-
-#ifdef PREVIEW_MODE
-    serializeState();
-#endif
 }
 
 Camera::~Camera() {
@@ -45,25 +36,10 @@ Camera::~Camera() {
     cameras_.erase(this);
 }
 
-#ifdef PREVIEW_MODE
-void Camera::serializeState() {
-	// TODO properly broadcast all these values
-
-	currentState_.Set("near", 0);
-	currentState_.Set("far", 0);
-	currentState_.Set("width", 0);
-	currentState_.Set("priority", 0);
-}
-#endif
-
 void Camera::update(float dt) {
     world2camera.block<3,3>(0,0) = gameObject->transform.getRotationMatrix().transpose();
     Vector3f t = world2camera.block<3,3>(0,0)*-gameObject->transform.position;
     world2camera.block<3,1>(0,3) = t;
-
-#ifdef PREVIEW_MODE
-    serializeState();
-#endif
 }
 
 void Camera::draw(float temporalAlpha) {
@@ -75,7 +51,64 @@ void Camera::draw(float temporalAlpha) {
 }
 
 bool Camera::CameraPriorityComparison(const Camera* a, const Camera* b) {
-    return a->priority < b->priority;
+    return a->priority_ < b->priority_;
+}
+
+void Camera::recomputeProjectionMatrix() {
+    // TODO compute t as a function of r and the screen aspect ratio
+    float t = nearPlaneWidth_;
+    projection <<
+        2.0f*nearPlane_/nearPlaneWidth_, 0.0f, 0.0f, 0.0f,
+        0.0f, 2.0f*nearPlane_/t, 0.0f, 0.0f,
+        0.0f, 0.0f, -(farPlane_+nearPlane_)/(farPlane_-nearPlane_), -2.0f*farPlane_*nearPlane_/(farPlane_-nearPlane_),
+        0.0f, 0.0f, -1.0f, 0.0f;
+}
+
+void Camera::setPriority(float value) {
+    priority_ = value;
+    // Reposition this camera in the cameras_ set
+    cameras_.erase(this);
+    cameras_.insert(this);
+}
+
+float Camera::getPriority() {
+    return priority_;
+}
+
+void Camera::setNearPlane(float value) {
+    nearPlane_ = value;
+    recomputeProjectionMatrix();
+}
+
+float Camera::getNearPlane() {
+    return nearPlane_;
+}
+
+void Camera::setFarPlane(float value) {
+    farPlane_ = value;
+    recomputeProjectionMatrix();
+}
+
+float Camera::getFarPlane() {
+    return farPlane_;
+}
+
+void Camera::setFOV(float value) {
+    nearPlaneWidth_ = 2.0f*nearPlane_*tan(value/2.0f);
+    recomputeProjectionMatrix();
+}
+
+float Camera::getFOV() {
+    return 2.0f*atan2(nearPlaneWidth_,2.0f*nearPlane_);
+}
+
+void Camera::setNearPlaneWidth(float value) {
+    nearPlaneWidth_ = value;
+    recomputeProjectionMatrix();
+}
+
+float Camera::getNearPlaneWidth() {
+    return nearPlaneWidth_;
 }
 
 //////
