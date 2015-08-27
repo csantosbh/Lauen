@@ -132,35 +132,7 @@ void Camera::resetAspect() {
 //////
 // Factory
 #define CAMERA_ID 0
-template<>
-int Component::getComponentId<lau::Camera>() {
-	return CAMERA_ID;
-}
-
-template<>
-shared_ptr<Component> Factories::componentInternalFactory<lau::Camera>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
-	lau::Camera* ptr = new lau::Camera(fields);
-
-	shared_ptr<Component> result;
-	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#ifdef PREVIEW_MODE
-	result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<lau::Camera>(result)));
-#endif
-
-	result->setId(CAMERA_ID);
-
-	return result;
-}
-
-// TODO posso fazer esse initializer todo com templates, e soh instanciar o template em cada classe. O mesmo provavelmente para componentInternalFactory.
-template<>
-struct Initializer<lau::Camera> {
-	Initializer() {
-		Factories::componentInstanceFactories[CAMERA_ID] = &Factories::componentInternalFactory<lau::Camera>;
-	}
-	static Initializer<lau::Camera> instance;
-};
-Initializer<lau::Camera> Initializer<lau::Camera>::instance STATIC_INITIALIZER_GROUP_C;
+__LAU_CREATE_COMPONENT_INITIALIZER(lau::Camera, CAMERA_ID)
 
 } // namespace lau
 

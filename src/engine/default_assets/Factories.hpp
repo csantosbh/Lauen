@@ -23,17 +23,39 @@ public:
 	static std::vector<std::shared_ptr<GameObject>> gameObjectFactory(const rapidjson::Document& objects);
 	static std::map<int, std::shared_ptr<Component>(*)(std::shared_ptr<GameObject>&, const rapidjson::Value&)> componentInstanceFactories;
 
-	template<class T>
-	static std::shared_ptr<Component> componentInternalFactory(std::shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent);
+	template<class CompType, int CompId>
+	static std::shared_ptr<Component> componentInternalFactory(std::shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent) {
+		CompType* ptr = new CompType(serializedComponent);
+
+		std::shared_ptr<Component> result(dynamic_cast<Component*>(ptr));
+#ifdef PREVIEW_MODE
+		result->lau_peeker__ = std::shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<CompType>(result)));
+#endif
+
+		result->setId(CompId);
+
+		return result;
+	}
 
 private:
     static std::shared_ptr<GameObject> assembleGameObject(const rapidjson::Value& serializedObj);
 };
 
-template<typename T>
+template<typename ComponentType, int componentId>
 struct Initializer {
-	Initializer();
-	static Initializer<T> instance;
+	Initializer() {
+		Factories::componentInstanceFactories[componentId] = &Factories::componentInternalFactory<ComponentType, componentId>;
+	}
+	static Initializer<ComponentType, componentId> instance;
 };
+
+#define __LAU_CREATE_COMPONENT_INITIALIZER(ComponentType, ComponentId) \
+template<>\
+int Component::getComponentId<ComponentType>() {\
+	return ComponentId;\
+}\
+template<typename T, int id>\
+Initializer<T, id> Initializer<T, id>::instance;\
+template struct Initializer<ComponentType, ComponentId>;
 
 }

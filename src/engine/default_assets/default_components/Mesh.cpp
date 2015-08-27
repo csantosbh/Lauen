@@ -57,34 +57,6 @@ void Mesh::onLoadMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string fname
 //////
 // Factory
 #define MESH_ID 1
-template<>
-int Component::getComponentId<lau::Mesh>() {
-	return MESH_ID;
-}
-
-template<>
-shared_ptr<Component> Factories::componentInternalFactory<lau::Mesh>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
-	lau::Mesh* ptr = new lau::Mesh(fields);
-
-	shared_ptr<Component> result;
-	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#ifdef PREVIEW_MODE
-	result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<lau::Mesh>(result)));
-#endif
-
-	result->setId(MESH_ID);
-
-	return result;
-}
-
-template<>
-struct Initializer<lau::Mesh> {
-	Initializer() {
-		Factories::componentInstanceFactories[MESH_ID] = &Factories::componentInternalFactory<lau::Mesh>;
-	}
-	static Initializer<lau::Mesh> instance;
-};
-Initializer<lau::Mesh> Initializer<lau::Mesh>::instance STATIC_INITIALIZER_GROUP_C;
-
+__LAU_CREATE_COMPONENT_INITIALIZER(lau::Mesh, MESH_ID)
 
 } // namespace lau

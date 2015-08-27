@@ -125,33 +125,6 @@ void MeshRenderer::checkShaderCompilation(GLuint shaderId) {
 /////
 // Factory
 #define MESH_RENDERER_ID 2
-template<>
-int Component::getComponentId<lau::MeshRenderer>() {
-	return MESH_RENDERER_ID;
-}
-
-template<>
-shared_ptr<Component> Factories::componentInternalFactory<lau::MeshRenderer>(shared_ptr<GameObject>& gameObj, const rapidjson::Value& fields) {
-	lau::MeshRenderer* ptr = new lau::MeshRenderer(fields);
-
-	shared_ptr<Component> result;
-	result = shared_ptr<Component>(dynamic_cast<Component*>(ptr));
-#ifdef PREVIEW_MODE
-    result->lau_peeker__ = shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<lau::MeshRenderer>(result)));
-#endif
-
-	result->setId(MESH_RENDERER_ID);
-
-	return result;
-}
-
-template<>
-struct Initializer<lau::MeshRenderer> {
-	Initializer() {
-		Factories::componentInstanceFactories[MESH_RENDERER_ID] = &Factories::componentInternalFactory<lau::MeshRenderer>;
-	}
-	static Initializer<lau::MeshRenderer> instance;
-};
-Initializer<lau::MeshRenderer> Initializer<lau::MeshRenderer>::instance STATIC_INITIALIZER_GROUP_C;
+__LAU_CREATE_COMPONENT_INITIALIZER(lau::MeshRenderer, MESH_RENDERER_ID)
 
 } // namespace lau

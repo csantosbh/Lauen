@@ -41,12 +41,7 @@ void ComponentPeekerImpl<${component['namespace']}::${component['class']}>::upda
 #endif
 
 template<>
-int Component::getComponentId<${component['namespace']}::${component['class']}>() {
-	return ${component['id']};
-}
-
-template<>
-shared_ptr<Component> Factories::componentInternalFactory<${component['namespace']}::${component['class']}>(shared_ptr<GameObject>&, const rapidjson::Value& fields) {
+shared_ptr<Component> Factories::componentInternalFactory<${component['namespace']}::${component['class']}, ${component['id']}>(shared_ptr<GameObject>&, const rapidjson::Value& fields) {
 	${component['namespace']}::${component['class']}* ptr = new ${component['namespace']}::${component['class']}();
 
 	% for f in component['fields']:
@@ -72,14 +67,7 @@ shared_ptr<Component> Factories::componentInternalFactory<${component['namespace
 	return result;
 }
 
-template<>
-struct Initializer<${component['namespace']}::${component['class']}> {
-	Initializer() {
-		Factories::componentInstanceFactories[${component['id']}] = &Factories::componentInternalFactory<${component['namespace']}::${component['class']}>;
-	}
-	static Initializer<${component['namespace']}::${component['class']}> instance;
-};
-Initializer<${component['namespace']}::${component['class']}> Initializer<${component['namespace']}::${component['class']}>::instance STATIC_INITIALIZER_GROUP_C;
+__LAU_CREATE_COMPONENT_INITIALIZER(${component['namespace']}::${component['class']}, ${component['id']})
 
 % endif
 
