@@ -102,7 +102,9 @@ angular.module('lauEditor')
       childGameObj._setParent(this);
     },
     _setParent: function(parentGameObj) {
-      this.transform.setHierarchyParent(parentGameObj);
+      if($editCanvas.isEditMode()) {
+        this.transform.setHierarchyParent(parentGameObj);
+      }
     },
     isParentOf: function(gameObj) {
       for(var g = 0; g < this.children.length; ++g) {

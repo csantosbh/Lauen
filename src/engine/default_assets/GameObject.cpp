@@ -10,7 +10,7 @@ namespace lau {
 
 extern int generateInstanceId();
 
-GameObject::GameObject(const rapidjson::Value& serializedObject) :
+GameObject::GameObject(const rapidjson::Value& serializedObject, const GameObject* parent) :
     transform(serializedObject["transform"])
 #ifdef PREVIEW_MODE
 	, gameObjectId(generateInstanceId()), gameObjectName(serializedObject["name"].GetString())
@@ -21,6 +21,10 @@ GameObject::GameObject(const rapidjson::Value& serializedObject) :
 	gameObjectInfo.Set("instanceId", gameObjectId);
 	gameObjectInfo.Set("name", gameObjectName);
     gameObjectInfo.Set("transform", transform.getCurrentState());
+    if(parent != nullptr)
+        gameObjectInfo.Set("parentId", parent->gameObjectId);
+    else
+        gameObjectInfo.Set("parentId", pp::Var::Null());
 	NaCl::getInstance()->createGameObject(gameObjectInfo);
 #endif
 }

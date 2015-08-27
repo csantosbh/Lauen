@@ -29,8 +29,8 @@ shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameOb
 	return nullptr;
 }
 
-shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& serializedObj) {
-    shared_ptr<GameObject> obj(new GameObject(serializedObj));
+shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& serializedObj, const GameObject* parent) {
+    shared_ptr<GameObject> obj(new GameObject(serializedObj, parent));
 
     // Add components
     const rapidjson::Value& components = serializedObj["components"];
@@ -52,7 +52,7 @@ shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& ser
     // Add children objects
     const rapidjson::Value& children = serializedObj["children"];
     for(int g = 0; g < children.Size(); ++g) {
-        obj->addChild(assembleGameObject(children[g]));
+        obj->addChild(assembleGameObject(children[g], obj.get()));
     }
 
     return obj;
@@ -61,7 +61,7 @@ shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& ser
 vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Document& objects) {
 	vector<shared_ptr<GameObject>> result;
 	for(int i = 0; i < objects.Size(); ++i) {
-		result.push_back(assembleGameObject(objects[i]));
+		result.push_back(assembleGameObject(objects[i], nullptr));
 	}
 
 	return result;

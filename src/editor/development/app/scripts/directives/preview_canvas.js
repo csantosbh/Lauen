@@ -25,7 +25,11 @@ angular.module('lauEditor')
           // Add new game objects
           if(msg.newGameObjects.length > 0) {
             for(var i = 0; i < msg.newGameObjects.length; ++i) {
-              $gom.pushGameObject(new $lgo.GameObject(msg.newGameObjects[i], msg.newGameObjects[i].instanceId));
+              var newGameObj = new $lgo.GameObject(msg.newGameObjects[i], msg.newGameObjects[i].instanceId);
+              $gom.pushGameObject(newGameObj);
+              if(msg.newGameObjects[i].parentId != null) {
+                $gom.moveGameObjectTo(newGameObj, $gom.getGameObject(msg.newGameObjects[i].parentId));
+              }
             }
           }
           // Add new components

@@ -15,7 +15,7 @@ namespace lau {
 
 class GameObject {
 public:
-    GameObject(const rapidjson::Value& serializedObject);
+    GameObject(const rapidjson::Value& serializedObject, const GameObject* parent = nullptr);
     ~GameObject();
 
     void update(float dt);

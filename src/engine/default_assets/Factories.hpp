@@ -38,7 +38,7 @@ public:
 	}
 
 private:
-    static std::shared_ptr<GameObject> assembleGameObject(const rapidjson::Value& serializedObj);
+    static std::shared_ptr<GameObject> assembleGameObject(const rapidjson::Value& serializedObj, const GameObject* parent);
 };
 
 template<typename ComponentType, int componentId>
