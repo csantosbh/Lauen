@@ -9,7 +9,6 @@
 #include "Component.hpp"
 #include "default_components/Transform.hpp"
 #include "DrawableComponent.hpp"
-#include "LauCommon.h" // TODO tirar isso
 
 namespace lau {
 

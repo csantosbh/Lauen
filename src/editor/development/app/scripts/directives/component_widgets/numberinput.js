@@ -6,7 +6,7 @@
  * @description
  * # numberInput
  */
-angular.module('lauEditor').directive('numberInput', function () {
+angular.module('lauEditor').directive('numberInput', ['$timeout', 'historyManager', function ($timeout, $hm) {
   var defaultAttrs = {
     'lblClass': 'number-input',
     'lblId': '',
@@ -36,15 +36,25 @@ angular.module('lauEditor').directive('numberInput', function () {
       $.extend(attrs, defaultAttrs, userAttrs);
       var inputElement = element.find('input');
       var labelElement = element.find('label');
+      var preCommitValue = null;
 
+      // Handle focus
+      inputElement.bind('focus', function() {
+        preCommitValue = inputElement.val();
+      })
+      // Handle blur
+      .bind('blur', function() {
+        publishHistoryCommand();
+      })
       // Handle <enter>
-      inputElement.bind('keydown', function(downE) {
+      .bind('keydown', function(downE) {
         if(downE.keyCode === 13) {
           inputElement.blur();
         }
       });
       // Handle mouse-based value changing
       labelElement.bind('mousedown', function() {
+        preCommitValue = inputElement.val();
         $canvas.requestPointerLock();
 
         // Catch mouse move event
@@ -61,10 +71,33 @@ angular.module('lauEditor').directive('numberInput', function () {
           // Don't need to keep these events bound
           document.removeEventListener('mouseup', mouseUpDocument);
           document.removeEventListener('mousemove', mouseMoveDocument);
+          publishHistoryCommand();
           document.exitPointerLock();
         });
       });
+
+      // Handle history commands
+      function publishHistoryCommand() {
+        var afterValue = inputElement.val();
+
+        // Do not push commands that dont change anything
+        if(afterValue == preCommitValue) return;
+
+        $hm.pushCommand({
+          _before: preCommitValue,
+          _after: afterValue,
+          undo: function() {
+            inputElement.val(this._before);
+            inputElement.change();
+          },
+          redo: function() {
+            inputElement.val(this._after);
+            inputElement.change();
+          }
+        });
+        preCommitValue = afterValue;
+      }
     },
     restrict: 'E',
   };
-});
+}]);

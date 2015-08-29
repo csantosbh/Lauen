@@ -18,7 +18,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
   function CameraComponent(gameObject, componentFlyWeight) {
     this.type = 'camera';
 
-    // TODO use Object.defineProperty with get() and set(), so I can have a FOV field
     this.near = componentFlyWeight.fields.near;
     this.far = componentFlyWeight.fields.far;
     this.width = componentFlyWeight.fields.width;

@@ -68,7 +68,7 @@ class _Project:
                     Utils.Console.info('Adding file to project: '+asset)
                     pass
                 elif self.isUserScriptFactory(asset):
-                    # TODO provavelmente nao preciso desse processamento aqui.
+                    # TODO provavelmente nao preciso desse processamento aqui. Verificar se o assetprocessor vai resolver isso, e remover esse codigo caso positivo
                     # Remove automatically generated files that depend on user
                     # generated assets, and whose original assets are no longer
                     # present.

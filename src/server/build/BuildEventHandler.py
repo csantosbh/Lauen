@@ -163,7 +163,6 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
         workQueue.join()
 
         # Link
-        # TODO only link if the final executable is older than any of the object files
         Utils.Console.info('Linking '+outputFolder+'...')
         startTime=time.time()
         outputFile = outputFolder+'/game'

@@ -1,5 +1,3 @@
-// TODO make this a regular cpp file
-
 #include "Peekers.hpp"
 #include "default_components/Camera.hpp"
 #include "default_components/MeshRenderer.hpp"

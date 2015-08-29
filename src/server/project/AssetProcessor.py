@@ -30,10 +30,6 @@ class AssetProcessor(object):
         self.path = path
         if persistent_fields != None:
             self.persistent_fields = persistent_fields
-            # TODO RMOVE
-            if not 'id' in self.persistent_fields:
-                self.persistent_fields['id'] = Project.getUniqueAssetId()
-                pass
         else:
             self.persistent_fields = dict(mtime = 0, dependencies=[], id=Project.getUniqueAssetId())
         pass
