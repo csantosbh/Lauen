@@ -8,7 +8,7 @@
  * Service in the lauEditor.
  */
 angular.module('lauEditor')
-.service('lauGameObject', ['editCanvasManager', 'componentManager', function ($editCanvas, $cm) {
+.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', function ($editCanvas, $cm, $hm, $gom) {
   ///
   // Public GameObject API
   ///
@@ -16,7 +16,7 @@ angular.module('lauEditor')
     this.name = fields.name;
     this.components = [];
     this.children = [];
-    this.transform = new Transform();
+    this.transform = new Transform(this);
     this.parent = null;
 
     if(fields.transform != undefined) {
@@ -27,7 +27,7 @@ angular.module('lauEditor')
       // Initialize components
       var comps = fields.components;
       for(var c = 0; c < comps.length; ++c) {
-        var component = $cm.createComponentFromId(this, comps[c].id);
+        var component = $cm.createComponentFromId(this, comps[c].id, comps[c].instanceId);
         if(component == null) {
           console.log('[warning] could not create component from id ' + comps[c].id);
           continue;
@@ -179,6 +179,7 @@ angular.module('lauEditor')
     this.rotation = [0,0,0];
     this.scale = [1,1,1];
     this.type = "transform";
+    this.ownerGameObject = gameObject;
 
     if($editCanvas.isEditMode()) {
       ////
@@ -231,6 +232,24 @@ angular.module('lauEditor')
           }
         }
       });
+
+      this._editorCommitCallback = function(field) {
+        return function(oldValue, newValue) {
+          $hm.pushCommand({
+            _before: oldValue,
+            _after: newValue,
+            _gameObj: $this.ownerGameObject.instanceId,
+            undo: function() {
+              var gameObj = $gom.getGameObject(this._gameObj);
+              gameObj.transform[field] = this._before;
+            },
+            redo: function() {
+              var gameObj = $gom.getGameObject(this._gameObj);
+              gameObj.transform[field] = this._after;
+            }
+          });
+        };
+      };
     }
   }
   Transform.prototype = {

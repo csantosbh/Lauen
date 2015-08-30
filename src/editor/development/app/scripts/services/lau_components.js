@@ -7,7 +7,7 @@
  * # lauComponents
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('lauComponents', ['editCanvasManager', function ($editCanvas) {
+angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'historyManager', 'gameObjectManager', function ($editCanvas, $hm, $gom) {
   // Return default initial value for each field type
 
   ///
@@ -15,13 +15,15 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
   ///
 
   // Camera component
-  function CameraComponent(gameObject, componentFlyWeight) {
+  function CameraComponent(gameObject, componentFlyWeight, instanceId) {
     this.type = 'camera';
 
     this.near = componentFlyWeight.fields.near;
     this.far = componentFlyWeight.fields.far;
     this.width = componentFlyWeight.fields.width;
     this.priority = componentFlyWeight.fields.priority;
+
+    this.instanceId = _allocComponentId(instanceId);
 
     Object.defineProperty(this, 'fov', {
       set: function(fov) {
@@ -37,12 +39,36 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     this.parent = gameObject;
 
     // TODO add visual interpretation of camera
+    if($editCanvas.isEditMode()) {
+      var $this = this;
+
+      this._editorCommitCallback = function(field) {
+        return function(oldValue, newValue) {
+          $hm.pushCommand({
+            _before: oldValue,
+            _after: newValue,
+            _gameObj: $this.parent.instanceId,
+            _component: $this.instanceId,
+            undo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              gameObject.getComponentByInstanceId(this._component)[field] = this._before;
+            },
+            redo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              gameObject.getComponentByInstanceId(this._component)[field] = this._after;
+            }
+          });
+        };
+      }
+    }
+
   }
   CameraComponent.prototype = {
     export: function() {
       return {
         type: this.flyweight.type,
         id: this.flyweight.id,
+        instanceId: this.instanceId,
         fields: {
           near: this.near,
           far: this.far,
@@ -58,15 +84,18 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       this.priority = LAU.Utils.clone(flyweight.fields.priority);
     },
     destroy: function() {
+      _freeComponentId(this.instanceId);
     }
   };
 
   // Mesh component
-  function MeshComponent(gameObject, componentFlyWeight) {
+  function MeshComponent(gameObject, componentFlyWeight, instanceId) {
     this.type = 'mesh';
     this.mesh = componentFlyWeight.fields.mesh;
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
+
+    this.instanceId = _allocComponentId(instanceId);
 
     if($editCanvas.isEditMode()) {
       ////
@@ -107,6 +136,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       return {
         type: this.flyweight.type,
         id: this.flyweight.id,
+        instanceId: this.instanceId,
         fields: {
           mesh: this.mesh,
         }
@@ -120,14 +150,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
         // Remove this mesh from the hierarchy that groups everything from this game object
         this.parent.transform.hierarchyGroup.remove(this.meshGeometry);
       }
+      _freeComponentId(this.instanceId);
     }
   };
 
   // Mesh Renderer component
-  function MeshRendererComponent(gameObject, componentFlyWeight) {
+  function MeshRendererComponent(gameObject, componentFlyWeight, instanceId) {
     this.type = 'mesh_renderer';
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
+
+    this.instanceId = _allocComponentId(instanceId);
 
     if($editCanvas.isEditMode()) {
       ////
@@ -140,6 +173,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       return {
         type: this.flyweight.type,
         id: this.flyweight.id,
+        instanceId: this.instanceId,
         fields: {
           mesh: this.mesh,
         }
@@ -150,6 +184,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       if($editCanvas.isEditMode()) {
         //$editCanvas.scene.remove(this.meshGeometry);
       }
+      _freeComponentId(this.instanceId);
     },
     updateModels: function() {
       var transform = this.parent.transform;
@@ -161,11 +196,37 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
   };
 
   // Script Component
-  function ScriptComponent(gameObject, componentFlyWeight) {
+  function ScriptComponent(gameObject, componentFlyWeight, instanceId) {
     this.type = 'script';
     this.fields = {};
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
+
+    this.instanceId = _allocComponentId(instanceId);
+
+    if($editCanvas.isEditMode()) {
+      var $this = this;
+
+      this._editorCommitCallback = function(field) {
+        return function(oldValue, newValue) {
+          $hm.pushCommand({
+            _before: oldValue,
+            _after: newValue,
+            _gameObj: $this.parent.instanceId,
+            _component: $this.instanceId,
+            undo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              gameObject.getComponentByInstanceId(this._component).fields[field] = this._before;
+            },
+            redo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              gameObject.getComponentByInstanceId(this._component).fields[field] = this._after;
+            }
+          });
+        };
+      };
+
+    }
   }
   ScriptComponent.prototype = {
     export: function() {
@@ -181,6 +242,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
         path: this.flyweight.path,
         namespace: this.flyweight.namespace,
         id: this.flyweight.id,
+        instanceId: this.instanceId,
         fields: exported_fields
       };
     },
@@ -194,6 +256,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
       }
     },
     destroy: function() {
+      _freeComponentId(this.instanceId);
     }
   };
 
@@ -203,25 +266,45 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', funct
     var result;
     switch(componentFlyWeight.type) {
       case 'camera':
-        result = new CameraComponent(gameObject, componentFlyWeight);
+        result = new CameraComponent(gameObject, componentFlyWeight, instanceId);
       break;
       case 'mesh':
-        result = new MeshComponent(gameObject, componentFlyWeight);
+        result = new MeshComponent(gameObject, componentFlyWeight, instanceId);
       break;
       case 'mesh_renderer':
-        result = new MeshRendererComponent(gameObject, componentFlyWeight);
+        result = new MeshRendererComponent(gameObject, componentFlyWeight, instanceId);
       break;
       case 'script':
-        result = new ScriptComponent(gameObject, componentFlyWeight);
+        result = new ScriptComponent(gameObject, componentFlyWeight, instanceId);
       break;
     }
 
     // Set initial values from flyweight defaults
     result.setValues(componentFlyWeight);
-    if(typeof instanceId !== 'undefined')
-      result.instanceId = instanceId;
 
     return result;
+  }
+
+  ///
+  // Internal logic
+  ///
+  var _componentIds = new Set();
+  function _allocComponentId(id) {
+    function genId() {
+      return Math.pow(2,32)*Math.random();
+    }
+
+    if(id == undefined) {
+      id = genId();
+      while(_componentIds.has(id))
+        id = genId();
+    }
+    _componentIds.add(id);
+
+    return id;
+  }
+  function _freeComponentId(id) {
+    _componentIds.delete(id);
   }
 
   return {

@@ -1,9 +1,9 @@
 <div>
   Camera<br/>
   Type: perspective
-  <div><number-input bind="component.near" label="Near plane"></number-input></div>
-  <div><number-input bind="component.far" label="Far plane"></number-input></div>
-  <div><number-input bind="component.width" label="Near plane width"></number-input></div>
-  <div><number-input bind="component.fov" label="FOV"></number-input></div>
-  <div><number-input bind="component.priority" label="Draw priority"></number-input></div>
+  <div><number-input bind="component.near" commit-callback="component._editorCommitCallback('near')" label="Near plane"></number-input></div>
+  <div><number-input bind="component.far" commit-callback="component._editorCommitCallback('far')" label="Far plane"></number-input></div>
+  <div><number-input bind="component.width" commit-callback="component._editorCommitCallback('width')" label="Near plane width"></number-input></div>
+  <div><number-input bind="component.fov" commit-callback="component._editorCommitCallback('fov')" label="FOV"></number-input></div>
+  <div><number-input bind="component.priority" commit-callback="component._editorCommitCallback('priority')" label="Draw priority"></number-input></div>
 </div>

@@ -33,7 +33,6 @@ angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$
         event.stopPropagation();
       };
       scope.removeGameObject = function(event, gameObj) {
-        console.log(gameObj);
         // Handle undo/redo
         $hm.pushCommand({
           _serializedGameObj: gameObj.export(),

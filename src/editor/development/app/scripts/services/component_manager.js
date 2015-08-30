@@ -79,7 +79,7 @@ angular.module('lauEditor')
             // Backup original data
             var componentBackup = comp.export();
             // Update flyweight
-            gameObj.components[c] = $lauComps.createComponentFromFlyWeight(gameObj, scriptFlyweight);
+            gameObj.components[c] = $lauComps.createComponentFromFlyWeight(gameObj, scriptFlyweight, componentBackup.instanceId);
             // Restore data
             gameObj.components[c].setValues(componentBackup);
           }

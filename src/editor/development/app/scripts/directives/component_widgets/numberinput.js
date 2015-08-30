@@ -26,6 +26,7 @@ angular.module('lauEditor').directive('numberInput', ['historyManager', function
     },
     scope: {
       bind: '=',
+      commitCallback: '&',
       lblClass: '@',
       lblId: '@',
       inpClass: '@',
@@ -88,16 +89,8 @@ angular.module('lauEditor').directive('numberInput', ['historyManager', function
         // Do not push commands that dont change anything
         if(afterValue == preCommitValue) return;
 
-        $hm.pushCommand({
-          _before: preCommitValue,
-          _after: afterValue,
-          undo: function() {
-            scope.bind = this._before;
-          },
-          redo: function() {
-            scope.bind = this._after;
-          }
-        });
+        scope.commitCallback()(preCommitValue, afterValue);
+
         preCommitValue = afterValue;
       }
     },
