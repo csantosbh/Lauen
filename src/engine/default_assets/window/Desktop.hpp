@@ -22,8 +22,8 @@ public:
 
 private:
     static void windowErrorCallback(int error, const char* description);
-    static void windowSizeCallback(GLFWwindow*, int, int);
-    static void updateScreenData(int w, int h);
+    static void windowResizeCallback(GLFWwindow*, int, int);
+    static Game* static_game; // GLFW static callbacks need a pointer to this
 
     GLFWwindow* window;
 };

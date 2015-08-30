@@ -1,5 +1,4 @@
 #include "Desktop.hpp"
-#include "Screen.hpp"
 
 #ifdef DESKTOP
 
@@ -8,14 +7,11 @@ namespace lau {
 std::ostream& lout = std::cout;
 std::ostream& lerr = std::cerr;
 
-void Desktop::updateScreenData(int w, int h) {
-    Screen::windowWidth = w;
-    Screen::windowHeight = h;
-}
+Game* Desktop::static_game = nullptr; // GLFW static callbacks need a pointer to this
 
-void Desktop::windowSizeCallback(GLFWwindow* window, int w, int h) {
+void Desktop::windowResizeCallback(GLFWwindow* window, int w, int h) {
     // TODO maybe use glfwGetFramebufferSize? window size is not the correct way to go; check out http://www.glfw.org/docs/latest/window.html
-    updateScreenData(w, h);
+    static_game->resize(w, h);
 }
 
 void Desktop::init(int winWidth, int winHeight) {
@@ -34,7 +30,7 @@ void Desktop::init(int winWidth, int winHeight) {
         throw 1;
     }
 
-    glfwSetWindowSizeCallback(this->window, &windowSizeCallback);
+    glfwSetWindowSizeCallback(this->window, &windowResizeCallback);
 
     /* Make the window's context current */
     glfwMakeContextCurrent(this->window);
@@ -48,8 +44,7 @@ void Desktop::init(int winWidth, int winHeight) {
         }
     }
 
-    updateScreenData(winWidth, winHeight);
-
+    static_game = &game;
     game.init(winWidth, winHeight);
 }
 

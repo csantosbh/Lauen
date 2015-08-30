@@ -3,6 +3,7 @@
 #include "utils/IO.h"
 #include "LauCommon.h"
 #include "default_components/Camera.hpp"
+#include "window/Screen.hpp"
 
 namespace lau {
 
@@ -17,7 +18,7 @@ Game::Game() {
 
 void Game::init(int windowWidth, int windowHeight) {
     glClearColor(0,0,0,1);
-    glViewport(0, 0, windowWidth, windowHeight);
+    resize(windowWidth, windowHeight);
 
     // Load game objects
     utils::IO::getInstance().requestFiles({"scenes/scene0.json"}, [this] (deque<pair<bool, vector<uint8_t>>>& fileData) {
@@ -34,6 +35,7 @@ void Game::init(int windowWidth, int windowHeight) {
 
 void Game::resize(int windowWidth, int windowHeight) {
     glViewport(0, 0, windowWidth, windowHeight);
+    Screen::windowResizeCallback(windowWidth, windowHeight);
 }
 
 void Game::draw(double temporalAlpha) {

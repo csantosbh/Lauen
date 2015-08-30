@@ -6,6 +6,7 @@
 #include <Eigen/Eigen>
 
 #include "Component.hpp"
+#include "../utils/Callback.hpp"
 
 namespace lau {
 
@@ -48,15 +49,19 @@ public:
 private:
     static bool CameraPriorityComparison(const Camera* a, const Camera* b);
 
+    static std::set<Camera*, bool(*)(const Camera*,const Camera*)> cameras_;
+
     void recomputeProjectionMatrix();
+    void windowResizeListener(int w, int h);
 
     float priority_;
-    static std::set<Camera*, bool(*)(const Camera*,const Camera*)> cameras_;
     float farPlane_;
     float nearPlane_;
     float nearPlaneWidth_;
+
     float aspect_;
     bool customAspectProvided_;
+    Callback<int,int>::CallbackID screenCallback_;
 };
 
 } // namespace lau

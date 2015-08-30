@@ -11,7 +11,7 @@ using namespace Eigen;
 namespace lau {
 
 std::set<Camera*, bool(*)(const Camera*,const Camera*)> Camera::cameras_ STATIC_INITIALIZER_GROUP_A (CameraPriorityComparison);
-const Camera* Camera::current;
+const Camera* Camera::current = nullptr;
 
 Camera::Camera(const rapidjson::Value& fields) {
     nearPlane_ = static_cast<float>(fields["near"].GetDouble());
@@ -30,11 +30,15 @@ Camera::Camera(const rapidjson::Value& fields) {
 
     // Add this camera to the game's camera collection
     cameras_.insert(this);
+
+    // Listen to screen updates
+    screenCallback_ = Screen::onWindowResize.subscribe(std::bind(&Camera::windowResizeListener, this, std::placeholders::_1, std::placeholders::_2));
 }
 
 Camera::~Camera() {
     // Make sure the game will forget this camera
     cameras_.erase(this);
+    Screen::onWindowResize.unsubscribe(screenCallback_);
 }
 
 void Camera::update(float dt) {
@@ -45,10 +49,13 @@ void Camera::update(float dt) {
 
 void Camera::draw(float temporalAlpha) {
     glClear(GL_COLOR_BUFFER_BIT);
+    const Camera* prevCamera = current;
     current = this;
     for(auto& gameObject: GameObject::allGameObjects()) {
         gameObject->draw(temporalAlpha);
     }
+    // Restaure previous camera
+    current = prevCamera;
 }
 
 bool Camera::CameraPriorityComparison(const Camera* a, const Camera* b) {
@@ -128,6 +135,11 @@ void Camera::resetAspect() {
     recomputeProjectionMatrix();
 }
 
+void Camera::windowResizeListener(int w, int h) {
+    if(!customAspectProvided_) {
+        resetAspect();
+    }
+}
 
 //////
 // Factory

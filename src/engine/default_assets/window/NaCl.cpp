@@ -99,9 +99,6 @@ void NaCl::DidChangeView(const pp::View& view) {
     int32_t new_width = view.GetRect().width() * view.GetDeviceScale();
     int32_t new_height = view.GetRect().height() * view.GetDeviceScale();
 
-    Screen::windowWidth = new_width;
-    Screen::windowHeight = new_height;
-
     if(context.is_null()) {
         if(!init(new_width,new_height)) {
             lerr << "Failed to init opengl" << endl;

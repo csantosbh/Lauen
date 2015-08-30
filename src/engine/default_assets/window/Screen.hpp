@@ -1,8 +1,13 @@
 #pragma once
 
+#include "Game.hpp"
+#include "../utils/Callback.hpp"
+
 namespace lau {
 
 class Screen {
+    friend class Game;
+
 public:
     struct Resolution {
         int width;
@@ -13,7 +18,6 @@ public:
     // Screen resolution
     static Resolution screenResolution;
     /*
-     * TODO figure out a better way for this module to communicate with the window
     static bool getFullScreen();
     static void setFullScreen(bool);
     */
@@ -21,6 +25,10 @@ public:
     static int windowWidth;
     static int windowHeight;
 
+    static Callback<int,int> onWindowResize;
+
+private:
+    static void windowResizeCallback(int w, int h);
 };
 
 } // namespace lau
