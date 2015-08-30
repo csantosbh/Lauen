@@ -6,7 +6,7 @@
  * @description
  * # gameObjectEditor
  */
-angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', function ($gom, $cm, $lauComps) {
+angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', 'historyManager', function ($gom, $cm, $lauComps, $hm) {
   function setupComponentMenu($scope) {
     $scope.gameObjectEditor = {
       componentMenu: $cm.getComponentMenu(),
@@ -25,7 +25,24 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
 
         var currentGameObj = $gom.selectedGameObject();
         var componentData = $lauComps.createComponentFromFlyWeight(currentGameObj, eventData.flyweight);
-        $gom.addComponentToSelectedGameObject(componentData);
+
+        // Undo/redo support
+        $hm.pushCommand({
+          _gameObjId: currentGameObj.instanceId,
+          _componentId: componentData.instanceId,
+          _compFlyweight: eventData.flyweight,
+          undo: function() {
+            let gameObj = $gom.getGameObject(this._gameObjId);
+            gameObj.removeComponent(this._componentId);
+          },
+          redo: function() {
+            let gameObj = $gom.getGameObject(this._gameObjId);
+            let remadeComp = $lauComps.createComponentFromFlyWeight(gameObj, this._compFlyweight, this._componentId);
+            gameObj.addComponent(remadeComp);
+          }
+        });
+
+        currentGameObj.addComponent(componentData);
       }
     };
   }

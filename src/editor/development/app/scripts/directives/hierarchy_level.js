@@ -55,6 +55,7 @@ angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$
 
         $gom.removeGameObject(gameObj.instanceId);
 
+        event.preventDefault();
         event.stopPropagation();
       };
       scope.onDrop = function(event, draggedElement) {

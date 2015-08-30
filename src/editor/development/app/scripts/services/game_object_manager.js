@@ -19,7 +19,6 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     pushGameObject: pushGameObject,
     moveGameObjectTo: moveGameObjectTo,
     removeGameObject: removeGameObject,
-    addComponentToSelectedGameObject: addComponentToSelectedGameObject,
     getGameObject: getGameObject,
     serializeGameObjects: serializeGameObjects,
     removeScriptFromGameObjects: removeScriptFromGameObjects,
@@ -95,10 +94,6 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     } else {
       console.error('Could not find game object ['+gameObj.name+'] parent.');
     }
-  }
-
-  function addComponentToSelectedGameObject(component) {
-    currentlySelectedGameObj.components.push(component);
   }
 
   function getGameObject(instanceId) {

@@ -83,6 +83,25 @@ angular.module('lauEditor')
       console.error("No component with instance id "+id+" found");
       return null;
     },
+    addComponent: function(component) {
+      this.components.push(component);
+    },
+    removeComponent: function(componentId) {
+      let compIdx = -1;
+      for(let i = 0; i < this.components.length; ++i) {
+        let comp = this.components[i];
+        if(comp.instanceId == componentId) {
+          compIdx = i;
+          break;
+        }
+      }
+
+      if(compIdx >= 0) {
+        this.components.splice(compIdx, 1);
+      } else {
+        console.error('Could remove component of id '+componentId);
+      }
+    },
     updateStates: function(currentStates) {
       this.transform.setValues(currentStates.transform);
       for(var j = 0; j < currentStates.components.length; ++j) {
@@ -151,6 +170,11 @@ angular.module('lauEditor')
       }
       for(var i = 0; i < this.children.length; ++i) {
         this.children[i].destroy();
+      }
+
+      if($gom.selectedGameObject() != null &&
+         $gom.selectedGameObject().instanceId == this.instanceId) {
+        $gom.selectGameObject(null);
       }
 
       if(this._managedId)
