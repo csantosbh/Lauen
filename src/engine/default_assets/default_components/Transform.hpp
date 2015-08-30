@@ -13,6 +13,7 @@ public:
 	Eigen::Vector3f position;
 	Eigen::Vector3f scale;
 	Eigen::Quaternionf rotation;
+    Eigen::Matrix4f parent2world;
 	Transform(const rapidjson::Value& fields);
 
     void update(float dt);

@@ -63,7 +63,7 @@ void GameObject::update(float dt) {
 
     // Update child game objects
     for(auto& child: this->children_) {
-        // TODO pass stacked transform
+        child->transform.parent2world = this->transform.getAffineTransformMatrix();
         child->update(dt);
     }
 
@@ -77,6 +77,11 @@ void GameObject::update(float dt) {
 void GameObject::draw(float alpha) {
     for(auto& drawableComponent: this->drawableComponents_) {
         drawableComponent->draw(alpha);
+    }
+
+    // Draw child game objects
+    for(auto& child: this->children_) {
+        child->draw(alpha);
     }
 }
 

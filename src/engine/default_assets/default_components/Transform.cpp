@@ -8,6 +8,7 @@ namespace lau {
 
 Transform::Transform(const rapidjson::Value& fields) :
     rotation(Quaternionf::Identity()),
+    parent2world(Matrix4f::Identity()),
     affineMatrixUpToDate_(false) {
     const auto& pos = fields["position"];
     const auto& rot = fields["rotation"];

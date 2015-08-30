@@ -102,7 +102,8 @@ void MeshRenderer::draw(float alpha) {
             Eigen::Matrix4f I = Eigen::Matrix4f::Identity();
             glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE, camera->projection.data());
             glUniformMatrix4fv(world2cameraUniformLocation, 1, GL_FALSE, camera->world2camera.data());
-            glUniformMatrix4fv(object2worldUniformLocation, 1, GL_FALSE, transform.getAffineTransformMatrix().data());
+            Matrix4f object2world = transform.parent2world*transform.getAffineTransformMatrix();
+            glUniformMatrix4fv(object2worldUniformLocation, 1, GL_FALSE, object2world.data());
             glDrawElements(GL_TRIANGLE_STRIP, vbo->vertexCount(), GL_UNSIGNED_INT, 0);
         }
 	}
