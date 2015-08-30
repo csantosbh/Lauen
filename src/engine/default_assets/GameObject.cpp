@@ -56,6 +56,8 @@ void GameObject::update(float dt) {
 #endif
     }
 
+    handleRequestedNewComponents();
+
     // Update transform
     transform.update(dt);
 
@@ -83,6 +85,7 @@ void GameObject::addChild(const shared_ptr<GameObject>& gameObj) {
 }
 
 void GameObject::addComponent(const shared_ptr<Component>& component) {
+    component->setGameObject(this);
     this->updateableComponents_.push_back(component);
 
     // If component is drawable, add it to the drawable list
@@ -104,6 +107,14 @@ void GameObject::addComponent(const shared_ptr<Component>& component) {
 
 const vector<shared_ptr<GameObject>>& GameObject::allGameObjects() {
     return lau_internal::GameInstance->allGameObjects();
+}
+
+void GameObject::handleRequestedNewComponents() {
+    while(!addComponentRequested_.empty()) {
+        auto& component = addComponentRequested_.front();
+        addComponent(component);
+        addComponentRequested_.pop();
+    }
 }
 
 } // namespace lau

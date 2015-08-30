@@ -12,6 +12,7 @@ namespace lau {
 
 class MeshRenderer : public DrawableComponent {
 public:
+    MeshRenderer();
 	MeshRenderer(const rapidjson::Value& fields);
 
 	void update(float dt);

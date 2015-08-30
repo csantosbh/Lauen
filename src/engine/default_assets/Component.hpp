@@ -8,7 +8,7 @@ class GameObject;
 
 class Component {
 public:
-    virtual void setGameObject(std::shared_ptr<GameObject>& gameObj) {
+    virtual void setGameObject(GameObject* gameObj) {
         gameObject = gameObj;
     }
 
@@ -30,7 +30,7 @@ public:
 
 protected:
     int _id;
-    std::shared_ptr<GameObject> gameObject;
+    GameObject* gameObject;
 };
 
 } // namespace

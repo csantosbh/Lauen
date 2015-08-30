@@ -8,6 +8,12 @@ using namespace rapidjson;
 
 namespace lau {
 
+Mesh::Mesh() {
+    utils::IO::getInstance().requestFiles({
+        "default_assets/default_components/primitive_meshes/Cube.lmf"
+    }, std::bind(&Mesh::onLoadMesh, this, std::placeholders::_1, "default_assets/default_components/primitive_meshes/Cube.lmf"));
+}
+
 Mesh::Mesh(const rapidjson::Value& fields) {
     utils::IO::getInstance().requestFiles({
         fields["mesh"].GetString()

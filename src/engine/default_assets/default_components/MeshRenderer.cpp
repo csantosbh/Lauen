@@ -12,12 +12,15 @@ using namespace Eigen;
 
 namespace lau {
 
-MeshRenderer::MeshRenderer(const rapidjson::Value& fields) {
+MeshRenderer::MeshRenderer() {
     // Create shaders
     utils::IO::getInstance().requestFiles({
         "default_assets/shaders/basic.vs",
         "default_assets/shaders/basic.fs"
     }, std::bind(&MeshRenderer::onLoadShaders, this, std::placeholders::_1));
+}
+
+MeshRenderer::MeshRenderer(const rapidjson::Value& fields) : MeshRenderer() {
 }
 
 void MeshRenderer::update(float dt) {
@@ -82,7 +85,6 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
 #endif
 }
 
-int tstlau = 0;
 void MeshRenderer::draw(float alpha) {
 	auto mesh = gameObject->getComponent<Mesh>();
     auto& transform = gameObject->transform;

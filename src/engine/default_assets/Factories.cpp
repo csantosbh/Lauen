@@ -39,7 +39,6 @@ shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& ser
 
         // TODO assert that component cant be null?
         if(component != NULL) {
-            component->setGameObject(obj);
             obj->addComponent(component);
         }
 #ifdef DEBUG

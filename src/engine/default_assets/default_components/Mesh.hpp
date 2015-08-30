@@ -14,6 +14,7 @@ namespace lau {
 
 class Mesh : public Component {
 public:
+    Mesh();
 	Mesh(const rapidjson::Value& fields);
 
 	void update(float dt);
