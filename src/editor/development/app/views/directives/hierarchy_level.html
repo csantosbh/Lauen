@@ -1,5 +1,5 @@
 <div>
-  <div data-drop="true" ng-model="dropBucket" jqyoui-droppable="{multiple:true, onDrop:'onDrop()'}" data-jqyoui-options="optionsList" ng-click="selectGameObject($event, gameObject)">
+  <div data-drop="true" jqyoui-droppable="{multiple:true, onDrop:'onDrop'}" data-jqyoui-options="optionsList" ng-click="selectGameObject($event, gameObject)">
     <span ng-style="{paddingLeft: 10 * level}" ng-model="gameObject" data-drag="true" jqyoui-draggable="{placeholder:'keep'}" data-jqyoui-options="{revert: 'invalid', appendTo: 'body', helper: 'clone'}">{{gameObject.name}}</span>
     <div class="glyphicon glyphicon-remove-circle pull-right" ng-click="removeGameObject($event, gameObject)"></div>
   </div>

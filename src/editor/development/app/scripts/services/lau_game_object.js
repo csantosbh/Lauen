@@ -38,7 +38,8 @@ angular.module('lauEditor')
       // Initialize children game objects
       var child = fields.children;
       for(var g = 0; g < child.length; ++g) {
-        this.addChild(new GameObject(child[g]));
+        var newChild = new GameObject(child[g], child[g].instanceId);
+        newChild.setParent(this);
       }
     }
 
@@ -98,14 +99,17 @@ angular.module('lauEditor')
         }
       }
     },
-    addChild: function(childGameObj) {
+    _addChild: function(childGameObj) {
       this.children.push(childGameObj);
-      childGameObj._setParent(this);
     },
-    _setParent: function(parentGameObj) {
+    setParent: function(parentGameObj) {
+      if(parentGameObj != null)
+        parentGameObj._addChild(this);
+
       if($editCanvas.isEditMode()) {
         this.transform.setHierarchyParent(parentGameObj);
       }
+
       this.parent = parentGameObj;
     },
     isParentOf: function(gameObj) {
@@ -133,6 +137,7 @@ angular.module('lauEditor')
 
       return {
         name: this.name,
+        instanceId: this.instanceId,
         transform: this.transform.export(),
         components: exportedComps,
         children: children

@@ -87,9 +87,8 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   function moveGameObjectTo(gameObj, destination) {
     // First, remove `gameObj` from whatever array it is
     if(_popGameObject(gameObj.instanceId)) {
-      if(destination != null) {
-        destination.addChild(gameObj);
-      } else {
+      gameObj.setParent(destination);
+      if(destination == null) {
         // Move gameObj to root node
         gameObjects.push(gameObj);
       }

@@ -36,8 +36,37 @@ angular.module('lauEditor')
               return draggedGameObj != undefined;
             }
           },
+          historyHandlerCallback: function(draggedGameObj, newParentObj) {
+            // Push command to history manager
+            let oldParent = draggedGameObj.parent == null ? null :
+              draggedGameObj.parent.instanceId;
+            let newParent = newParentObj == null ? null :
+              newParentObj.instanceId;
+            $hm.pushCommand({
+              _objId: draggedGameObj.instanceId,
+              _oldParentId: oldParent,
+              _oldPosition: $gom.getMenuPosition(draggedGameObj.instanceId),
+              _newParentId: newParent,
+              undo: function() {
+                let dst = this._oldParentId == null ? null :
+                  $gom.getGameObject(this._oldParentId);
+                let gameObj = $gom.getGameObject(this._objId);
+                $gom.moveGameObjectTo(gameObj, dst);
+                $gom.setMenuPosition(gameObj, this._oldPosition);
+              },
+              redo: function() {
+                var dst = this._newParentId == null ? null :
+                  $gom.getGameObject(this._newParentId);
+                $gom.moveGameObjectTo($gom.getGameObject(this._objId), dst);
+              }
+            });
+          },
           onDrop: function(event, draggedElement) {
             var draggedGameObj = draggedElement.draggable.scope().gameObject;
+
+            // Handle undo/redo
+            scope.gameObjectHierarchy.historyHandlerCallback(draggedGameObj, null);
+
             $gom.moveGameObjectTo(draggedGameObj, null);
           }
         };

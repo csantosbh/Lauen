@@ -1,5 +1,5 @@
 <div>
   <!-- TODO use bootstrap to align fields -->
-<number-input label="x" bind="bind[0]" inp-class="vector-input"></number-input>
-<number-input label="y" bind="bind[1]" inp-class="vector-input"></number-input>
+<number-input label="x" bind="bind[0]" inp-class="vector-input" commit-callback="_forwardCommitter(0)"></number-input>
+<number-input label="y" bind="bind[1]" inp-class="vector-input" commit-callback="_forwardCommitter(1)"></number-input>
 </div>

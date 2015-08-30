@@ -1,4 +1,4 @@
 <div data-drop="true" jqyoui-droppable="{multiple:true, onDrop:'gameObjectHierarchy.onDrop'}" data-jqyoui-options="droppableOptions"></div>
-<hierarchy-level level="0" ng-repeat="obj in gameObjectHierarchy.gameObjects()" game-object="obj"></hierarchy-level>
+<hierarchy-level level="0" ng-repeat="obj in gameObjectHierarchy.gameObjects()" game-object="obj" history-handler-callback="gameObjectHierarchy.historyHandlerCallback"></hierarchy-level>
 <div style="height: 10px;" data-drop="true" jqyoui-droppable="{multiple:true, onDrop:'gameObjectHierarchy.onDrop'}" data-jqyoui-options="droppableOptions"></div>
 <input type="button" ng-click="gameObjectHierarchy.createGameObject()" value="+game object" />
