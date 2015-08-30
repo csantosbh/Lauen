@@ -11,7 +11,7 @@ angular.module('lauEditor')
     return {
       templateUrl: 'views/directives/component_editors/v3f.html',
       restrict: 'E',
-      scope: {parentModel: '=ngModel'},
+      scope: {bind: '='},
       link: function postLink(scope, element, attrs) {
       }
     };

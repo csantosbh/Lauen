@@ -23,6 +23,8 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     getGameObject: getGameObject,
     serializeGameObjects: serializeGameObjects,
     removeScriptFromGameObjects: removeScriptFromGameObjects,
+    getMenuPosition: getMenuPosition,
+    setMenuPosition: setMenuPosition,
   };
 
   var _editorGameObjects; // Backup for the real gameobjects from the edit mode
@@ -134,6 +136,41 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     for(var g = 0; g < gameObjects.length; ++g) {
       gameObjects[g].removeScriptsByPath(scriptFlyweight.path);
     }
+  }
+
+  // Returns the position of the game object inside its menu
+  function getMenuPosition(instanceId) {
+    function _recurse(objs) {
+      // Look for game object
+      for(var i = 0; i < objs.length; ++i) {
+        if(objs[i].instanceId == instanceId) {
+          return i;
+        } else if(objs[i].children.length > 0) {
+          let idx = _recurse(objs[i].children);
+          if(idx >= 0)
+            return idx;
+        }
+      }
+      return -1;
+    }
+    return _recurse(gameObjects);
+  }
+
+  function setMenuPosition(gameObject, newPos) {
+    var parent = gameObject.parent;
+    var parentChildren;
+    if(parent == null)
+      parentChildren = gameObjects;
+    else
+      parentChildren = parent.children;
+
+    var oldPos = 0;
+    while(oldPos < parentChildren.length &&
+          parentChildren[oldPos].instanceId != gameObject.instanceId)
+      oldPos++;
+
+    parentChildren.splice(oldPos, 1);
+    parentChildren.splice(newPos, 0, gameObject);
   }
 
   ////

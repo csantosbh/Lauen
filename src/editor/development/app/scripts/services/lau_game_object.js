@@ -17,6 +17,7 @@ angular.module('lauEditor')
     this.components = [];
     this.children = [];
     this.transform = new Transform();
+    this.parent = null;
 
     if(fields.transform != undefined) {
       this.transform.setValues(fields.transform);
@@ -105,6 +106,7 @@ angular.module('lauEditor')
       if($editCanvas.isEditMode()) {
         this.transform.setHierarchyParent(parentGameObj);
       }
+      this.parent = parentGameObj;
     },
     isParentOf: function(gameObj) {
       for(var g = 0; g < this.children.length; ++g) {
@@ -183,7 +185,7 @@ angular.module('lauEditor')
       // Bind transform to edit canvas
       this.hierarchyGroup = $editCanvas.createGroup();
       this.hierarchyGroup.add($editCanvas.createBoundingBox());
-      this._oldParent = $editCanvas.scene;
+      this._parentGroup = $editCanvas.scene;
 
       $editCanvas.scene.add(this.hierarchyGroup);
 
@@ -246,7 +248,7 @@ angular.module('lauEditor')
     },
     destroy: function() {
       if($editCanvas.isEditMode()) {
-        $editCanvas.scene.remove(this.hierarchyGroup);
+        this._parentGroup.remove(this.hierarchyGroup);
       }
     },
     setHierarchyParent: function(newParent) {
@@ -254,9 +256,9 @@ angular.module('lauEditor')
       if(newParent != null) {
         parentGroup = newParent.transform.hierarchyGroup;
       }
-      this._oldParent.remove(this.hierarchyGroup);
+      this._parentGroup.remove(this.hierarchyGroup);
       parentGroup.add(this.hierarchyGroup);
-      this._oldParent = parentGroup;
+      this._parentGroup = parentGroup;
     }
   };
 

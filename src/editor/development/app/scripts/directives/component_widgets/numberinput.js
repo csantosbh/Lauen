@@ -6,7 +6,7 @@
  * @description
  * # numberInput
  */
-angular.module('lauEditor').directive('numberInput', ['$timeout', 'historyManager', function ($timeout, $hm) {
+angular.module('lauEditor').directive('numberInput', ['historyManager', function ($hm) {
   var defaultAttrs = {
     'lblClass': 'number-input',
     'lblId': '',
@@ -20,16 +20,18 @@ angular.module('lauEditor').directive('numberInput', ['$timeout', 'historyManage
     template: function(elem, userAttrs) {
       var attrs = {};
       $.extend(attrs, defaultAttrs, userAttrs);
-      var ngModel = 'ng-model="'+attrs.ngModel+'"';
 
-      return '<label class="'+attrs.lblClass +
-             '" for="'+attrs.inpId +
-             '" id="'+ attrs.lblId +
-             '">'+ attrs.label +
-             '</label><input '+ngModel +
-             '" type="number" id="'+
-             attrs.inpId + '" class="'+
-             attrs.inpClass+'">';
+      return `<label ng-class="lblClass" for="{{inpId}}" ng-id="lblId">{{label}}</label>
+      <input ng-model="bind" type="number" ng-id="inpId" ng-class="inpClass"/>`;
+    },
+    scope: {
+      bind: '=',
+      lblClass: '@',
+      lblId: '@',
+      inpClass: '@',
+      inpId: '@',
+      sensitivity: '@',
+      label: '@',
     },
     link: function(scope, element, userAttrs) {
       var attrs = {};
@@ -40,7 +42,7 @@ angular.module('lauEditor').directive('numberInput', ['$timeout', 'historyManage
 
       // Handle focus
       inputElement.bind('focus', function() {
-        preCommitValue = inputElement.val();
+        preCommitValue = scope.bind;
       })
       // Handle blur
       .bind('blur', function() {
@@ -53,15 +55,15 @@ angular.module('lauEditor').directive('numberInput', ['$timeout', 'historyManage
         }
       });
       // Handle mouse-based value changing
-      labelElement.bind('mousedown', function() {
-        preCommitValue = inputElement.val();
+      labelElement.bind('mousedown', function(event) {
+        preCommitValue = scope.bind;
         $canvas.requestPointerLock();
 
         // Catch mouse move event
         function mouseMoveDocument(moveE) {
           var xDiff = moveE.movementX * attrs.sensitivity;
 
-          inputElement.val(parseFloat(inputElement.val())+xDiff);
+          inputElement.val(parseFloat(scope.bind)+xDiff);
           inputElement.change();
         }
         document.addEventListener('mousemove', mouseMoveDocument);
@@ -74,11 +76,14 @@ angular.module('lauEditor').directive('numberInput', ['$timeout', 'historyManage
           publishHistoryCommand();
           document.exitPointerLock();
         });
+
+        event.preventDefault();
+        event.stopPropagation();
       });
 
       // Handle history commands
       function publishHistoryCommand() {
-        var afterValue = inputElement.val();
+        var afterValue = scope.bind;
 
         // Do not push commands that dont change anything
         if(afterValue == preCommitValue) return;
@@ -87,12 +92,10 @@ angular.module('lauEditor').directive('numberInput', ['$timeout', 'historyManage
           _before: preCommitValue,
           _after: afterValue,
           undo: function() {
-            inputElement.val(this._before);
-            inputElement.change();
+            scope.bind = this._before;
           },
           redo: function() {
-            inputElement.val(this._after);
-            inputElement.change();
+            scope.bind = this._after;
           }
         });
         preCommitValue = afterValue;
