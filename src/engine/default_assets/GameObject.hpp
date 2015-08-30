@@ -8,8 +8,10 @@
 #include <rapidjson/document.h>
 
 #include "Component.hpp"
-#include "default_components/Transform.hpp"
+#include "Peekers.hpp"
 #include "DrawableComponent.hpp"
+
+#include "default_components/Transform.hpp"
 
 namespace lau {
 
@@ -39,7 +41,12 @@ public:
     T* addComponent() {
         T* component = new T();
         component->setId(Component::getComponentId<T>());
-        addComponentRequested_.push(std::shared_ptr<Component>(dynamic_cast<Component*>(component)));
+        std::shared_ptr<Component> result(dynamic_cast<Component*>(component));
+        addComponentRequested_.push(result);
+
+#ifdef PREVIEW_MODE
+		component->lau_peeker__ = std::shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<T>(result)));
+#endif
         return component;
     }
     void addChild(const std::shared_ptr<GameObject>& gameObj);
