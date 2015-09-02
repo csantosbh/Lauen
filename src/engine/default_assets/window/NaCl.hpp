@@ -27,6 +27,7 @@ public:
 
 	void addComponent(const pp::VarDictionary& comp);
 	void createGameObject(const pp::VarDictionary& gameObj);
+    void deleteComponent(const pp::VarDictionary& objInfo);
 	void deleteGameObject(const pp::VarDictionary& gameObj);
 	void publishState(const pp::VarDictionary& state);
 

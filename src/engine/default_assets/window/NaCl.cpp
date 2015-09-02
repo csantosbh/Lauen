@@ -92,6 +92,7 @@ void NaCl::resetAccumulatedEvents() {
 	accumulatedEvents.Set("newComponents", pp::VarArray());
 	accumulatedEvents.Set("newGameObjects", pp::VarArray());
 	accumulatedEvents.Set("deletedGameObjects", pp::VarArray());
+	accumulatedEvents.Set("deletedComponents", pp::VarArray());
 	accumulatedEvents.Set("currentStates", pp::VarArray());
 }
 
@@ -132,6 +133,13 @@ void NaCl::createGameObject(const pp::VarDictionary& gameObj) {
 	auto gameObjects = pp::VarArray(accumulatedEvents.Get("newGameObjects"));
     gameObjects.Set(gameObjects.GetLength(), gameObj);
 	accumulatedEvents.Set("newGameObjects", gameObjects);
+}
+
+void NaCl::deleteComponent(const pp::VarDictionary& objInfo) {
+	accumulatedEvents.Set("isDirty", true);
+	auto components = pp::VarArray(accumulatedEvents.Get("deletedComponents"));
+    components.Set(components.GetLength(), objInfo);
+	accumulatedEvents.Set("deletedComponents", components);
 }
 
 void NaCl::deleteGameObject(const pp::VarDictionary& gameObj) {

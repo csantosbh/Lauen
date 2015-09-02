@@ -1,7 +1,8 @@
 #pragma once
 
 #include <vector>
-#include <queue>
+#include <deque>
+#include <set>
 #include <string>
 #include <memory>
 
@@ -42,7 +43,7 @@ public:
         T* component = new T();
         component->setId(Component::getComponentId<T>());
         std::shared_ptr<Component> result(dynamic_cast<Component*>(component));
-        addComponentRequested_.push(result);
+        addComponentRequested_.push_back(result);
 
 #ifdef PREVIEW_MODE
 		component->lau_peeker__ = std::shared_ptr<ComponentPeeker>(dynamic_cast<ComponentPeeker*>(new ComponentPeekerImpl<T>(result)));
@@ -50,18 +51,23 @@ public:
         return component;
     }
     void addChild(const std::shared_ptr<GameObject>& gameObj);
+    // Dont use this. Call Component::destroy instead.
+    void destroyComponent(const Component*);
 
     Transform transform;
 
     static const std::vector<std::shared_ptr<GameObject>>& allGameObjects();
 
-protected:
+private:
     std::vector<std::shared_ptr<Component>> updateableComponents_;
-    std::vector<std::shared_ptr<DrawableComponent>> drawableComponents_;
+    std::set<DrawableComponent*> drawableComponents_;
     std::vector<std::shared_ptr<GameObject>> children_;
-    std::queue<std::shared_ptr<Component>> addComponentRequested_;
+    std::deque<std::shared_ptr<Component>> addComponentRequested_;
+    std::deque<const Component*> delComponentRequested_;
 
     void handleRequestedNewComponents();
+    void handleRequestedDestroyedComponents();
+    int getComponentByInstanceId(int componentId);
 
 #ifdef PREVIEW_MODE
 	int gameObjectId;

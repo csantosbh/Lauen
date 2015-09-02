@@ -57,6 +57,7 @@ void GameObject::update(float dt) {
     }
 
     handleRequestedNewComponents();
+    handleRequestedDestroyedComponents();
 
     // Update transform
     transform.update(dt);
@@ -95,7 +96,7 @@ void GameObject::addComponent(const shared_ptr<Component>& component) {
 
     // If component is drawable, add it to the drawable list
     if(dynamic_cast<DrawableComponent*>(component.get()) != nullptr) {
-        this->drawableComponents_.push_back(dynamic_pointer_cast<DrawableComponent>(component));
+        this->drawableComponents_.insert(dynamic_cast<DrawableComponent*>(component.get()));
     }
 
 #ifdef PREVIEW_MODE
@@ -118,8 +119,42 @@ void GameObject::handleRequestedNewComponents() {
     while(!addComponentRequested_.empty()) {
         auto& component = addComponentRequested_.front();
         addComponent(component);
-        addComponentRequested_.pop();
+        addComponentRequested_.pop_front();
     }
 }
+
+void GameObject::destroyComponent(const Component* comp) {
+    delComponentRequested_.push_back(comp);
+}
+
+void GameObject::handleRequestedDestroyedComponents() {
+    for(auto& comp: delComponentRequested_) {
+        int pos = getComponentByInstanceId(comp->getId());
+
+        assert(pos>=0);
+
+        const DrawableComponent* component = dynamic_cast<const DrawableComponent*>(comp);
+        if(component != nullptr)
+            drawableComponents_.erase(const_cast<DrawableComponent*>(component));
+
+#ifdef PREVIEW_MODE
+        pp::VarDictionary destroyedComponentInfo;
+        destroyedComponentInfo.Set("gameObjectId", gameObjectId);
+        destroyedComponentInfo.Set("componentId", comp->lau_peeker__->getInstanceId());
+        NaCl::getInstance()->deleteComponent(destroyedComponentInfo);
+#endif
+
+        updateableComponents_.erase(updateableComponents_.begin() + pos);
+    }
+    delComponentRequested_.clear();
+}
+
+int GameObject::getComponentByInstanceId(int id) {
+    for(int i = 0; i < updateableComponents_.size(); ++i)
+        if(updateableComponents_[i]->getId() == id)
+            return i;
+    return -1;
+}
+
 
 } // namespace lau

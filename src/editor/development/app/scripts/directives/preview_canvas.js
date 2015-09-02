@@ -39,15 +39,7 @@ angular.module('lauEditor')
               var componentData = $cm.createComponentFromId(gameObj,
                 msg.newComponents[i].component.componentId,
                 msg.newComponents[i].component.instanceId);
-                // TODO create an addComponent function to the gameObject prototype
-              gameObj.components.push(componentData);
-            }
-          }
-          // Remove game object
-          if(msg.deletedGameObjects.length > 0) {
-            for(var i = 0; i < msg.deletedGameObjects.length; ++i) {
-              var deletedObj = msg.deletedGameObjects[i];
-              $gom.removeGameObject(deletedObj.instanceId);
+              gameObj.addComponent(componentData);
             }
           }
           // Update states
@@ -57,6 +49,20 @@ angular.module('lauEditor')
               var gameObj = $gom.getGameObject(state.instanceId);
               // Update its components
               gameObj.updateStates(state);
+            }
+          }
+          // Remove game object
+          if(msg.deletedGameObjects.length > 0) {
+            for(var i = 0; i < msg.deletedGameObjects.length; ++i) {
+              var deletedObj = msg.deletedGameObjects[i];
+              $gom.removeGameObject(deletedObj.instanceId);
+            }
+          }
+          // Remove component
+          if(msg.deletedComponents.length > 0) {
+            for(var i = 0; i < msg.deletedComponents.length; ++i) {
+              var deletedObj = msg.deletedComponents[i];
+              $gom.getGameObject(deletedObj.gameObjectId).removeComponent(deletedObj.componentId);
             }
           }
         }
