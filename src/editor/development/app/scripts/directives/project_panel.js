@@ -6,7 +6,7 @@
  * @description
  * # projectPanel
  */
-angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauGameObject', function ($timeout, $gom, $cm, $lgo) {
+angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauGameObject', 'dragdropManager', function ($timeout, $gom, $cm, $lgo, $dm) {
   // TODO this was moved here because the RPCs are not guaranteeded to obey any
   // particular call order. Implement some order-filtering to RPC calls. Maybe a
   // 'requires' parameter that specifies its dependencies.
@@ -27,14 +27,21 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
   return {
     templateUrl: 'views/directives/project_panel.html',
     restrict: 'E',
+    scope: true,
     link: function postLink(scope, element, attrs) {
       scope.projectPanel = {
-        dropBucket: null,
-        onDrop:function() {
-          scope.gameObjectEditor.addComponent(scope.projectPanel.dropBucket);
-        },
         projectFiles: getProjectFiles,
       };
+      scope.onDrop = function(event, draggedElement) {
+        $dm.dispatchAction(draggedElement, scope, 'dropid_project_panel');
+      }
+      scope.dragid = 'dragid_project_panel';
+
+      $dm.registerAction('dragid_game_obj_hierarchy', 'dropid_project_panel', function(draggedScope, dropScope) {
+        // Create prefab requested!
+        $rpc.call('createPrefab', draggedScope.gameObject.export(), function() {
+        });
+      });
 
       $rpc.call('getAssetList', null, function(fileList) {
         $timeout(function() {

@@ -184,6 +184,35 @@ class ScriptProcessor(AssetProcessor):
         pass
     pass
 
+class PrefabProcessor(AssetProcessor):
+    def __init__(self, path, persistent_fields):
+        super(PrefabProcessor, self).__init__(path, persistent_fields)
+        pass
+
+    def dependsOn(self, path):
+        return False
+
+    # Handle file removal event
+    def remove(self):
+        # Nothing special to do here
+        pass
+
+    def getMetadata(self):
+        with open(Project.getAbsProjFilePath(self.path)) as f:
+            wrapper={
+                'type': 'prefab',
+                'path': self.path,
+                'content': json.loads(f.read())
+            }
+            return wrapper
+            pass
+        pass
+
+    def update(self):
+        pass
+    pass
+
+
 class UserFactoriesProcessor(AssetProcessor):
     def __init__(self, path, persistent_fields):
         super(UserFactoriesProcessor, self).__init__(path, persistent_fields)
@@ -237,6 +266,8 @@ def CreateAssetProcessor(assetPath, persistent_fields=None):
             Utils.Console.error('Unsupported cpy file detected: '+assetPath)
             return None
         pass
+    elif Utils.IsPrefabFile(assetPath):
+        return PrefabProcessor(assetPath, persistent_fields)
     else:
         return None
     pass

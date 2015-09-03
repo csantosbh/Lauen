@@ -6,10 +6,13 @@
  * @description
  * # gameObjectEditor
  */
-angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', 'historyManager', function ($gom, $cm, $lauComps, $hm) {
+angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', 'historyManager', 'dragdropManager', function ($gom, $cm, $lauComps, $hm, $dm) {
   function setupComponentMenu($scope) {
     $scope.gameObjectEditor = {
       componentMenu: $cm.getComponentMenu(),
+      onDrop:function(event, draggedElement) {
+        $dm.dispatchAction(draggedElement, $scope, 'dropid_game_obj_editor');
+      },
       gameObjects: $gom.getGameObjects,
       selectedGameObject: $gom.selectedGameObject,
       _menuPickup: function(item) {
@@ -45,6 +48,10 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
         currentGameObj.addComponent(componentData);
       }
     };
+
+    $dm.registerAction('dragid_project_panel', 'dropid_game_obj_editor', function(draggedScope, dropScope) {
+      $scope.gameObjectEditor.addComponent(draggedScope.file);
+    });
   }
 
   return {

@@ -7,11 +7,27 @@
  * # gameObjectHierarchy
  */
 angular.module('lauEditor')
-  .directive('gameObjectHierarchy', ['gameObjectManager', 'lauGameObject', 'historyManager', function ($gom, $lgo, $hm) {
+  .directive('gameObjectHierarchy', ['gameObjectManager', 'lauGameObject', 'historyManager', 'dragdropManager', function ($gom, $lgo, $hm, $dm) {
     return {
       templateUrl: 'views/directives/game_object_hierarchy.html',
       restrict: 'E',
+      scope: true,
       link: function postLink(scope, element, attrs) {
+        $dm.registerAction('dragid_game_obj_hierarchy',
+                           'dropid_game_obj_hierarchy', function(draggedScope, dropScope) {
+          var draggedGameObj = draggedScope.gameObject;
+
+          var parentObj = null;
+          if(dropScope.gameObject != undefined)
+            parentObj = dropScope.gameObject;
+
+          // Handle undo/redo
+          scope.gameObjectHierarchy.historyHandlerCallback(draggedGameObj, parentObj);
+
+          $gom.moveGameObjectTo(draggedGameObj, parentObj);
+        });
+
+        scope.dragid = 'dragid_game_obj_hierarchy';
         scope.gameObjectHierarchy = {
           createGameObject: function() {
             var newGameObj = new $lgo.GameObject({name: 'Unnamed'});
@@ -62,12 +78,7 @@ angular.module('lauEditor')
             });
           },
           onDrop: function(event, draggedElement) {
-            var draggedGameObj = draggedElement.draggable.scope().gameObject;
-
-            // Handle undo/redo
-            scope.gameObjectHierarchy.historyHandlerCallback(draggedGameObj, null);
-
-            $gom.moveGameObjectTo(draggedGameObj, null);
+            $dm.dispatchAction(draggedElement, scope, 'dropid_game_obj_hierarchy');
           }
         };
       }

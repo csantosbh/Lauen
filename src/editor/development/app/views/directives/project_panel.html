@@ -1,1 +1,3 @@
-<div ng-repeat="file in projectPanel.projectFiles()" class="file-widget" ng-model="file" data-drag="true" jqyoui-draggable="{placeholder:'keep'}" data-jqyoui-options="{revert: 'invalid', appendTo: 'body', helper: 'clone'}"><img src="images/icons/file-cpp.svg" mimeType="image/svg+xml"/><label>{{LAU.IO.getFileNameFromPath(file.flyweight.path)}}</label></div>
+<div data-drop="true" data-jqyoui-options jqyoui-droppable="{multiple:true, onDrop:'projectPanel.onDrop()'}">
+  <div ng-repeat="file in projectPanel.projectFiles()" class="file-widget" ng-model="file" data-drag="true" jqyoui-draggable="{placeholder:'keep'}" data-jqyoui-options="{revert: 'invalid', appendTo: 'body', helper: 'clone'}"><img ng-src="{{LAU.IO.getFileIconFromPath(file.flyweight.path)}}" mimeType="image/svg+xml"/><label>{{LAU.IO.getFileNameFromPath(file.flyweight.path)}}</label></div>
+</div>

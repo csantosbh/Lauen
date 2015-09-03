@@ -12,6 +12,14 @@ def getAssetList(evData):
 def loadCurrentScene(e):
     return Project.loadCurrentScene()
 
+def createPrefab(prefab):
+    import json
+    with open(Project.getProjectFolder() + '/assets/'+prefab['name']+'.prefab', 'w') as f:
+        f.write(json.dumps(prefab))
+        pass
+    return True
+
 RPC.listen(save)
 RPC.listen(loadCurrentScene)
 RPC.listen(getAssetList)
+RPC.listen(createPrefab)

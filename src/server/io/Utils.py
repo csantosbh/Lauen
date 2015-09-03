@@ -28,6 +28,9 @@ def IsObjectFile(assetPath):
 def IsHeaderFile(assetPath):
     return PathHasExtension(assetPath, ['.hpp', '.h'])
 
+def IsPrefabFile(assetPath):
+    return PathHasExtension(assetPath, ['.prefab'])
+
 def IsImplementationFile(assetPath):
     return PathHasExtension(assetPath, ['.cpp', '.cxx'])
 
@@ -42,7 +45,7 @@ def IsProcessableFile(path):
 
 def IsTrackableAsset(filePath):
     # TODO also check for other supported file type
-    return IsHeaderFile(filePath)
+    return IsHeaderFile(filePath) or IsPrefabFile(filePath)
 
 def ListFilesFromFolder(mypath, extensions = None):
     from server.parser import CppParser

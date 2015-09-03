@@ -1,6 +1,6 @@
 'use strict';
 
-angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$compile', 'historyManager', 'lauGameObject', function ($gom, $compile, $hm, $lgo) {
+angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$compile', 'historyManager', 'lauGameObject', 'dragdropManager', function ($gom, $compile, $hm, $lgo, $dm) {
   return {
     restrict: "E",
     replace: true,
@@ -59,22 +59,9 @@ angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$
         event.stopPropagation();
       };
       scope.onDrop = function(event, draggedElement) {
-        var draggedGameObj = draggedElement.draggable.scope().gameObject;
-
-        // Handle undo/redo
-        scope.historyHandlerCallback(draggedGameObj, scope.gameObject);
-
-        $gom.moveGameObjectTo(draggedGameObj, scope.gameObject);
+        $dm.dispatchAction(draggedElement, scope, 'dropid_game_obj_hierarchy');
       }
-      scope.optionsList = {
-        accept: function(draggedElement) {
-          var draggedGameObj = draggedElement.draggable().scope().gameObject;
-
-          return draggedGameObj != undefined &&
-            draggedGameObj.instanceId != scope.gameObject.instanceId &&
-            !draggedGameObj.isParentOf(scope.gameObject);
-        }
-      };
+      scope.dragid = 'dragid_game_obj_hierarchy';
 
       if (angular.isArray(scope.gameObject.children)) {
         var nestedElement = angular.element('<hierarchy-level level="level+1" ng-repeat="obj in gameObject.children" history-handler-callback="historyHandlerCallback" game-object="obj"></hierarchy-level>');
