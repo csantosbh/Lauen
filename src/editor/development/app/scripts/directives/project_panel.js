@@ -6,7 +6,7 @@
  * @description
  * # projectPanel
  */
-angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauGameObject', 'dragdropManager', function ($timeout, $gom, $cm, $lgo, $dm) {
+angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauGameObject', 'dragdropManager', 'lauPrefab', function ($timeout, $gom, $cm, $lgo, $dm, $lp) {
   // TODO this was moved here because the RPCs are not guaranteeded to obey any
   // particular call order. Implement some order-filtering to RPC calls. Maybe a
   // 'requires' parameter that specifies its dependencies.
@@ -20,8 +20,11 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
   }
 
   function getProjectFiles() {
-    var components = $cm.getComponents();
-    return components.script;
+    let components = $cm.getComponents();
+    var assets = []
+      .concat(components.script)
+      .concat(components.prefab);
+    return assets;
   }
 
   return {
@@ -37,6 +40,20 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
       }
       scope.dragid = 'dragid_project_panel';
 
+      scope.onAssetClick = function(event, file) {
+        switch(file.flyweight.type) {
+          case 'prefab':
+            let prefab = new $lp.Prefab(file.flyweight.content);
+            $gom.selectGameObject(prefab.gameObject);
+            $timeout(function() {
+              prefab.destroy();
+            },6000);
+            break;
+          default:
+            return;
+        }
+      }
+
       $dm.registerAction('dragid_game_obj_hierarchy', 'dropid_project_panel', function(draggedScope, dropScope) {
         // Create prefab requested!
         $rpc.call('createPrefab', draggedScope.gameObject.export(), function() {
@@ -46,7 +63,6 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
       $rpc.call('getAssetList', null, function(fileList) {
         $timeout(function() {
           for(var i=0; i < fileList.length; ++i) {
-            fileList[i].type = 'script';
             $cm.pushComponent({
               menu_label: LAU.IO.getFileNameFromPath(fileList[i].path),
               flyweight: fileList[i]

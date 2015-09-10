@@ -17,6 +17,7 @@ angular.module('lauEditor')
       mesh: {menu_label: 'Mesh', flyweight: null},
       mesh_renderer: {menu_label: 'Mesh Renderer', flyweight: null},
       script: [],
+      prefab: [],
     };
     var componentMenu = [
       componentFlyweights.camera,
@@ -36,6 +37,11 @@ angular.module('lauEditor')
       return componentFlyweights;
     }
     function pushComponent(componentWrapper) {
+      if(!componentFlyweights.hasOwnProperty(componentWrapper.flyweight.type)) {
+        console.error('Component type not implemented: '+componentWrapper.flyweight.type);
+        return;
+      }
+
       if(Array.isArray(componentFlyweights[componentWrapper.flyweight.type]))
         componentFlyweights[componentWrapper.flyweight.type].push(componentWrapper);
       else
@@ -119,7 +125,6 @@ angular.module('lauEditor')
           var compInd = findComponentByPath(data.asset.path);
 
           // TODO data.asset.type must come from the server
-          data.asset.type = 'script';
           var flyweightWrapper = {
             menu_label: LAU.IO.getFileNameFromPath(data.asset.path),
             flyweight: data.asset

@@ -115,6 +115,7 @@ class ScriptProcessor(AssetProcessor):
                 fileSymbols = fileInfo['symbols']
                 fileSymbols['path'] = self.path
                 fileSymbols['id'] = self.persistent_fields['id']
+                fileSymbols['type'] = 'script'
 
                 Utils.Console.step('Updating dependencies for '+self.path)
                 self.persistent_fields['dependencies'] = list(fileInfo['dependencies'])
