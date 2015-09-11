@@ -43,11 +43,17 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
       scope.onAssetClick = function(event, file) {
         switch(file.flyweight.type) {
           case 'prefab':
-            let prefab = new $lp.Prefab(file.flyweight.content);
+            console.log(file.flyweight);
+            let prefab = $lp.getPrefab(file.flyweight.content.instanceId);
+            if(prefab == null) {
+              prefab = $lp.createPrefabFromFlyweight(file.flyweight.content);
+            }
             $gom.selectGameObject(prefab.gameObject);
+            /*
             $timeout(function() {
               prefab.destroy();
             },6000);
+           */
             break;
           default:
             return;
@@ -56,7 +62,12 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
 
       $dm.registerAction('dragid_game_obj_hierarchy', 'dropid_project_panel', function(draggedScope, dropScope) {
         // Create prefab requested!
-        $rpc.call('createPrefab', draggedScope.gameObject.export(), function() {
+        let newPrefab = $lp.createPrefabFromGameObject(draggedScope.gameObject.instanceId);
+        draggedScope.gameObject.setPrefabParent(newPrefab.instanceId);
+        $rpc.call('createPrefab', newPrefab.export(), function(status) {
+          if(status) {
+            $rpc.call('save', $gom.serializeGameObjects(), function(status) {});
+          }
         });
       });
 

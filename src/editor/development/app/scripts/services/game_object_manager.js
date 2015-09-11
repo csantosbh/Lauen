@@ -24,6 +24,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     removeScriptFromGameObjects: removeScriptFromGameObjects,
     getMenuPosition: getMenuPosition,
     setMenuPosition: setMenuPosition,
+    getInstancesOfPrefab: getInstancesOfPrefab,
   };
 
   var _editorGameObjects; // Backup for the real gameobjects from the edit mode
@@ -165,6 +166,20 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
     parentChildren.splice(oldPos, 1);
     parentChildren.splice(newPos, 0, gameObject);
+  }
+
+  function getInstancesOfPrefab(prefabId) {
+    function recurse(gameObjs) {
+      let results = [];
+      for(let i = 0; i < gameObjs.length; ++i) {
+        if(gameObjs[i].parentPrefabId == prefabId) {
+          results.push(gameObjs[i]);
+        }
+        results.concat(recurse(gameObjs[i].children));
+      }
+      return results;
+    }
+    return recurse(gameObjects);
   }
 
   ////

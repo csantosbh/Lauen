@@ -19,6 +19,11 @@ angular.module('lauEditor')
     this.transform = new Transform(this);
     this.parent = null;
 
+    if(fields.parentPrefabId)
+      this.parentPrefabId = fields.parentPrefabId;
+    else
+      this.parentPrefabId = null;
+
     if(fields.transform != undefined) {
       this.transform.setValues(fields.transform);
     }
@@ -159,8 +164,17 @@ angular.module('lauEditor')
         instanceId: this.instanceId,
         transform: this.transform.export(),
         components: exportedComps,
-        children: children
+        children: children,
+        parentPrefabId: this.parentPrefabId,
       };
+    },
+    setPrefabParent: function(prefabId) {
+      this.parentPrefabId = prefabId;
+    },
+    syncComponentToPrefab: function(componentId, changes) {
+      let comp = this.getComponentsById(componentId)[0];
+      // TODO create a game-object specific id for components to tell duplicate components from eachother
+      comp.syncComponentToPrefab(changes);
     },
     destroy: function() {
       this.transform.destroy();

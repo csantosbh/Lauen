@@ -85,6 +85,13 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
     },
     destroy: function() {
       _freeComponentId(this.instanceId);
+    },
+    syncComponentToPrefab: function(changes) {
+      for(let i = 0; i < changes.length; ++i) {
+        let ch = changes[i];
+        if(this[ch.name] == ch.oldValue)
+          this[ch.name] = LAU.Utils.clone(ch.object[ch.name]);
+      }
     }
   };
 
