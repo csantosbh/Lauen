@@ -12,22 +12,8 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
   var currentlySelectedGameObj = null;
   var gameObjects = [];
-  var gameObjectManager = {
-    getGameObjects: getGameObjects,
-    selectGameObject: selectGameObject,
-    selectedGameObject: selectedGameObject,
-    pushGameObject: pushGameObject,
-    moveGameObjectTo: moveGameObjectTo,
-    removeGameObject: removeGameObject,
-    getGameObject: getGameObject,
-    serializeGameObjects: serializeGameObjects,
-    removeScriptFromGameObjects: removeScriptFromGameObjects,
-    getMenuPosition: getMenuPosition,
-    setMenuPosition: setMenuPosition,
-    getInstancesOfPrefab: getInstancesOfPrefab,
-  };
 
-  var _editorGameObjects; // Backup for the real gameobjects from the edit mode
+  var editorGameObjects_; // Backup for the real gameobjects from the edit mode
 
   function getGameObjects() {
     return gameObjects;
@@ -47,8 +33,8 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   }
 
   // Removes `gameObj` from whatever container it is
-  function _popGameObject(instanceId) {
-    function _recurse(objs) {
+  function popGameObject_(instanceId) {
+    function recurse_(objs) {
       // Look for game object
       for(var i = 0; i < objs.length; ++i) {
         if(objs[i].instanceId == instanceId) {
@@ -56,7 +42,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
           objs.splice(i, 1);
           return obj;
         } else {
-          var obj = _recurse(objs[i].children);
+          var obj = recurse_(objs[i].children);
           if(obj != null)
             return obj;
         }
@@ -64,11 +50,11 @@ angular.module('lauEditor').service('gameObjectManager', function () {
       return null;
     }
 
-    return _recurse(gameObjects);
+    return recurse_(gameObjects);
   }
 
   function removeGameObject(instanceId) {
-    var obj = _popGameObject(instanceId);
+    var obj = popGameObject_(instanceId);
 
     if(obj == null) {
       console.error("No game object of instance id ["+instanceId+"] to remove.");
@@ -86,7 +72,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   // Makes `gameObj` child of `destination`
   function moveGameObjectTo(gameObj, destination) {
     // First, remove `gameObj` from whatever array it is
-    if(_popGameObject(gameObj.instanceId)) {
+    if(popGameObject_(gameObj.instanceId)) {
       gameObj.setParent(destination);
       if(destination == null) {
         // Move gameObj to root node
@@ -98,13 +84,28 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   }
 
   function getGameObject(instanceId) {
-    function _recurse(objs) {
+    function recurse_(objs) {
       // Look for game object
       for(var i = 0; i < objs.length; ++i) {
         if(objs[i].instanceId == instanceId) {
           return objs[i];
         } else if(objs[i].children.length > 0) {
-          let go = _recurse(objs[i].children);
+          let go = recurse_(objs[i].children);
+          if(go != null)
+            return go;
+        }
+      }
+      return null;
+    }
+    function prefabRecurse_(prefs) {
+      for(var i in prefs) {
+        if(!prefs.hasOwnProperty(i))
+          continue;
+
+        if(prefs[i].gameObject.instanceId == instanceId) {
+          return prefs[i].gameObject;
+        } else if(prefs[i].gameObject.children.length > 0) {
+          let go = recurse_(prefs[i].gameObject.children);
           if(go != null)
             return go;
         }
@@ -112,9 +113,11 @@ angular.module('lauEditor').service('gameObjectManager', function () {
       return null;
     }
 
-    let go = _recurse(gameObjects);
+    let go = recurse_(gameObjects);
     if(go == null) {
-      console.error("Could not get game object of instance id ["+instanceId+"].");
+      go = prefabRecurse_(prefabManager.getPrefabs());
+      if(go == null)
+        console.error("Could not get game object of instance id ["+instanceId+"].");
     }
     return go;
   }
@@ -135,20 +138,20 @@ angular.module('lauEditor').service('gameObjectManager', function () {
 
   // Returns the position of the game object inside its menu
   function getMenuPosition(instanceId) {
-    function _recurse(objs) {
+    function recurse_(objs) {
       // Look for game object
       for(var i = 0; i < objs.length; ++i) {
         if(objs[i].instanceId == instanceId) {
           return i;
         } else if(objs[i].children.length > 0) {
-          let idx = _recurse(objs[i].children);
+          let idx = recurse_(objs[i].children);
           if(idx >= 0)
             return idx;
         }
       }
       return -1;
     }
-    return _recurse(gameObjects);
+    return recurse_(gameObjects);
   }
 
   function setMenuPosition(gameObject, newPos) {
@@ -169,34 +172,121 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   }
 
   function getInstancesOfPrefab(prefabId) {
-    function recurse(gameObjs) {
+    function recurse_(gameObjs) {
       let results = [];
       for(let i = 0; i < gameObjs.length; ++i) {
         if(gameObjs[i].parentPrefabId == prefabId) {
           results.push(gameObjs[i]);
         }
-        results.concat(recurse(gameObjs[i].children));
+        results = results.concat(recurse_(gameObjs[i].children));
       }
       return results;
     }
-    return recurse(gameObjects);
+    return recurse_(gameObjects);
   }
+
+  /// Prefab Manager
+  var prefabManager = (function (){
+    // TODO remove prefab when it is deleted from filesystem
+    var allPrefabs_ = {};
+    function addPrefab(prefab) {
+      allPrefabs_[prefab.instanceId] = prefab;
+    }
+    function destroyPrefab(prefabId) {
+      // TODO beware of other scenes with instances of this prefab
+      let instances = getInstancesOfPrefab(prefabId);
+
+      for(let i = 0; i < instances.length; ++i) {
+        instances[i].setPrefabParent(null);
+      }
+
+      freePrefabId(prefabId);
+      delete allPrefabs_[prefabId];
+    }
+    var prefabIds_ = new Set();
+    function allocPrefabId(requestedId) {
+      function genId() {
+        return Math.pow(2,32)*Math.random();
+      }
+
+      if(requestedId != undefined) {
+        prefabIds_.add(requestedId);
+        return requestedId;
+      } else {
+        let id = genId();
+        while(prefabIds_.has(id))
+          id = genId();
+        prefabIds_.add(id);
+
+        return id;
+      }
+    }
+    function freePrefabId(id) {
+      prefabIds_.delete(id);
+    }
+
+    function getPrefab(prefabId) {
+      if(allPrefabs_.hasOwnProperty(prefabId))
+        return allPrefabs_[prefabId];
+      else {
+        console.error('Could not find prefab of id '+prefabId);
+        return null;
+      }
+    }
+
+    function getPrefabs() {
+      return allPrefabs_;
+    }
+
+    function serializePrefabs() {
+      let serializedPrefabs = [];
+      for(var i in allPrefabs_) {
+        if(allPrefabs_.hasOwnProperty(i)) {
+          serializedPrefabs.push(allPrefabs_[i].export());
+        }
+      }
+      return serializedPrefabs;
+    }
+
+    return {
+      addPrefab: addPrefab,
+      destroyPrefab: destroyPrefab,
+      allocPrefabId: allocPrefabId,
+      getPrefab: getPrefab,
+      getPrefabs: getPrefabs,
+      serializePrefabs: serializePrefabs,
+    };
+  })();
 
   ////
   // Internal functions
   $event.listen('togglePreviewMode', function(isPreviewing) {
     currentlySelectedGameObj = null;
     if(isPreviewing) {
-      _editorGameObjects = gameObjects;
+      editorGameObjects_ = gameObjects;
       gameObjects = [];
     } else {
       for(var i = 0; i < gameObjects.length; ++i) {
         gameObjects[i].destroy();
       }
 
-      gameObjects = _editorGameObjects;
+      gameObjects = editorGameObjects_;
     }
   });
 
-  return gameObjectManager;
+  return {
+    getGameObjects: getGameObjects,
+    selectGameObject: selectGameObject,
+    selectedGameObject: selectedGameObject,
+    pushGameObject: pushGameObject,
+    moveGameObjectTo: moveGameObjectTo,
+    removeGameObject: removeGameObject,
+    getGameObject: getGameObject,
+    serializeGameObjects: serializeGameObjects,
+    removeScriptFromGameObjects: removeScriptFromGameObjects,
+    getMenuPosition: getMenuPosition,
+    setMenuPosition: setMenuPosition,
+    getInstancesOfPrefab: getInstancesOfPrefab,
+    prefabManager: prefabManager,
+  };
 });

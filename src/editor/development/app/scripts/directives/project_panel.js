@@ -6,14 +6,20 @@
  * @description
  * # projectPanel
  */
-angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauGameObject', 'dragdropManager', 'lauPrefab', function ($timeout, $gom, $cm, $lgo, $dm, $lp) {
+angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectManager', 'componentManager', 'lauGameObject', 'dragdropManager', 'sceneManager', function ($timeout, $gom, $cm, $lgo, $dm, $sm) {
   // TODO this was moved here because the RPCs are not guaranteeded to obey any
   // particular call order. Implement some order-filtering to RPC calls. Maybe a
   // 'requires' parameter that specifies its dependencies.
   function handleIOEvents(sceneData, $scope) {
     $timeout(function() {
+      // Setup prefabs
+      let prefabs = $cm.getComponents().prefab;
+      for(let i = 0; i < prefabs.length; ++i) {
+        let pf = prefabs[i].flyweight.content;
+        $lgo.createPrefabFromFlyweight(pf);
+      }
       // Setup game objects
-      for(var i = 0; i < sceneData.length; ++i) {
+      for(let i = 0; i < sceneData.length; ++i) {
         $gom.pushGameObject(new $lgo.GameObject(sceneData[i]));
       }
     });
@@ -43,17 +49,8 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
       scope.onAssetClick = function(event, file) {
         switch(file.flyweight.type) {
           case 'prefab':
-            console.log(file.flyweight);
-            let prefab = $lp.getPrefab(file.flyweight.content.instanceId);
-            if(prefab == null) {
-              prefab = $lp.createPrefabFromFlyweight(file.flyweight.content);
-            }
+            let prefab = $gom.prefabManager.getPrefab(file.flyweight.content.instanceId);
             $gom.selectGameObject(prefab.gameObject);
-            /*
-            $timeout(function() {
-              prefab.destroy();
-            },6000);
-           */
             break;
           default:
             return;
@@ -62,11 +59,14 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
 
       $dm.registerAction('dragid_game_obj_hierarchy', 'dropid_project_panel', function(draggedScope, dropScope) {
         // Create prefab requested!
-        let newPrefab = $lp.createPrefabFromGameObject(draggedScope.gameObject.instanceId);
-        draggedScope.gameObject.setPrefabParent(newPrefab.instanceId);
-        $rpc.call('createPrefab', newPrefab.export(), function(status) {
+        let go = $gom.getGameObject(draggedScope.gameObject.instanceId);
+        let newPrefab = $lgo.createPrefabFromGameObject(go);
+        go.setPrefabParent(newPrefab.instanceId);
+        $rpc.call('savePrefab', newPrefab.export(), function(status) {
           if(status) {
-            $rpc.call('save', $gom.serializeGameObjects(), function(status) {});
+            $sm.saveScene();
+          } else {
+            console.error('Could not save prefab '+newPrefab.name);
           }
         });
       });

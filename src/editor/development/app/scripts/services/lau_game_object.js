@@ -8,22 +8,38 @@
  * Service in the lauEditor.
  */
 angular.module('lauEditor')
-.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', function ($editCanvas, $cm, $hm, $gom) {
+.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', 'lauComponents', function ($editCanvas, $cm, $hm, $gom, $lc) {
   ///
   // Public GameObject API
   ///
-  function GameObject(fields, uniqueNumericId) {
+  function GameObject(fields, uniqueNumericId, isPrefab) {
     this.name = fields.name;
     this.components = [];
     this.children = [];
-    this.transform = new Transform(this);
     this.parent = null;
 
-    if(fields.parentPrefabId)
+    if(isPrefab == undefined)
+      this.isPrefab = false;
+    else
+      this.isPrefab = isPrefab;
+
+    if(uniqueNumericId != undefined) {
+      this.instanceId = uniqueNumericId;
+      this._managedId = false;
+    } else {
+      this.instanceId = _allocGameObjectId();
+      this._managedId = true;
+    }
+
+    if(fields.parentPrefabId && !isPrefab) {
       this.parentPrefabId = fields.parentPrefabId;
+    }
     else
       this.parentPrefabId = null;
 
+    ////
+    // Set component values
+    this.transform = new Transform(this);
     if(fields.transform != undefined) {
       this.transform.setValues(fields.transform);
     }
@@ -48,12 +64,10 @@ angular.module('lauEditor')
       }
     }
 
-    if(uniqueNumericId != undefined) {
-      this.instanceId = uniqueNumericId;
-      this._managedId = false;
-    } else {
-      this.instanceId = _allocGameObjectId();
-      this._managedId = true;
+    ////
+    // Synchronize components with prefab
+    if(fields.parentPrefabId && !isPrefab) {
+      this.checkPrefabSynchronization();
     }
   }
 
@@ -170,11 +184,28 @@ angular.module('lauEditor')
     },
     setPrefabParent: function(prefabId) {
       this.parentPrefabId = prefabId;
+      this.syncComponentsToPrefab();
     },
-    syncComponentToPrefab: function(componentId, changes) {
-      let comp = this.getComponentsById(componentId)[0];
-      // TODO create a game-object specific id for components to tell duplicate components from eachother
-      comp.syncComponentToPrefab(changes);
+    checkPrefabSynchronization: function() {
+      this.transform.checkPrefabSynchronization();
+      for(let i = 0; i < this.components.length; ++i) {
+        this.components[i].checkPrefabSynchronization();
+      }
+    },
+    syncComponentsToPrefab: function() {
+      this.transform.syncComponentToPrefab();
+      for(let i = 0; i < this.components.length; ++i) {
+        this.components[i].syncComponentToPrefab();
+      }
+    },
+    syncComponentToPrefab: function(componentId) {
+      if(componentId == 'transform') {
+        this.transform.syncComponentToPrefab();
+      } else {
+        // TODO create a game-object specific id for components to tell duplicate components from eachother
+        let comp = this.getComponentsById(componentId)[0];
+        comp.syncComponentToPrefab();
+      }
     },
     destroy: function() {
       this.transform.destroy();
@@ -195,6 +226,106 @@ angular.module('lauEditor')
         _freeGameObjectId(this.instanceId);
     }
   };
+
+  ///
+  // Public Game Object Prefab API
+  ///
+  function Prefab(serializedData) {
+    let $this = this;
+    this.gameObject = new GameObject(serializedData.gameObject, undefined, true);
+    this.instanceId = $gom.prefabManager.allocPrefabId(serializedData.instanceId);
+    this.name = serializedData.name;
+
+    function makeObserver(i) {
+      return function(changes) {
+        let changedComponentId;
+        if(i != 'transform') {
+          changedComponentId = $this.gameObject.components[i].flyweight.id;
+        }
+        else {
+          changedComponentId = i;
+        }
+
+        let gameObjs = $gom.getInstancesOfPrefab($this.instanceId);
+
+        for(let i = 0; i < gameObjs.length; ++i) {
+          gameObjs[i].syncComponentToPrefab(changedComponentId);
+        }
+      }
+    }
+
+    let observers_ = {};
+    function initializeWatchCallback(gameObj) {
+      // TODO watch for newly added components
+      observers_['transform'] = makeObserver('transform');
+      for(let i in gameObj.transform.fields)
+        Object.observe(gameObj.transform.fields[i], observers_['transform']);
+
+      for(let i = 0; i < gameObj.components.length; ++i) {
+        if(gameObj.components[i].hasOwnProperty('fields')) {
+          if(!observers_.hasOwnProperty(i))
+            observers_[i] = makeObserver(i);
+
+          let fields = gameObj.components[i].fields;
+          // We have to observe the whole fields object to account for changes
+          // in primitive types
+          Object.observe(fields, observers_[i]);
+          for(let f in fields) {
+            if(fields.hasOwnProperty(f) && (Array.isArray(fields[f]) || typeof(fields[f]) == 'object')) {
+              // And we have to deep watch objects/arrays
+              Object.observe(fields[f], observers_[i]);
+            }
+          }
+        }
+      }
+    }
+
+    function destroyWatchCallback(gameObj) {
+      for(let i in gameObj.transform.fields)
+        Object.unobserve(gameObj.transform.fields[i], observers_['transform']);
+
+      for(let i = 0; i < gameObj.components.length; ++i) {
+        if(gameObj.components[i].hasOwnProperty('fields') && observers_.hasOwnProperty(i)) {
+          let fields = gameObj.components[i].fields;
+          Object.unobserve(fields, observers_[i]);
+          for(let f in fields) {
+            if(fields.hasOwnProperty(f) && (Array.isArray(fields[f]) || typeof(fields[f]) == 'object')) {
+              Object.unobserve(fields[f], observers_[i]);
+            }
+          }
+        }
+      }
+    }
+
+    this.destroy = function() {
+      destroyWatchCallback(this.gameObject);
+      this.gameObject.destroy();
+      $gom.prefabManager.destroyPrefab(this.instanceId);
+    };
+
+    initializeWatchCallback(this.gameObject);
+  }
+  Prefab.prototype = {
+    export: function() {
+      return {
+        gameObject: this.gameObject.export(),
+        instanceId: this.instanceId,
+        name: this.name,
+      };
+    }
+  };
+
+  function createPrefabFromGameObject(gameObj) {
+    return createPrefabFromFlyweight({
+      gameObject: gameObj.export(),
+      name: gameObj.name
+    });
+  }
+  function createPrefabFromFlyweight(flyweight) {
+    let newPrefab = new Prefab(flyweight);
+    $gom.prefabManager.addPrefab(newPrefab);
+    return newPrefab;
+  }
 
   ///
   // Internal logic
@@ -218,98 +349,107 @@ angular.module('lauEditor')
 
   // Transform logic
   function Transform(gameObject) {
-    this.position = [0,0,0];
-    this.rotation = [0,0,0];
-    this.scale = [1,1,1];
+    this.fields = {
+      position: [0,0,0],
+      rotation: [0,0,0],
+      scale: [1,1,1],
+    };
+
+    this.resetPrefabSync = function() {
+      this.prefabSync = {
+        position: [true,true,true],
+        rotation: [true,true,true],
+        scale: [true,true,true],
+      };
+    }
+    this.resetPrefabSync();
+
     this.type = "transform";
-    this.ownerGameObject = gameObject;
+    this.parent = gameObject;
 
     if($editCanvas.isEditMode()) {
-      ////
-      // Bind transform to edit canvas
-      this.hierarchyGroup = $editCanvas.createGroup();
-      this.hierarchyGroup.add($editCanvas.createBoundingBox());
-      this._parentGroup = $editCanvas.scene;
-
-      $editCanvas.scene.add(this.hierarchyGroup);
-
       var $this = this;
-      function updatePosition(newValue) {
-        if(newValue != null)
-          $this.hierarchyGroup.position.fromArray(newValue);
-      }
-      function positionObserver(changes) {
-        var newValue = changes[changes.length-1].object;
-        updatePosition(newValue);
-      }
-      function updateRotation(newValue) {
-        if(newValue != null)
-          $this.hierarchyGroup.rotation.fromArray(newValue);
-      }
-      function rotationObserver(changes) {
-        var newValue = changes[changes.length-1].object;
-        updateRotation(newValue);
-      }
-      function updateScale(newValue) {
-        if(newValue != null)
-          $this.hierarchyGroup.scale.fromArray(newValue);
-      }
-      function scaleObserver(changes) {
-        var newValue = changes[changes.length-1].object;
-        updateScale(newValue);
-      }
-      Object.observe(this, function(changes) {
-        for(var i = 0; i < changes.length; ++i) {
-          var cng = changes[i];
-          if(cng.name == "position" && cng.type=="update") {
-            updatePosition($this.position);
-            Object.observe($this.position, positionObserver);
-          }
-          else if(cng.name == "rotation" && cng.type=="update") {
-            updateRotation($this.rotation);
-            Object.observe($this.rotation, rotationObserver);
-          }
-          else if(cng.name == "scale" && cng.type=="update") {
-            updateScale($this.scale);
-            Object.observe($this.scale, scaleObserver);
-          }
+
+      if(!this.parent.isPrefab) {
+        ////
+        // Bind transform to edit canvas
+        this.hierarchyGroup = $editCanvas.createGroup();
+        this.hierarchyGroup.add($editCanvas.createBoundingBox());
+        this._parentGroup = $editCanvas.scene;
+
+        $editCanvas.scene.add(this.hierarchyGroup);
+
+        function updatePosition(newValue) {
+          if(newValue != null)
+            $this.hierarchyGroup.position.fromArray(newValue);
         }
-      });
+        function positionObserver(changes) {
+          var newValue = changes[changes.length-1].object;
+          updatePosition(newValue);
+        }
+        function updateRotation(newValue) {
+          if(newValue != null)
+            $this.hierarchyGroup.rotation.fromArray(newValue);
+        }
+        function rotationObserver(changes) {
+          var newValue = changes[changes.length-1].object;
+          updateRotation(newValue);
+        }
+        function updateScale(newValue) {
+          if(newValue != null)
+            $this.hierarchyGroup.scale.fromArray(newValue);
+        }
+        function scaleObserver(changes) {
+          var newValue = changes[changes.length-1].object;
+          updateScale(newValue);
+        }
+        updatePosition($this.fields.position);
+        Object.observe($this.fields.position, positionObserver);
+        updateRotation($this.fields.rotation);
+        Object.observe($this.fields.rotation, rotationObserver);
+        updateScale($this.fields.scale);
+        Object.observe($this.fields.scale, scaleObserver);
+      }
 
       this._editorCommitCallback = function(field) {
         return function(oldValue, newValue) {
           $hm.pushCommand({
             _before: oldValue,
             _after: newValue,
-            _gameObj: $this.ownerGameObject.instanceId,
+            _gameObj: $this.parent.instanceId,
             undo: function() {
               var gameObj = $gom.getGameObject(this._gameObj);
-              gameObj.transform[field] = this._before;
+              LAU.Utils.deepCopy(this._before, gameObj.transform.fields[field]);
+              $this.checkPrefabFieldSynchronization(field);
             },
             redo: function() {
               var gameObj = $gom.getGameObject(this._gameObj);
-              gameObj.transform[field] = this._after;
+              LAU.Utils.deepCopy(this._after, gameObj.transform.fields[field]);
+              $this.checkPrefabFieldSynchronization(field);
             }
           });
+
+          $this.checkPrefabFieldSynchronization(field);
         };
       };
     }
   }
-  Transform.prototype = {
+  Transform.prototype = Object.create($lc.Component.prototype);
+  LAU.Utils.deepCopy({
     export: function() {
       return {
-        position: this.position,
-        rotation: this.rotation,
-        scale: this.scale
+        fields: {
+          position: this.fields.position,
+          rotation: this.fields.rotation,
+          scale: this.fields.scale,
+        }
       };
     },
     setValues: function(flyweight) {
-      this.position = LAU.Utils.clone(flyweight.position);
-      this.rotation = LAU.Utils.clone(flyweight.rotation);
-      this.scale = LAU.Utils.clone(flyweight.scale);
+      LAU.Utils.deepCopy(flyweight.fields, this.fields);
     },
     destroy: function() {
-      if($editCanvas.isEditMode()) {
+      if($editCanvas.isEditMode() && !this.parent.isPrefab) {
         this._parentGroup.remove(this.hierarchyGroup);
       }
     },
@@ -322,9 +462,11 @@ angular.module('lauEditor')
       parentGroup.add(this.hierarchyGroup);
       this._parentGroup = parentGroup;
     }
-  };
+  }, Transform.prototype);
 
   return {
-    GameObject: GameObject
+    GameObject: GameObject,
+    createPrefabFromFlyweight: createPrefabFromFlyweight,
+    createPrefabFromGameObject: createPrefabFromGameObject,
   };
 }]);

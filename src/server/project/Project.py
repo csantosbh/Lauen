@@ -145,6 +145,15 @@ class _Project:
             pass
         pass
     
+    def savePrefab(self, prefab):
+        import json
+        with open(self.getProjectFolder() + '/assets/'+prefab['name']+'.prefab', 'w') as f:
+            f.write(json.dumps(prefab))
+            return True
+            pass
+        return False
+        pass
+
     def saveCurrentScene(self, sceneData):
         import json
         if self.project_path == None:
@@ -152,9 +161,14 @@ class _Project:
             return False
 
         project_folder = os.path.dirname(self.project_path)
+        # Save game objects
         with open(project_folder + '/' + self.scenes[self.currentScene], 'w') as fhandle:
-            fhandle.write(json.dumps(sceneData))
+            fhandle.write(json.dumps(sceneData['gameObjects']))
             pass
+
+        # Save prefabs
+        for prefab in sceneData['prefabs']:
+            self.savePrefab(prefab)
 
         return True
         pass
@@ -365,6 +379,10 @@ def createNewProject(path):
 def saveCurrentScene(sceneData):
     global _currentProject
     return _currentProject.saveCurrentScene(sceneData)
+
+def savePrefab(prefab):
+    global _currentProject
+    return _currentProject.savePrefab(prefab)
 
 def loadCurrentScene():
     global _currentProject

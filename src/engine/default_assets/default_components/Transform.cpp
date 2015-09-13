@@ -6,10 +6,11 @@ using namespace Eigen;
 
 namespace lau {
 
-Transform::Transform(const rapidjson::Value& fields) :
+Transform::Transform(const rapidjson::Value& serializedTransform) :
     rotation(Quaternionf::Identity()),
     parent2world(Matrix4f::Identity()),
     affineMatrixUpToDate_(false) {
+    const rapidjson::Value& fields = serializedTransform["fields"];
     const auto& pos = fields["position"];
     const auto& rot = fields["rotation"];
     const auto& scale = fields["scale"];

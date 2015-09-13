@@ -92,7 +92,7 @@ following fields:
 
 .. code-block:: javascript
 
-    /// Game Object Prototype
+    /// Game Object Interface
     {
       components: Array[], // Array of components.
       name: "string", // Component name.
@@ -467,7 +467,7 @@ changes must be implemented:
 * Adapt the function ``createComponentFromFlyWeight``. This function creates
   javascript instances of components, which are usually added to a game object
   (either by the editor, or as requested by the previewer).
-* Implement the following prototype (change the name ``ComponentPrototype`` to
+* Implement the following interface (change the name ``ComponentPrototype`` to
   something that suits your component better):
 
 .. code-block:: javascript
@@ -490,21 +490,32 @@ changes must be implemented:
     setValues: function(flyweight), // Set its internal data from the equivalent 
                                     // fields in the flyweight. Used both for
                                     // initialization and during preview updates.
-    destroy: function() // Component destructor. Called when the component is
-                        // removed from the game object, or when the gameo bject
-                        // itself is destroyed.
+    destroy: function(), // Component destructor. Called when the component is
+                         // removed from the game object, or when the gameo bject
+                         // itself is destroyed.
+    fields: {...}, // All fields exposed to the editor must be placed inside this
+                   // object. It will be watched by prefabs, which in turn will
+                   // guarantee consistent between prefabs and concrete objects.
+    prefabSync: {...}, // For every variable inside the fields object, there must
+                       // be an equivalent element in this object of boolean
+                       // type. This is a dirty flag that tells when that
+                       // particular field is in sync with the prefab (and thus
+                       // should be updated when it is changed).
+    resetPrefabSync: function(), // Sets the prefabSync to its default values,
+                                 // with all fields assigned true.
    };
 
-* If you need to access the component from somewhere else, then make it public
-  by adding this new prototype to the object returned at the end of this file:
+* Inherit from ``Component`` using proper prototypical inheritance. The
+  ``Component`` function implements the following interface:
 
 .. code-block:: javascript
-
-  return {
-    TransformComponent: TransformComponent,
-    ...,
-    NewComponent: ComponentPrototype
-   };
+    checkPrefabSynchronization: function(), // Update its prefabSync fields,
+                                            // setting them to "true" when they
+                                            // match the prefab value, and "false"
+                                            // otherwise.
+    syncComponentToPrefab: function(), // For each field whose corresponding
+                                       // prefabSync field is "true", set its
+                                       // value to that of the prefab.
 
 .. _canvas-consistency:
 --------
