@@ -57,6 +57,8 @@ public:
     Transform transform;
 
     static const std::vector<std::shared_ptr<GameObject>>& allGameObjects();
+    static void instantiateScene(const rapidjson::Document& gameObjs);
+    static void clearScene();
 
 private:
     std::vector<std::shared_ptr<Component>> updateableComponents_;
@@ -68,6 +70,8 @@ private:
     void handleRequestedNewComponents();
     void handleRequestedDestroyedComponents();
     int getComponentByInstanceId(int componentId);
+
+    static std::vector<std::shared_ptr<GameObject>> gameObjects_;
 
 #ifdef PREVIEW_MODE
 	int gameObjectId;

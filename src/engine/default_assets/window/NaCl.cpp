@@ -22,7 +22,6 @@ NaCl::NaCl(PP_Instance instance) :
 {
     windowInstance = this;
 	this->resetAccumulatedEvents();
-    lau_internal::GameInstance = &game;
 }
 
 bool NaCl::init(int32_t new_width, int32_t new_height) {
@@ -119,6 +118,7 @@ void NaCl::DidChangeView(const pp::View& view) {
 }
 
 NaCl::~NaCl() {
+    game.terminate();
 }
 
 void NaCl::addComponent(const pp::VarDictionary& comp) {

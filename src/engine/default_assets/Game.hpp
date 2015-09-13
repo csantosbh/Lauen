@@ -23,16 +23,7 @@ public:
 
     void terminate();
 
-    const std::vector<std::shared_ptr<GameObject>>& allGameObjects() {
-        return gameObjects_;
-    }
-
 private:
-    std::vector<std::shared_ptr<GameObject>> gameObjects_;
 };
-
-namespace lau_internal {
-extern Game *GameInstance;
-} // namespace lau_internal
 
 } // namespace lau

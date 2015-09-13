@@ -1,12 +1,14 @@
 #include "GameObject.hpp"
+#include "Factories.hpp"
 #include "Component.hpp"
 #include "Peekers.hpp"
 #include "window/NaCl.hpp"
-#include "Game.hpp" // TODO remove this from here after gameObjects_ are placed in the GameObject class
 
 using namespace std;
 
 namespace lau {
+
+std::vector<std::shared_ptr<GameObject>> GameObject::gameObjects_;
 
 extern int generateInstanceId();
 
@@ -112,7 +114,7 @@ void GameObject::addComponent(const shared_ptr<Component>& component) {
 }
 
 const vector<shared_ptr<GameObject>>& GameObject::allGameObjects() {
-    return lau_internal::GameInstance->allGameObjects();
+    return gameObjects_;
 }
 
 void GameObject::handleRequestedNewComponents() {
@@ -156,5 +158,12 @@ int GameObject::getComponentByInstanceId(int id) {
     return -1;
 }
 
+void GameObject::instantiateScene(const rapidjson::Document& serializedGameObjs) {
+    gameObjects_ = Factories::gameObjectFactory(serializedGameObjs);
+}
+
+void GameObject::clearScene() {
+    gameObjects_.clear();
+}
 
 } // namespace lau

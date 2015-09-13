@@ -2,6 +2,7 @@
 #include "Factories.hpp"
 #include "GameObject.hpp"
 #include "Camera.hpp"
+#include "LauCommon.h"
 
 using namespace std;
 

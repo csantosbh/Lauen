@@ -76,11 +76,11 @@ void Desktop::loop() {
 }
 
 void Desktop::terminate() {
-    game.terminate();
     glfwSetWindowShouldClose(window, GL_TRUE);
 }
 
 Desktop::~Desktop() {
+    game.terminate();
     glfwTerminate();
 }
 

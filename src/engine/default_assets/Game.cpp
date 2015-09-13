@@ -1,17 +1,13 @@
 #include "Game.hpp"
-#include "Factories.hpp"
 #include "utils/IO.h"
 #include "LauCommon.h"
 #include "default_components/Camera.hpp"
 #include "window/Screen.hpp"
+#include "GameObject.hpp"
 
 namespace lau {
 
 using namespace std;
-
-namespace lau_internal {
-Game *GameInstance;
-} // namespace lau_internal
 
 Game::Game() {
 }
@@ -25,11 +21,7 @@ void Game::init(int windowWidth, int windowHeight) {
         fileData.begin()->second.push_back('\0');
         rapidjson::Document serializedGameObjects;
         serializedGameObjects.Parse((char*)(fileData.begin()->second.data()));
-        // TODO move gameObjects_ to the GameObject class as a static field.
-        // Let it manage the collection of game objects. Change the Factories
-        // to comply with a friendly API for instantiating game objects so they
-        // can be instantiated here.
-        gameObjects_ = Factories::gameObjectFactory(serializedGameObjects);
+        GameObject::instantiateScene(serializedGameObjects);
     });
 }
 
@@ -45,12 +37,13 @@ void Game::draw(double temporalAlpha) {
 }
 
 void Game::update(double dt) {
-    for(auto& gameObject: gameObjects_) {
+    for(auto& gameObject: GameObject::allGameObjects()) {
         gameObject->update(dt);
     }
 }
 
 void Game::terminate() {
+    GameObject::clearScene();
 }
 
 } // namespace lau
