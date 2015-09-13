@@ -136,13 +136,13 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
             undo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
-              LAU.Utils.deepCopy(this._before, comp.fields[field]);
+              comp.fields[field] = this._before;
               $this.checkPrefabFieldSynchronization(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
-              LAU.Utils.deepCopy(this._after, comp.fields[field]);
+              comp.fields[field] = this._after;
               $this.checkPrefabFieldSynchronization(field);
             }
           });

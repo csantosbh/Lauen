@@ -6,7 +6,7 @@
  * @description
  * # gameObjectEditor
  */
-angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', 'historyManager', 'dragdropManager', function ($gom, $cm, $lauComps, $hm, $dm) {
+angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 'componentManager', 'lauComponents', 'historyManager', 'dragdropManager', function ($gom, $cm, $lc, $hm, $dm) {
   function setupComponentMenu($scope) {
     $scope.gameObjectEditor = {
       componentMenu: $cm.getComponentMenu(),
@@ -27,7 +27,7 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
         if($gom.selectedGameObject() < 0) return;
 
         var currentGameObj = $gom.selectedGameObject();
-        var componentData = $lauComps.createComponentFromFlyWeight(currentGameObj, eventData.flyweight);
+        var componentData = $lc.createComponentFromFlyWeight(currentGameObj, eventData.flyweight);
 
         // Undo/redo support
         $hm.pushCommand({
@@ -40,7 +40,7 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
           },
           redo: function() {
             let gameObj = $gom.getGameObject(this._gameObjId);
-            let remadeComp = $lauComps.createComponentFromFlyWeight(gameObj, this._compFlyweight, this._componentId);
+            let remadeComp = $lc.createComponentFromFlyWeight(gameObj, this._compFlyweight, this._componentId);
             gameObj.addComponent(remadeComp);
           }
         });

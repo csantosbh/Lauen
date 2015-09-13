@@ -79,13 +79,6 @@ angular.module('lauEditor').service('componentManager', ['$timeout', 'gameObject
       for(var c = gameObj.components.length-1; c >= 0; --c) {
         var comp = gameObj.components[c];
         if(comp.type=='script' && comp.flyweight.path == scriptFlyweight.path) {
-          // Backup original data
-          //var componentBackup = comp.export();
-          // Update flyweight
-          //gameObj.components[c] = $lauComps.createComponentFromFlyWeight(gameObj, scriptFlyweight, componentBackup.instanceId);
-          // Restore data
-          //gameObj.components[c].flyweight = scriptFlyweight;
-          //gameObj.components[c].setValues(comp.export());
           gameObj.components[c].refreshFlyweight(scriptFlyweight);
         }
       }
