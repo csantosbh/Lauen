@@ -12,22 +12,6 @@ angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$
     templateUrl: 'views/directives/hierarchy_level.html',
     link: function (scope, element, attrs) {
       scope.selectGameObject = function(event, gameObj) {
-        let gameObjBefore = $gom.selectedGameObject();
-        $hm.pushCommand({
-          _selectedGameObjBefore: gameObjBefore==null?null:gameObjBefore.instanceId,
-          _selectedGameObjAfter: gameObj==null?null:gameObj.instanceId,
-          redo: function() {
-            if(this._selectedGameObjAfter != null)
-              $gom.selectGameObject($gom.getGameObject(this._selectedGameObjAfter));
-          },
-          undo: function() {
-            if(this._selectedGameObjBefore != null)
-              $gom.selectGameObject($gom.getGameObject(this._selectedGameObjBefore));
-          },
-          settings: {
-            passthrough: true
-          }
-        });
         $gom.selectGameObject(gameObj);
 
         event.preventDefault();
@@ -62,6 +46,31 @@ angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$
         $dm.dispatchAction(draggedElement, scope, 'dropid_game_obj_hierarchy');
       }
       scope.dragid = 'dragid_game_obj_hierarchy';
+
+      $dm.registerAction('dragid_project_panel', 'dropid_game_obj_hierarchy', function(draggedScope, dropScope) {
+        let flyweight = draggedScope.file.flyweight;
+        if(flyweight.type == 'prefab') {
+          let prefab = $gom.prefabManager.getPrefab(flyweight.content.instanceId);
+          let gameObj = prefab.instantiate();
+
+          // Handle undo/redo
+          $hm.pushCommand({
+            _instanceId: gameObj.instanceId,
+            _prefabId: flyweight.content.instanceId,
+            undo: function() {
+              if(this._instanceId)
+                $gom.removeGameObject(this._instanceId);
+            },
+            redo: function() {
+              if($gom.prefabManager.prefabExists(this._prefabId)) {
+                let prefab = $gom.prefabManager.getPrefab(this._prefabId);
+                prefab.instantiate(this._instanceId);
+              } else this._instanceId = null;
+            }
+          });
+
+        }
+      });
 
       if (angular.isArray(scope.gameObject.children)) {
         var nestedElement = angular.element('<hierarchy-level level="level+1" ng-repeat="obj in gameObject.children" history-handler-callback="historyHandlerCallback" game-object="obj"></hierarchy-level>');

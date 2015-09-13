@@ -8,7 +8,7 @@
  * Service in the lauEditor.
  */
 angular.module('lauEditor')
-.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', 'lauComponents', function ($editCanvas, $cm, $hm, $gom, $lc) {
+.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', 'lauComponents', '$rootScope', function ($editCanvas, $cm, $hm, $gom, $lc, $rootScope) {
   ///
   // Public GameObject API
   ///
@@ -31,7 +31,7 @@ angular.module('lauEditor')
       this._managedId = true;
     }
 
-    if(fields.parentPrefabId && !isPrefab) {
+    if(fields.parentPrefabId && $gom.prefabManager.prefabExists(fields.parentPrefabId)) {
       this.parentPrefabId = fields.parentPrefabId;
     }
     else
@@ -370,6 +370,12 @@ angular.module('lauEditor')
         name: this.name,
       };
     },
+    instantiate: function(uniqueId) {
+      let gameObj = new GameObject(this.gameObject.export(), uniqueId);
+      $gom.pushGameObject(gameObj);
+      gameObj.setPrefabParent(this.instanceId);
+      return gameObj;
+    }
   };
 
   function createPrefabFromGameObject(gameObj) {

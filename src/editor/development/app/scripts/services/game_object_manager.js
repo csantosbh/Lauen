@@ -7,7 +7,7 @@
  * # gameObjectManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('gameObjectManager', function () {
+angular.module('lauEditor').service('gameObjectManager', ['historyManager', function ($hm) {
   // AngularJS will instantiate a singleton by calling "new" on this function
 
   var currentlySelectedGameObj = null;
@@ -20,6 +20,24 @@ angular.module('lauEditor').service('gameObjectManager', function () {
   }
 
   function selectGameObject(gameObj) {
+    if(gameObj != null) {
+      let gameObjBefore = selectedGameObject();
+      $hm.pushCommand({
+        _selectedGameObjBefore: gameObjBefore==null?null:gameObjBefore.instanceId,
+        _selectedGameObjAfter: gameObj==null?null:gameObj.instanceId,
+        redo: function() {
+          if(this._selectedGameObjAfter != null)
+            currentlySelectedGameObj = getGameObject(this._selectedGameObjAfter);
+        },
+        undo: function() {
+          if(this._selectedGameObjBefore != null)
+            currentlySelectedGameObj = getGameObject(this._selectedGameObjBefore);
+        },
+        settings: {
+          passthrough: true
+        }
+      });
+    }
     currentlySelectedGameObj = gameObj;
   }
   function selectedGameObject() {
@@ -229,9 +247,13 @@ angular.module('lauEditor').service('gameObjectManager', function () {
       if(allPrefabs_.hasOwnProperty(prefabId))
         return allPrefabs_[prefabId];
       else {
-        console.error('Could not find prefab of id '+prefabId);
+        console.error('Could not find prefab of id ['+prefabId+']');
         return null;
       }
+    }
+
+    function prefabExists(prefabId) {
+      return allPrefabs_.hasOwnProperty(prefabId);
     }
 
     function getPrefabs() {
@@ -252,6 +274,7 @@ angular.module('lauEditor').service('gameObjectManager', function () {
       addPrefab: addPrefab,
       destroyPrefab: destroyPrefab,
       allocPrefabId: allocPrefabId,
+      prefabExists: prefabExists,
       getPrefab: getPrefab,
       getPrefabs: getPrefabs,
       serializePrefabs: serializePrefabs,
@@ -289,4 +312,4 @@ angular.module('lauEditor').service('gameObjectManager', function () {
     getInstancesOfPrefab: getInstancesOfPrefab,
     prefabManager: prefabManager,
   };
-});
+}]);
