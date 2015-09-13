@@ -7,7 +7,7 @@
  * # gameObjectManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('gameObjectManager', ['historyManager', function ($hm) {
+angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'editCanvasManager', function ($hm, $editCanvas) {
   // AngularJS will instantiate a singleton by calling "new" on this function
 
   var currentlySelectedGameObj = null;
@@ -22,21 +22,23 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', func
   function selectGameObject(gameObj) {
     if(gameObj != null) {
       let gameObjBefore = selectedGameObject();
-      $hm.pushCommand({
-        _selectedGameObjBefore: gameObjBefore==null?null:gameObjBefore.instanceId,
-        _selectedGameObjAfter: gameObj==null?null:gameObj.instanceId,
-        redo: function() {
-          if(this._selectedGameObjAfter != null)
-            currentlySelectedGameObj = getGameObject(this._selectedGameObjAfter);
-        },
-        undo: function() {
-          if(this._selectedGameObjBefore != null)
-            currentlySelectedGameObj = getGameObject(this._selectedGameObjBefore);
-        },
-        settings: {
-          passthrough: true
-        }
-      });
+      if($editCanvas.isEditMode()) {
+        $hm.pushCommand({
+          _selectedGameObjBefore: gameObjBefore==null?null:gameObjBefore.instanceId,
+          _selectedGameObjAfter: gameObj==null?null:gameObj.instanceId,
+          redo: function() {
+            if(this._selectedGameObjAfter != null)
+              currentlySelectedGameObj = getGameObject(this._selectedGameObjAfter);
+          },
+          undo: function() {
+            if(this._selectedGameObjBefore != null)
+              currentlySelectedGameObj = getGameObject(this._selectedGameObjBefore);
+          },
+          settings: {
+            passthrough: true
+          }
+        });
+      }
     }
     currentlySelectedGameObj = gameObj;
   }

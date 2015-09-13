@@ -7,7 +7,7 @@
  * # historyManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('historyManager', ['$timeout', '$rootScope', function ($timeout, $rootScope) {
+angular.module('lauEditor').service('historyManager', ['$timeout', '$rootScope', 'editCanvasManager', function ($timeout, $rootScope, $editCanvas) {
   var history_length = 80;
 
   // TODO move the keystroke listeners to some keyhandler service
@@ -48,6 +48,9 @@ angular.module('lauEditor').service('historyManager', ['$timeout', '$rootScope',
   }
 
   function performUndo() {
+    if(!$editCanvas.isEditMode())
+      return;
+
     $timeout(function() {
       function _undo() {
         if(currentCommand >= 0) {
@@ -66,6 +69,9 @@ angular.module('lauEditor').service('historyManager', ['$timeout', '$rootScope',
     });
   }
   function performRedo() {
+    if(!$editCanvas.isEditMode())
+      return;
+
     $timeout(function() {
       function _redo() {
         if(currentCommand<commands.length-1) {
