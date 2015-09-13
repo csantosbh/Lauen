@@ -13,8 +13,7 @@ namespace lau {
 std::set<Camera*, bool(*)(const Camera*,const Camera*)> Camera::cameras_ STATIC_INITIALIZER_GROUP_A (CameraPriorityComparison);
 const Camera* Camera::current = nullptr;
 
-Camera::Camera(const rapidjson::Value& serializedCamera) {
-    const rapidjson::Value& fields = serializedCamera["fields"];
+Camera::Camera(const rapidjson::Value& fields) {
     nearPlane_ = static_cast<float>(fields["near"].GetDouble());
     farPlane_ = static_cast<float>(fields["far"].GetDouble());
     nearPlaneWidth_ = static_cast<float>(fields["width"].GetDouble());

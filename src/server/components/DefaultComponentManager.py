@@ -21,7 +21,7 @@ _defaultComponents = {
         'fields': {
             'near': 1.0,
             'far': 1000.0,
-            'width': 100.0,
+            'width': 1.0,
             'priority': 0.0
         }
     },

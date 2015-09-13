@@ -274,6 +274,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
       return {
         type: this.flyweight.type,
         id: this.flyweight.id,
+        fields: {},
         instanceId: this.instanceId,
       };
     },
