@@ -23,6 +23,10 @@ angular.module('lauEditor')
   return {
     restrict: 'E',
     link: function postLink(scope, element) {
+      if(!scope.component.flyweight.types.hasOwnProperty(scope.fieldName)) {
+        console.error('Requested non-existent field type: [' + scope.fieldName + ']');
+      }
+
       $templateRequest(getTemplateName(scope.component.flyweight.types[scope.fieldName])).then(function(template){
         element.html(template);
         $compile(element.contents())(scope);

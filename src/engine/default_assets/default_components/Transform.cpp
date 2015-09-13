@@ -72,9 +72,11 @@ void Transform::serializeState() {
 		scale.Set(i, this->scale[i]);
 	}
 
-	currentState_.Set("position", pos);
-	currentState_.Set("scale", scale);
-	currentState_.Set("rotation", rot);
+    pp::VarDictionary fields;
+	fields.Set("position", pos);
+	fields.Set("scale", scale);
+	fields.Set("rotation", rot);
+    currentState_.Set("fields", fields);
 }
 #endif
 
