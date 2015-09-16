@@ -7,7 +7,7 @@
  * # lauComponents
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'historyManager', 'gameObjectManager', function ($editCanvas, $hm, $gom) {
+angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'editorStateManager', 'historyManager', 'gameObjectManager', function ($editCanvas, $esm, $hm, $gom) {
   // Return default initial value for each field type
 
   ///
@@ -123,7 +123,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
     this.parent = gameObject;
 
     // TODO add visual interpretation of camera
-    if($editCanvas.isEditMode()) {
+    if($esm.isEditMode()) {
       var $this = this;
 
       this._editorCommitCallback = function(field) {
@@ -196,7 +196,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
 
     this.instanceId = _allocComponentId(instanceId);
 
-    if($editCanvas.isEditMode()) {
+    if($esm.isEditMode()) {
       ////
       // Bind to edit canvas
       var $this = this;
@@ -246,7 +246,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
       this.fields.mesh = flyweight.fields.mesh;
     },
     destroy: function() {
-      if($editCanvas.isEditMode()) {
+      if($esm.isEditMode()) {
         // Remove this mesh from the hierarchy that groups everything from this game object
         this.parent.transform.hierarchyGroup.remove(this.meshGeometry);
       }
@@ -262,7 +262,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
 
     this.instanceId = _allocComponentId(instanceId);
 
-    if($editCanvas.isEditMode()) {
+    if($esm.isEditMode()) {
       ////
       // Bind to edit canvas
       this.updateModels();
@@ -316,7 +316,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'hist
 
     this.instanceId = _allocComponentId(instanceId);
 
-    if($editCanvas.isEditMode()) {
+    if($esm.isEditMode()) {
       var $this = this;
 
       this._editorCommitCallback = function(field) {

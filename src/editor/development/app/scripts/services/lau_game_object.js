@@ -8,7 +8,7 @@
  * Service in the lauEditor.
  */
 angular.module('lauEditor')
-.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', 'lauComponents', '$rootScope', function ($editCanvas, $cm, $hm, $gom, $lc, $rootScope) {
+.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', 'lauComponents', 'editorStateManager', function ($editCanvas, $cm, $hm, $gom, $lc, $esm) {
   ///
   // Public GameObject API
   ///
@@ -154,7 +154,7 @@ angular.module('lauEditor')
       if(parentGameObj != null)
         parentGameObj._addChild(this);
 
-      if($editCanvas.isEditMode()) {
+      if($esm.isEditMode()) {
         this.transform.setHierarchyParent(parentGameObj);
       }
 
@@ -430,14 +430,16 @@ angular.module('lauEditor')
     this.type = "transform";
     this.parent = gameObject;
 
-    if($editCanvas.isEditMode()) {
+    if($esm.isEditMode()) {
       var $this = this;
 
       if(!this.parent.isPrefab) {
         ////
         // Bind transform to edit canvas
         this.hierarchyGroup = $editCanvas.createGroup();
-        this.hierarchyGroup.add($editCanvas.createBoundingBox());
+        this.translateHandle = $editCanvas.createBoundingBox();
+        this.translateHandle.__lauGameObject = this.parent;
+        this.hierarchyGroup.add(this.translateHandle);
         this._parentGroup = $editCanvas.scene;
 
         $editCanvas.scene.add(this.hierarchyGroup);
@@ -512,7 +514,7 @@ angular.module('lauEditor')
       LAU.Utils.deepCopy(flyweight.fields, this.fields);
     },
     destroy: function() {
-      if($editCanvas.isEditMode() && !this.parent.isPrefab) {
+      if($esm.isEditMode() && !this.parent.isPrefab) {
         this._parentGroup.remove(this.hierarchyGroup);
       }
     },

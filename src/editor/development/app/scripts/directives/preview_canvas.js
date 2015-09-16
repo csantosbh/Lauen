@@ -7,7 +7,7 @@
  * # previewCanvas
  */
 angular.module('lauEditor')
-.directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'componentManager', 'editCanvasManager', function ($timeout, $gom, $lgo, $cm, $editCanvas) {
+.directive('previewCanvas', ['$timeout', 'gameObjectManager', 'lauGameObject', 'componentManager', 'editorStateManager', function ($timeout, $gom, $lgo, $cm, $esm) {
   return {
     template: '<embed class="inner-canvas" src="http://localhost:9002/lau_canvas.nmf" type="application/x-pnacl" />',
     restrict: 'E',
@@ -70,7 +70,7 @@ angular.module('lauEditor')
         // Check if the edit mode is still enabled,
         // to avoid race conditions.
         $timeout(function() {
-          if(!$editCanvas.isEditMode()) {
+          if(!$esm.isEditMode()) {
             processMessage();
           }
         });
@@ -81,13 +81,13 @@ angular.module('lauEditor')
       scope.previewCanvas = {
         toggleEditMode: function() {
           if(!_toggleRequested) {
-            if($editCanvas.isEditMode() == true) {
+            if($esm.isEditMode() == true) {
               _toggleRequested = true;
               $rpc.call('previewGame', null, function(status) {
                 $timeout(function() {
                   $event.broadcast('togglePreviewMode', true);
                   console.log('build status: ' + status);
-                  $editCanvas.disableEditMode();
+                  $esm.disableEditMode();
                   _toggleRequested = false;
                 });
               });
@@ -96,7 +96,7 @@ angular.module('lauEditor')
               $timeout(function() {
                 $event.broadcast('togglePreviewMode', false);
                 _toggleRequested = false;
-                $editCanvas.enableEditMode();
+                $esm.enableEditMode();
               });
             }
           }
@@ -104,7 +104,7 @@ angular.module('lauEditor')
       }
       Object.defineProperty(scope.previewCanvas, '_previewToggleMode', {
         get: function() {
-          return !$editCanvas.isEditMode();
+          return !$esm.isEditMode();
         },
         set: function(v) {},
       });

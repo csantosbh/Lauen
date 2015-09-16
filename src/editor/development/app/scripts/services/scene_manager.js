@@ -23,6 +23,6 @@ angular.module('lauEditor').service('sceneManager', ['gameObjectManager', functi
   }
 
   return {
-    saveScene: saveScene
+    saveScene: saveScene,
   };
 }]);

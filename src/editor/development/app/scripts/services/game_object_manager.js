@@ -7,7 +7,7 @@
  * # gameObjectManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'editCanvasManager', function ($hm, $editCanvas) {
+angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'editorStateManager', function ($hm, $esm) {
   // AngularJS will instantiate a singleton by calling "new" on this function
 
   var currentlySelectedGameObj = null;
@@ -22,7 +22,7 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'edi
   function selectGameObject(gameObj) {
     if(gameObj != null) {
       let gameObjBefore = selectedGameObject();
-      if($editCanvas.isEditMode()) {
+      if($esm.isEditMode()) {
         $hm.pushCommand({
           _selectedGameObjBefore: gameObjBefore==null?null:gameObjBefore.instanceId,
           _selectedGameObjAfter: gameObj==null?null:gameObj.instanceId,
