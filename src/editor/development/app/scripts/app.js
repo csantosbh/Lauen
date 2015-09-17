@@ -20,6 +20,7 @@ angular
     'ngTouch',
     'ngDialog',
     'ngDragDrop',
+    'ui.bootstrap',
   ])
   .config(function ($routeProvider) {
     $routeProvider

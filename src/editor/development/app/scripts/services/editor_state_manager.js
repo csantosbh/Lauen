@@ -24,5 +24,6 @@ angular.module('lauEditor').service('editorStateManager', function () {
     isEditMode: isEditMode,
     disableEditMode: disableEditMode,
     enableEditMode: enableEditMode,
+    editCanvasInteraction: {mode: 'translate'},
   };
 });

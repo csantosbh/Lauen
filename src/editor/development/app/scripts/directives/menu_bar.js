@@ -6,7 +6,7 @@
  * @description
  * # menuBar
  */
-angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', 'gameObjectManager', 'sceneManager', function ($timeout, $dialog, $gom, $sm) {
+angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', 'gameObjectManager', 'sceneManager', 'editorStateManager', function ($timeout, $dialog, $gom, $sm, $esm) {
   return {
     templateUrl: 'views/directives/menu_bar.html',
     restrict: 'E',
@@ -69,6 +69,7 @@ angular.module('lauEditor').directive('menuBar', ['$timeout', 'ngDialog', 'gameO
       };
 
       // Internal fields
+      scope.editCanvasInteraction=$esm.editCanvasInteraction;
       scope.menuBar._requestBuildCompPlatform='linux';
       scope.menuBar._requestBuildCompMode='RELEASE';
     }

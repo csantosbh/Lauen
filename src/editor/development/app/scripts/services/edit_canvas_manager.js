@@ -7,7 +7,7 @@
  * # editCanvasManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '$timeout', function ($gom, $timeout) {
+angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '$timeout', 'editorStateManager', function ($gom, $timeout, $esm) {
   ////
   // Public fields
   var scene = new THREE.Scene();
@@ -82,7 +82,43 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     var pivot_distance = 1000.00;
     var translate_sensitivity = 3.0;
 
-    function translateObject(object) {
+    ////
+    // Object handles
+    //
+    // Translate
+    function translateObject(threeObject) {
+      let object = threeObject.object.__lauGameObject;
+      return {
+        begin: function() {
+          let position = object.transform.fields.position;
+          this._initialPosition = LAU.Utils.clone(position);
+        },
+        move: function(moveE) {
+          var cameraQuat = camera.getWorldQuaternion();
+          var X = new THREE.Vector3(1,0,0).applyQuaternion(cameraQuat);
+          var Y = new THREE.Vector3(0,1,0).applyQuaternion(cameraQuat);
+
+          X.multiplyScalar(moveE.movementX * translate_sensitivity);
+          Y.multiplyScalar(-moveE.movementY * translate_sensitivity);
+          let displacement = X.add(Y);
+
+          $timeout(function() {
+            let position = object.transform.fields.position;
+            position[0] += displacement.x;
+            position[1] += displacement.y;
+            position[2] += displacement.z;
+          });
+        },
+        end: function() {
+          let position = LAU.Utils.clone(object.transform.fields.position);
+          object.transform._editorCommitCallback('position')(this._initialPosition, position);
+        }
+      }
+    }
+    //
+    // Rotate
+    function rotateObject(threeObject) {
+      let object = threeObject.object.__lauGameObject;
       return {
         begin: function() {
           let position = object.transform.fields.position;
@@ -111,6 +147,45 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
       }
     }
 
+    //
+    // Scale
+    function scaleObject(threeObject) {
+      let object = threeObject.object.__lauGameObject;
+      let scale_sensitivity = 0.1;
+      return {
+        begin: function() {
+          let scale = object.transform.fields.scale;
+          this._initialScale = LAU.Utils.clone(scale);
+        },
+        move: function(moveE) {
+          var cameraQuat = camera.getWorldQuaternion();
+          var X = new THREE.Vector3(1,0,0).applyQuaternion(cameraQuat);
+          var Y = new THREE.Vector3(0,1,0).applyQuaternion(cameraQuat);
+
+          let rot = new THREE.Quaternion().setFromEuler(threeObject.object.parent.rotation);
+          X.applyQuaternion(rot);
+          Y.applyQuaternion(rot);
+
+          X.multiplyScalar(moveE.movementX * scale_sensitivity);
+          Y.multiplyScalar(-moveE.movementY * scale_sensitivity);
+          let displacement = X.add(Y);
+
+          $timeout(function() {
+            let scale = object.transform.fields.scale;
+            scale[0] += displacement.x;
+            scale[1] += displacement.y;
+            scale[2] += displacement.z;
+          });
+        },
+        end: function() {
+          let scale = LAU.Utils.clone(object.transform.fields.scale);
+          object.transform._editorCommitCallback('scale')(this._initialScale, scale);
+        }
+      }
+    }
+
+    ////
+    // Camera handles
     let translateCamera = {
       move: function(moveE) {
         var cameraQuat = camera.getWorldQuaternion();
@@ -164,7 +239,22 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
           let hitObjs = getObjectsUnderCursor();
           if(hitObjs.length == 0)
             return;
-          eventHandler = translateObject(hitObjs[0].object.__lauGameObject);
+          $timeout(function(){
+            // Select the clicked game object
+            $gom.selectGameObject(hitObjs[0].object.__lauGameObject);
+          });
+
+          switch($esm.editCanvasInteraction.mode) {
+            case 'translate':
+              eventHandler = translateObject(hitObjs[0]);
+            break;
+            case 'rotate':
+              eventHandler = rotateObject(hitObjs[0]);
+            break;
+            case 'scale':
+              eventHandler = scaleObject(hitObjs[0]);
+            break;
+          }
           break;
         case 1: // Middle
           eventHandler = translateCamera;
