@@ -60,6 +60,9 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
     transclude: true,
     link: function postLink(scope, element) {
       setupComponentMenu(scope);
+      scope.doBlur = function(event) {
+        event.target.blur();
+      }
     },
   };
 }]);

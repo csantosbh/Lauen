@@ -1,4 +1,4 @@
-<div><b>{{gameObjectEditor.selectedGameObject().instanceId}}</b></div>
+<input ng-if="gameObjectEditor.selectedGameObject()!=null" ng-model="gameObjectEditor.selectedGameObject().name" style="width: 100%" ng-enter="doBlur($event)" />
 <component-editor ng-if="gameObjectEditor.selectedGameObject()!=null" component="gameObjectEditor.selectedGameObject().transform"></component-editor>
 <component-editor ng-repeat="component in gameObjectEditor.selectedGameObject().components" component="component"></component-editor>
 <div style="width: 100%; position: relative; height: 200px; display: inline-block;"><mmenu elements="gameObjectEditor.componentMenu" callback="gameObjectEditor._menuPickup"></mmenu></div>

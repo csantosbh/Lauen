@@ -7,6 +7,10 @@ body {
   padding: 0px;
 }
 
+* {
+  outline: 0;
+}
+
 .scroll-y {
   overflow-y: scroll;
 }
