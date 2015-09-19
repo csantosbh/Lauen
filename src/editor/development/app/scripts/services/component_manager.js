@@ -17,9 +17,11 @@ angular.module('lauEditor').service('componentManager', ['$timeout', 'gameObject
     mesh_renderer: {menu_label: 'Mesh Renderer', flyweight: null},
     script: [],
     prefab: [],
+    light: {menu_label: 'Light', flyweight: null},
   };
   var componentMenu = [
     componentFlyweights.camera,
+    componentFlyweights.light,
     {menu_label: 'Meshes', children: [
       componentFlyweights.mesh,
       componentFlyweights.mesh_renderer,

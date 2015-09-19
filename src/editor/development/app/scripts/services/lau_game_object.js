@@ -235,6 +235,24 @@ angular.module('lauEditor')
 
       if(this._managedId)
         _freeGameObjectId(this.instanceId);
+    },
+    _nameCommitCallback: function() {
+      var $this = this;
+      return function(oldValue, newValue) {
+        $hm.pushCommand({
+          _before: oldValue,
+          _after: newValue,
+          _gameObj: $this.instanceId,
+          undo: function() {
+            var gameObj = $gom.getGameObject(this._gameObj);
+            gameObj.name = this._before;
+          },
+          redo: function() {
+            var gameObj = $gom.getGameObject(this._gameObj);
+            gameObj.name = this._after;
+          }
+        });
+      };
     }
   };
 

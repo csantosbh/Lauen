@@ -17,7 +17,6 @@ _defaultComponents = {
         'id': 0,
         'type': 'camera', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
         'path': 'default_components/Camera.hpp',
-        'full_class_name': 'lau::Camera',
         'fields': {
             'near': 1.0,
             'far': 1000.0,
@@ -29,7 +28,6 @@ _defaultComponents = {
         'id': 1,
         'type': 'mesh', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
         'path': 'default_components/Mesh.hpp',
-        'full_class_name': 'lau::Mesh',
         'fields': {
             'mesh': 'default_assets/default_components/primitive_meshes/Cube.lmf',
         }
@@ -38,8 +36,15 @@ _defaultComponents = {
         'id': 2,
         'type': 'mesh_renderer', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
         'path': 'default_components/MeshRenderer.hpp',
-        'full_class_name': 'lau::MeshRenderer',
         'fields': { }
+    },
+    'light': {
+        'id': 3,
+        'type': 'light', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
+        'path': 'default_components/Light.hpp',
+        'fields': {
+            'color': 0xffffff
+        }
     }
 }
 
