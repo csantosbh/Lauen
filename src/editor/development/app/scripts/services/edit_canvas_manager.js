@@ -52,7 +52,7 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     intersections.sort(function(a,b) {
       return a.distance>b.distance;
     });
-    
+
     return intersections;
   }
 
@@ -119,30 +119,43 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     // Rotate
     function rotateObject(threeObject) {
       let object = threeObject.object.__lauGameObject;
+      let rotation_sensitivity = 0.01;
+      let radius = (new THREE.Vector3()).subVectors(threeObject.point, threeObject.object.parent.position);
       return {
         begin: function() {
-          let position = object.transform.fields.position;
-          this._initialPosition = LAU.Utils.clone(position);
+          let rotation = object.transform.fields.rotation;
+          this._initialRotation = LAU.Utils.clone(rotation);
         },
         move: function(moveE) {
           var cameraQuat = camera.getWorldQuaternion();
           var X = new THREE.Vector3(1,0,0).applyQuaternion(cameraQuat);
           var Y = new THREE.Vector3(0,1,0).applyQuaternion(cameraQuat);
 
-          X.multiplyScalar(moveE.movementX * translate_sensitivity);
-          Y.multiplyScalar(-moveE.movementY * translate_sensitivity);
+          let objRot = new THREE.Quaternion().setFromEuler(threeObject.object.parent.rotation);
+
+          X.multiplyScalar(moveE.movementX);
+          Y.multiplyScalar(-moveE.movementY);
           let displacement = X.add(Y);
+          let normRadius = (new THREE.Vector3(radius.x,radius.y,radius.z)).normalize();
+          normRadius.multiplyScalar(-1);
+          let axis = (new THREE.Vector3()).crossVectors(displacement, normRadius);
+          axis.normalize();
+          let angle = rotation_sensitivity*Math.sqrt(moveE.movementX*moveE.movementX+moveE.movementY*moveE.movementY);
+          let newRot = new THREE.Quaternion().setFromAxisAngle(axis, angle);
+          let rotProd = (new THREE.Quaternion()).multiplyQuaternions(newRot, objRot);
+          let newEuler = (new THREE.Euler()).setFromQuaternion(rotProd);
+          radius.applyQuaternion(newRot);
 
           $timeout(function() {
-            let position = object.transform.fields.position;
-            position[0] += displacement.x;
-            position[1] += displacement.y;
-            position[2] += displacement.z;
+            let objRot = object.transform.fields.rotation;
+            objRot[0] = newEuler.x;
+            objRot[1] = newEuler.y;
+            objRot[2] = newEuler.z;
           });
         },
         end: function() {
-          let position = LAU.Utils.clone(object.transform.fields.position);
-          object.transform._editorCommitCallback('position')(this._initialPosition, position);
+          let rotation = LAU.Utils.clone(object.transform.fields.rotation);
+          object.transform._editorCommitCallback('rotation')(this._initialRotation, rotation);
         }
       }
     }
