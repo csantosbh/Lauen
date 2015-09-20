@@ -291,6 +291,51 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     }
   }, MeshRendererComponent.prototype);
 
+  // Light component
+  function LightComponent(gameObject, componentFlyWeight, instanceId) {
+    this.type = 'light';
+    this.flyweight = componentFlyWeight;
+    this.parent = gameObject;
+
+    this.instanceId = _allocComponentId(instanceId);
+
+    this.fields = {
+      color: componentFlyWeight.fields.color
+    };
+
+    if($esm.isEditMode()) {
+      ////
+      // Bind to edit canvas
+      this.updateModels();
+    }
+  }
+  LightComponent.prototype = Object.create(Component.prototype);
+  LAU.Utils.deepCopy({
+    export: function() {
+      return {
+        type: this.flyweight.type,
+        id: this.flyweight.id,
+        fields: {
+          color: this.fields.color,
+        },
+        instanceId: this.instanceId,
+      };
+    },
+    setValues: function(flyweight) {
+      this.fields.color = flyweight.fields.color;
+    },
+    destroy: function() {
+      _freeComponentId(this.instanceId);
+    },
+    updateModels: function() {
+      var transform = this.parent.transform;
+      var meshComponents = this.parent.getComponentsByType('mesh');
+      for(var i = 0; i < meshComponents.length; ++i) {
+        transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
+      }
+    }
+  }, LightComponent.prototype);
+
   // Script Component
   function ScriptComponent(gameObject, componentFlyWeight, instanceId) {
     this.type = 'script';
@@ -438,6 +483,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       case 'mesh_renderer':
         result = new MeshRendererComponent(gameObject, componentFlyWeight, instanceId);
       break;
+      case 'light':
+        result = new LightComponent(gameObject, componentFlyWeight, instanceId);
+        break;
       case 'script':
         result = new ScriptComponent(gameObject, componentFlyWeight, instanceId);
       break;

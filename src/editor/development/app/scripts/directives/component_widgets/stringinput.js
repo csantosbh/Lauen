@@ -23,7 +23,6 @@ angular.module('lauEditor').directive('stringInput', function () {
       lblId: '@',
       inpClass: '@',
       inpId: '@',
-      sensitivity: '@',
       label: '@',
     },
     restrict: 'E',

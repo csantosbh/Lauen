@@ -240,7 +240,7 @@ module.exports = function (grunt) {
           '<%= yeoman.dist %>/scripts/**/*.js',
           '<%= yeoman.dist %>/styles/{,*/}*.css',
           //'<%= yeoman.dist %>/images/**/*.{png,jpg,jpeg,gif,webp,svg}',
-          '<%= yeoman.dist %>/styles/fonts/*'
+          '<%= yeoman.dist %>/styles/fonts/*',
         ]
       }
     },
@@ -375,7 +375,7 @@ module.exports = function (grunt) {
           expand: true,
           cwd: '.tmp/images',
           dest: '<%= yeoman.dist %>/images',
-          src: ['generated/*']
+          src: [ 'generated/*' ]
         }, {
           expand: true,
           cwd: '<%= yeoman.app %>',
@@ -388,6 +388,27 @@ module.exports = function (grunt) {
           cwd: '.',
           src: 'bower_components/bootstrap-sass-official/assets/fonts/bootstrap/*',
           dest: '<%= yeoman.dist %>'
+        }]
+      },
+      // Compensate for external projects with poorly designed bower.json files by
+      // "manually" copying their dependencies into our tree
+      deps: {
+        files: [{
+          // Copy colorpicker images
+          expand: true,
+          dest: '<%= yeoman.app %>/images',
+          cwd: 'bower_components/colorpicker/images',
+          src: [
+            '**/*.png'
+          ]
+        }, {
+          // Copy jquery-ui base template
+          expand: true,
+          dest: '<%= yeoman.app %>/styles/third_party/',
+          cwd: 'bower_components/jquery-ui/themes/base/',
+          src: [
+            'jquery-ui.min.css'
+          ]
         }]
       },
       //styles: {
@@ -429,6 +450,7 @@ module.exports = function (grunt) {
     }
 
     grunt.task.run([
+      'copy:deps',
       'clean:server',
       'wiredep',
       'concurrent:server',
