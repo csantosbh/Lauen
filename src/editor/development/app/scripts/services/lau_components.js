@@ -300,7 +300,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     this.instanceId = _allocComponentId(instanceId);
 
     this.fields = {
-      color: componentFlyWeight.fields.color
+      color: Number(componentFlyWeight.fields.color).toString(16)
     };
 
     if($esm.isEditMode()) {
@@ -316,13 +316,13 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         type: this.flyweight.type,
         id: this.flyweight.id,
         fields: {
-          color: this.fields.color,
+          color: Number.parseInt(this.fields.color, 16),
         },
         instanceId: this.instanceId,
       };
     },
     setValues: function(flyweight) {
-      this.fields.color = flyweight.fields.color;
+      this.fields.color = Number(flyweight.fields.color).toString(16);
     },
     destroy: function() {
       _freeComponentId(this.instanceId);
@@ -333,7 +333,37 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       for(var i = 0; i < meshComponents.length; ++i) {
         transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
       }
-    }
+    },
+    _editorCommitCallback: function(field) {
+      if($esm.isEditMode()) {
+        var $this = this;
+
+        // TODO refatorar o metodo commitCallback, ficando apenas em Component.
+        // Cuidado com o deepcopy, que soh funciona em arrays/objects.
+        return function(oldValue, newValue) {
+          $hm.pushCommand({
+            _before: oldValue,
+            _after: newValue,
+            _gameObj: $this.parent.instanceId,
+            _component: $this.instanceId,
+            undo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              let comp = gameObject.getComponentByInstanceId(this._component);
+              comp.fields[field] = this._before;
+              $this.checkPrefabFieldSynchronization(field);
+            },
+            redo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              let comp = gameObject.getComponentByInstanceId(this._component);
+              comp.fields[field] = this._after;
+              $this.checkPrefabFieldSynchronization(field);
+            }
+          });
+
+          $this.checkPrefabFieldSynchronization(field);
+        };
+      }
+    },
   }, LightComponent.prototype);
 
   // Script Component

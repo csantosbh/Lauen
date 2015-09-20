@@ -409,6 +409,14 @@ module.exports = function (grunt) {
           src: [
             'jquery-ui.min.css'
           ]
+        }, {
+          // Copy jquery-ui template images
+          expand: true,
+          dest: '<%= yeoman.app %>/styles/third_party/images',
+          cwd: 'bower_components/jquery-ui/themes/base/images',
+          src: [
+            '**/*.png'
+          ]
         }]
       },
       //styles: {

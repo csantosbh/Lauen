@@ -43,7 +43,7 @@ _defaultComponents = {
         'type': 'light', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
         'path': 'default_components/Light.hpp',
         'fields': {
-            'color': 0xffffff
+            'color': 0xffffffff
         }
     }
 }
