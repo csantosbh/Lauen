@@ -49,7 +49,7 @@ void Camera::update(float dt) {
 }
 
 void Camera::draw(float temporalAlpha) {
-    glClear(GL_COLOR_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     const Camera* prevCamera = current;
     current = this;
     for(auto& gameObject: GameObject::allGameObjects()) {

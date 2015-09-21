@@ -16,6 +16,10 @@ public:
     static const std::set<Light*>& allLights() {
         return lights_;
     }
+    // TODO this function relies on the parent2world transform of each light. How can I make sure that the parent2world was properly initialized when this function is called?
+    static const std::vector<float> allLightPositions();
+    static const std::vector<float> allLightColors();
+
     static const Light* current;
 
     void draw(float temporalAlpha);

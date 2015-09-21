@@ -10,8 +10,8 @@ namespace lau {
 
 Mesh::Mesh() {
     utils::IO::getInstance().requestFiles({
-        "default_assets/default_components/primitive_meshes/Cube.lmf"
-    }, std::bind(&Mesh::onLoadMesh, this, std::placeholders::_1, "default_assets/default_components/primitive_meshes/Cube.lmf"));
+        "default_assets/default_components/primitive_meshes/Plane.lmf"
+    }, std::bind(&Mesh::onLoadMesh, this, std::placeholders::_1, "default_assets/default_components/primitive_meshes/Plane.lmf"));
 }
 
 Mesh::Mesh(const rapidjson::Value& fields) {
@@ -36,6 +36,7 @@ void Mesh::onLoadMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string fname
         serializedMesh.Parse((char*)(meshFile.begin()->second.data()));
 
         vector<float> vertices;
+        vector<float> normals;
         vector<int> indices;
 
         vertices.reserve(serializedMesh["vertices"].Size());
@@ -48,6 +49,13 @@ void Mesh::onLoadMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string fname
             vertices.push_back(itr->GetDouble());
         }
 
+        // Grab normals
+        const Value& _norms=serializedMesh["normals"];
+        for (Value::ConstValueIterator itr = _norms.Begin();
+                itr != _norms.End(); ++itr) {
+            normals.push_back(itr->GetDouble());
+        }
+
         // Grab indices
         const Value& _inds=serializedMesh["indices"];
         for (Value::ConstValueIterator itr = _inds.Begin();
@@ -56,7 +64,8 @@ void Mesh::onLoadMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string fname
         }
 
         // Initialize VBO
-        vbo = shared_ptr<VBO>(new VBO(3, vertices, indices));
+        //vbo = shared_ptr<VBO>(new VBO(3, vertices, normals, indices));
+        vbo = shared_ptr<VBO>(new VBO(3, vertices, normals, indices));
     }
 }
 

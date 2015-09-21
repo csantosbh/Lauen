@@ -26,10 +26,14 @@ private:
     // TODO move this to a Shader class
     GLuint program;
     const int vertexAttribId = 0;
+    const int normalAttribId = 1;
     void checkShaderCompilation(GLuint shaderId);
     GLint projectionUniformLocation;
     GLint world2cameraUniformLocation;
     GLint object2worldUniformLocation;
+    GLint numLightsUniformLocation;
+    GLint lightPositionsUniformLocation;
+    GLint lightColorsUniformLocation;
 };
 
 } // namespace

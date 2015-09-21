@@ -14,6 +14,7 @@ Game::Game() {
 
 void Game::init(int windowWidth, int windowHeight) {
     glClearColor(0,0,0,1);
+    glEnable(GL_DEPTH_TEST);
     resize(windowWidth, windowHeight);
 
     // Load game objects

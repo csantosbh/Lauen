@@ -7,6 +7,8 @@
 #include "Mesh.hpp"
 #include "Camera.hpp"
 
+#include "Light.hpp"
+
 using namespace std;
 using namespace Eigen;
 
@@ -15,8 +17,8 @@ namespace lau {
 MeshRenderer::MeshRenderer() {
     // Create shaders
     utils::IO::getInstance().requestFiles({
-        "default_assets/shaders/basic.vs",
-        "default_assets/shaders/basic.fs"
+        "default_assets/shaders/phong_interpolated_light.vs",
+        "default_assets/shaders/phong_interpolated_light.fs"
     }, std::bind(&MeshRenderer::onLoadShaders, this, std::placeholders::_1));
 }
 
@@ -67,6 +69,7 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     glAttachShader(program, vsId);
     glAttachShader(program, fsId);
     glBindAttribLocation(program, vertexAttribId, "in_Position");
+    glBindAttribLocation(program, normalAttribId, "in_Normal");
     glLinkProgram(program);
     glUseProgram(program);
 	lout << "shader OK!" << endl;
@@ -75,12 +78,24 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     projectionUniformLocation = glGetUniformLocation(program, "projection");
     world2cameraUniformLocation = glGetUniformLocation(program, "world2camera");
     object2worldUniformLocation = glGetUniformLocation(program, "object2world");
+    numLightsUniformLocation = glGetUniformLocation(program, "numLights");
+    lightPositionsUniformLocation = glGetUniformLocation(program, "lightPositions");
+    lightColorsUniformLocation = glGetUniformLocation(program, "lightColors");
 
 #ifdef DEBUG
     if(projectionUniformLocation == -1 ||
        world2cameraUniformLocation == -1 ||
-       object2worldUniformLocation == -1) {
+       object2worldUniformLocation == -1 ||
+       numLightsUniformLocation == -1 ||
+       lightPositionsUniformLocation == -1 ||
+       lightColorsUniformLocation == -1) {
         lerr << "[error] Could not get uniform location(s)!" << endl;
+        lerr << projectionUniformLocation << "; "
+             << world2cameraUniformLocation << "; "
+             << object2worldUniformLocation << "; "
+             << numLightsUniformLocation << "; "
+             << lightPositionsUniformLocation << "; "
+             << lightColorsUniformLocation << endl;
     }
 #endif
 }
@@ -91,19 +106,30 @@ void MeshRenderer::draw(float alpha) {
     auto camera = Camera::current;
 	if(mesh != nullptr) {
 		if(!wasInitialized && mesh->getVBO() != nullptr) {
-			mesh->getVBO()->bindVertexToAttribute(vertexAttribId);
+            GLuint attrs[] = {static_cast<GLuint>(vertexAttribId), static_cast<GLuint>(normalAttribId)};
+			mesh->getVBO()->bindAttributes(attrs);
 			wasInitialized = true;
 		}
 
 		auto vbo = mesh->getVBO();
         if(vbo != nullptr) {
-            vbo->bindForDrawing(vertexAttribId);
+            GLuint attrs[] = {static_cast<GLuint>(vertexAttribId), static_cast<GLuint>(normalAttribId)};
+			vbo->bindForDrawing(attrs);
             // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
             Eigen::Matrix4f I = Eigen::Matrix4f::Identity();
             glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE, camera->projection.data());
             glUniformMatrix4fv(world2cameraUniformLocation, 1, GL_FALSE, camera->world2camera.data());
             Matrix4f object2world = transform.parent2world*transform.getAffineTransformMatrix();
             glUniformMatrix4fv(object2worldUniformLocation, 1, GL_FALSE, object2world.data());
+
+            // Lights
+            auto& lights = Light::allLights();
+            auto lightPositions = Light::allLightPositions();
+            auto lightColors = Light::allLightColors();
+            glUniform1i(numLightsUniformLocation, lights.size());
+            glUniform3fv(lightPositionsUniformLocation, lights.size(), lightPositions.data());
+            glUniform4fv(lightColorsUniformLocation, lights.size(), lightColors.data());
+
             glDrawElements(GL_TRIANGLE_STRIP, vbo->vertexCount(), GL_UNSIGNED_INT, 0);
         }
 	}
