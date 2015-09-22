@@ -19,6 +19,18 @@ public:
     Eigen::Vector4f& getRgbaV4f() {
         return color_;
     }
+    float& r() {
+        return color_[0];
+    }
+    float& g() {
+        return color_[1];
+    }
+    float& b() {
+        return color_[2];
+    }
+    float& a() {
+        return color_[3];
+    }
 
     static const Color red;
     static const Color green;
