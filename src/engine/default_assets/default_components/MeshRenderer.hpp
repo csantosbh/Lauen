@@ -34,6 +34,7 @@ private:
     GLint numLightsUniformLocation;
     GLint lightPositionsUniformLocation;
     GLint lightColorsUniformLocation;
+    bool shaderIsReady_;
 };
 
 } // namespace

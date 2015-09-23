@@ -41,6 +41,11 @@ void Game::update(double dt) {
     for(auto& gameObject: GameObject::allGameObjects()) {
         gameObject->update(dt);
     }
+
+    // Handle IO requests
+    while(utils::IO::hasCompletedRequests()) {
+        utils::IO::dispatchCompletedRequest();
+    }
 }
 
 void Game::terminate() {

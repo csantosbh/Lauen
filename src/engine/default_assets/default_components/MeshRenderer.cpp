@@ -14,7 +14,7 @@ using namespace Eigen;
 
 namespace lau {
 
-MeshRenderer::MeshRenderer() {
+MeshRenderer::MeshRenderer() : shaderIsReady_(false) {
     // Create shaders
     utils::IO::getInstance().requestFiles({
         "default_assets/shaders/phong_interpolated_light.vs",
@@ -98,9 +98,12 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
              << lightColorsUniformLocation << endl;
     }
 #endif
+    shaderIsReady_ = true;
 }
 
 void MeshRenderer::draw(float alpha) {
+    if(!shaderIsReady_) return;
+
 	auto mesh = gameObject->getComponent<Mesh>();
     auto& transform = gameObject->transform;
     auto camera = Camera::current;

@@ -16,6 +16,15 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : di
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
 
+#ifdef DEBUG
+    {
+    GLenum err = glGetError();
+    if(err != GL_NO_ERROR) {
+        lerr << "[VBO] Error generating VBO buffer. OpenGL error code: " << err << endl;
+    }
+    }
+#endif
+
     // Bind vertex buffer so we can start using it
     glBindBuffer(GL_ARRAY_BUFFER, bufferIds_[0]);
 
@@ -27,7 +36,7 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : di
     {
     GLenum err = glGetError();
     if(err != GL_NO_ERROR) {
-        lerr << "[VBO] Error pushing vertex data. OpenGL error code: " << err << endl;
+        lerr << "[VBO] Error pushing vertex data. OpenGL error code: " << err << "; buffer id: " << bufferIds_[0] << endl;
     }
     }
 #endif
@@ -55,6 +64,15 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
 
+#ifdef DEBUG
+    {
+    GLenum err = glGetError();
+    if(err != GL_NO_ERROR) {
+        lerr << "[VBO] Error generating VBO buffer. OpenGL error code: " << err << endl;
+    }
+    }
+#endif
+
     vector<float> verticesAndNormals;
     verticesAndNormals.reserve(dimensions_ * vertexCount_ * 2);
     for(int i = 0; i < vertexCount_; ++i) {
@@ -78,7 +96,7 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
     {
     GLenum err = glGetError();
     if(err != GL_NO_ERROR) {
-        lerr << "[VBO] Error pushing vertex data. OpenGL error code: " << err << endl;
+        lerr << "[VBO] Error pushing vertex data. OpenGL error code: " << err << "; buffer id: " << bufferIds_[0] << endl;
     }
     }
 #endif

@@ -28,6 +28,9 @@ namespace lau {
 
 namespace utils {
 
+std::mutex IO::completedRequestMtx_;
+std::deque<IO::IORequestResponse> IO::completedRequests_;
+
 #ifdef NACL
 
 using namespace pp;
@@ -69,7 +72,10 @@ private:
             handler->Start();
         } else {
             // The current request is done! Forward the requested data
-            pendingCallbacks.front()(filesRead);
+            {
+                unique_lock<mutex> lock(completedRequestMtx_);
+                completedRequests_.push_back(IORequestResponse(pendingCallbacks.front(), filesRead));
+            }
 
             // Clear filesRead container
             filesRead.clear();
@@ -136,7 +142,6 @@ private:
     template<class Container>
     void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)> callback)
     {
-        // TODO make this procedure asynchronous
         deque<pair<bool, vector<uint8_t>>> filesRead;
 
         for(const auto& filename: requestedFiles) {
@@ -148,7 +153,11 @@ private:
                 filesRead.push_back(make_pair(false, vector<uint8_t>()));
             }
         }
-        callback(filesRead);
+        // Make the requested files available
+        {
+            unique_lock<mutex> lock(completedRequestMtx_);
+            completedRequests_.push_back(IORequestResponse(callback, filesRead));
+        }
     }
 };
 
