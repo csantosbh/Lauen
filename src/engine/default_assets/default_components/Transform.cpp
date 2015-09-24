@@ -43,8 +43,6 @@ const Matrix3f Transform::getRotationMatrix() {
 }
 
 void Transform::update(float dt) {
-    //rotation = rotation*AngleAxisf(0.1 * M_PI/180.0f, Vector3f::UnitZ());
-
 #ifdef PREVIEW_MODE
     serializeState();
 #endif
@@ -54,6 +52,11 @@ const Matrix4f& Transform::getAffineTransformMatrix() {
     if(!affineMatrixUpToDate_) {
         affineTransformMatrix_.block<3,3>(0,0) = rotation.matrix();
         affineTransformMatrix_.block<3,1>(0,3) = position;
+        float* ptr = affineTransformMatrix_.data();
+
+        // Multiply by scale. This is equivalent to performing Affine = R*S.
+        ptr[0] *= scale[0]; ptr[1] *= scale[1]; ptr[2] *= scale[2];
+        ptr[4] *= scale[0]; ptr[5] *= scale[1]; ptr[6] *= scale[2];
     }
     return affineTransformMatrix_;
 }
