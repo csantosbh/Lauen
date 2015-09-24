@@ -109,6 +109,10 @@ body {
   width: 5em;
 }
 
+#hierarchy-container {
+  overflow-y: scroll;
+}
+
 body {
   overflow: hidden;
 }
