@@ -115,7 +115,11 @@ class ScriptProcessor(AssetProcessor):
                 fileSymbols = fileInfo['symbols']
                 fileSymbols['path'] = self.path
                 fileSymbols['id'] = self.persistent_fields['id']
-                fileSymbols['type'] = 'script'
+                if self.path.endswith('.hpp'):
+                    fileSymbols['type'] = 'script'
+                else:
+                    fileSymbols['type'] = 'script_impl'
+                    pass
 
                 Utils.Console.step('Updating dependencies for '+self.path)
                 self.persistent_fields['dependencies'] = list(fileInfo['dependencies'])

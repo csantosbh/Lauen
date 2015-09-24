@@ -147,8 +147,12 @@ angular.module('lauEditor').service('componentManager', ['$timeout', 'gameObject
         };
 
         if(compInd.idx == -1) {
-          // New file created
-          componentFlyweights[data.asset.type].push(flyweightWrapper);
+          if(componentFlyweights.hasOwnProperty(data.asset.type)) {
+            // New file created
+            componentFlyweights[data.asset.type].push(flyweightWrapper);
+          } else {
+            console.warn('Component of type [' + data.asset.type + '] ignored.');
+          }
         } else {
           // File updated
           componentFlyweights[compInd.type][compInd.idx] = flyweightWrapper;
