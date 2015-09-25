@@ -63,11 +63,50 @@ void GameObject::update(float dt) {
 
     // Update transform
     transform.update(dt);
+	transform.updateObject2World();
 
     // Update child game objects
     for(auto& child: this->children_) {
-        child->transform.parent2world = this->transform.getAffineTransformMatrix();
-        child->update(dt);
+        child->update(this, dt);
+    }
+
+#ifdef PREVIEW_MODE
+    currentState.Set("transform", transform.getCurrentState());
+	currentState.Set("components", componentStates);
+	NaCl::getInstance()->publishState(currentState);
+#endif
+}
+
+// TODO figure out a way to make this function reuse code from the regular update. They are nearly identical.
+void GameObject::update(GameObject* parent, float dt) {
+#ifdef PREVIEW_MODE
+	pp::VarDictionary currentState;
+	pp::VarArray componentStates;
+	currentState.Set("instanceId", gameObjectId);
+#endif
+
+    // Update components
+    for(auto& updateableComponent: this->updateableComponents_) {
+        updateableComponent->update(dt);
+#ifdef PREVIEW_MODE
+        updateableComponent->lau_peeker__->update();
+		pp::VarDictionary componentState;
+		componentState.Set("instanceId", updateableComponent->lau_peeker__->getInstanceId());
+		componentState.Set("fields", updateableComponent->lau_peeker__->getCurrentState());
+		componentStates.Set(componentStates.GetLength(), componentState);
+#endif
+    }
+
+    handleRequestedNewComponents();
+    handleRequestedDestroyedComponents();
+
+    // Update transform
+    transform.update(dt);
+	transform.updateObject2World(parent->transform.getObject2WorldMatrix(), parent->transform.getObject2WorldTranspOfInvMatrix());
+
+    // Update child game objects
+    for(auto& child: this->children_) {
+        child->update(this, dt);
     }
 
 #ifdef PREVIEW_MODE

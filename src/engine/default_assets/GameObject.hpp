@@ -22,6 +22,7 @@ public:
     ~GameObject();
 
     void update(float dt);
+    void update(GameObject* parent, float dt);
 
     void draw(float alpha);
 

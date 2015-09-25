@@ -32,7 +32,7 @@ const vector<float> Light::allLightPositions() {
 
     for(const auto light: lights_) {
         auto& lightTransformObj = light->gameObject->transform;
-        auto light2world = lightTransformObj.parent2world * lightTransformObj.getAffineTransformMatrix();
+        auto light2world = lightTransformObj.getObject2WorldMatrix();
         auto lightPosition = light2world *
             Vector4f(lightTransformObj.position[0],
                     lightTransformObj.position[0],

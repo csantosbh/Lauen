@@ -78,6 +78,7 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     projectionUniformLocation = glGetUniformLocation(program, "projection");
     world2cameraUniformLocation = glGetUniformLocation(program, "world2camera");
     object2worldUniformLocation = glGetUniformLocation(program, "object2world");
+    object2worldITUniformLocation = glGetUniformLocation(program, "object2world_it");
     numLightsUniformLocation = glGetUniformLocation(program, "numLights");
     lightPositionsUniformLocation = glGetUniformLocation(program, "lightPositions");
     lightColorsUniformLocation = glGetUniformLocation(program, "lightColors");
@@ -86,6 +87,7 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     if(projectionUniformLocation == -1 ||
        world2cameraUniformLocation == -1 ||
        object2worldUniformLocation == -1 ||
+       object2worldITUniformLocation == -1 ||
        numLightsUniformLocation == -1 ||
        lightPositionsUniformLocation == -1 ||
        lightColorsUniformLocation == -1) {
@@ -93,6 +95,7 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
         lerr << projectionUniformLocation << "; "
              << world2cameraUniformLocation << "; "
              << object2worldUniformLocation << "; "
+             << object2worldITUniformLocation << "; "
              << numLightsUniformLocation << "; "
              << lightPositionsUniformLocation << "; "
              << lightColorsUniformLocation << endl;
@@ -119,11 +122,12 @@ void MeshRenderer::draw(float alpha) {
             GLuint attrs[] = {static_cast<GLuint>(vertexAttribId), static_cast<GLuint>(normalAttribId)};
 			vbo->bindForDrawing(attrs);
             // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
-            Eigen::Matrix4f I = Eigen::Matrix4f::Identity();
             glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE, camera->projection.data());
             glUniformMatrix4fv(world2cameraUniformLocation, 1, GL_FALSE, camera->world2camera.data());
-            Matrix4f object2world = transform.parent2world*transform.getAffineTransformMatrix();
+            const Matrix4f& object2world = transform.getObject2WorldMatrix();
             glUniformMatrix4fv(object2worldUniformLocation, 1, GL_FALSE, object2world.data());
+            const Matrix4f& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
+            glUniformMatrix4fv(object2worldITUniformLocation, 1, GL_FALSE, object2world_it.data());
 
             // Lights
             auto& lights = Light::allLights();

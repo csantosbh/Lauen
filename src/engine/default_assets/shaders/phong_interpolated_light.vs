@@ -1,6 +1,7 @@
 uniform mat4 projection;
 uniform mat4 world2camera;
 uniform mat4 object2world;
+uniform mat4 object2world_it; // Transpose of inverse
 
 #ifndef GL_ES
 in vec3 in_Position;
@@ -15,7 +16,7 @@ void main()
 
 	gl_Position = projection * world2camera * worldPosition4f;
 	worldPosition = worldPosition4f.xyz;
-	normalAtFragment = (object2world * vec4(in_Normal, 0.0)).xyz;
+	normalAtFragment = (object2world_it * vec4(in_Normal, 0.0)).xyz;
 }
 
 #else
@@ -32,6 +33,6 @@ void main()
 
 	gl_Position = projection * world2camera * worldPosition4f;
 	worldPosition = worldPosition4f.xyz;
-	normalAtFragment = (object2world * vec4(in_Normal, 0.0)).xyz;
+	normalAtFragment = (object2world_it * vec4(in_Normal, 0.0)).xyz;
 }
 #endif

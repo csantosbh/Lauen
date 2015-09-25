@@ -31,6 +31,7 @@ private:
     GLint projectionUniformLocation;
     GLint world2cameraUniformLocation;
     GLint object2worldUniformLocation;
+    GLint object2worldITUniformLocation;
     GLint numLightsUniformLocation;
     GLint lightPositionsUniformLocation;
     GLint lightColorsUniformLocation;
