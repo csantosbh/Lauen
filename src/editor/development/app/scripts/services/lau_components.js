@@ -247,8 +247,10 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     },
     destroy: function() {
       if($esm.isEditMode()) {
-        // Remove this mesh from the hierarchy that groups everything from this game object
-        this.parent.transform.hierarchyGroup.remove(this.meshGeometry);
+        // Remove this mesh from the hierarchy that groups everything from this
+        // game object
+        if(!this.parent.isPrefab)
+          this.parent.transform.hierarchyGroup.remove(this.meshGeometry);
       }
       _freeComponentId(this.instanceId);
     }
@@ -259,6 +261,8 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     this.type = 'mesh_renderer';
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
+
+    this.resetPrefabSync = function() {}
 
     this.instanceId = _allocComponentId(instanceId);
 
@@ -283,10 +287,12 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       _freeComponentId(this.instanceId);
     },
     updateModels: function() {
-      var transform = this.parent.transform;
-      var meshComponents = this.parent.getComponentsByType('mesh');
-      for(var i = 0; i < meshComponents.length; ++i) {
-        transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
+      if(!this.parent.isPrefab) {
+        var transform = this.parent.transform;
+        var meshComponents = this.parent.getComponentsByType('mesh');
+        for(var i = 0; i < meshComponents.length; ++i) {
+          transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
+        }
       }
     }
   }, MeshRendererComponent.prototype);
@@ -302,6 +308,13 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     this.fields = {
       color: Number(componentFlyWeight.fields.color).toString(16)
     };
+
+    this.resetPrefabSync = function() {
+      this.prefabSync = {
+        color: true,
+      };
+    }
+    this.resetPrefabSync();
 
     if($esm.isEditMode()) {
       ////

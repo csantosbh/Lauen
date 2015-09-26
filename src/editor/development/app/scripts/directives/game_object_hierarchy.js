@@ -46,6 +46,8 @@ angular.module('lauEditor')
           },
           gameObjects: $gom.getGameObjects,
           selectedGameObject: $gom.selectedGameObject,
+          selectedPrefab: $gom.selectedPrefab,
+          selectPrefab: $gom.selectPrefab,
           droppableOptions: {
             accept: function(draggedElement) {
               var draggedGameObj = draggedElement.draggable().scope().gameObject;

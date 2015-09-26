@@ -50,7 +50,7 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
         switch(file.flyweight.type) {
           case 'prefab':
             let prefab = $gom.prefabManager.getPrefab(file.flyweight.content.instanceId);
-            $gom.selectGameObject(prefab.gameObject);
+            $gom.selectPrefab(prefab);
             break;
           default:
             return;

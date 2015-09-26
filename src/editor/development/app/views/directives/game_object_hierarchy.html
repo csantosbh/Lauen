@@ -1,3 +1,11 @@
+<div ng-if="gameObjectHierarchy.selectedPrefab() != null">
+  <div>
+    Selected Prefab
+    <div class="glyphicon glyphicon-remove-circle pull-right" ng-click="gameObjectHierarchy.selectPrefab(null)"></div>
+  </div>
+<hierarchy-level level="0" game-object="gameObjectHierarchy.selectedPrefab().gameObject" history-handler-callback="gameObjectHierarchy.historyHandlerCallback"></hierarchy-level>
+</div>
+<div>Scene Hierarchy</div>
 <div data-drop="true" jqyoui-droppable="{multiple:true, onDrop:'gameObjectHierarchy.onDrop'}" data-jqyoui-options="droppableOptions"></div>
 <hierarchy-level level="0" ng-repeat="obj in gameObjectHierarchy.gameObjects()" game-object="obj" history-handler-callback="gameObjectHierarchy.historyHandlerCallback"></hierarchy-level>
 <div style="height: 10px;" data-drop="true" jqyoui-droppable="{multiple:true, onDrop:'gameObjectHierarchy.onDrop'}" data-jqyoui-options="droppableOptions"></div>

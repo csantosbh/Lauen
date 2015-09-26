@@ -59,7 +59,7 @@ angular.module('lauEditor')
       // Initialize children game objects
       var child = fields.children;
       for(var g = 0; g < child.length; ++g) {
-        var newChild = new GameObject(child[g], child[g].instanceId);
+        var newChild = new GameObject(child[g], child[g].instanceId, isPrefab);
         newChild.setParent(this);
       }
     }
@@ -537,13 +537,15 @@ angular.module('lauEditor')
       }
     },
     setHierarchyParent: function(newParent) {
-      var parentGroup = $editCanvas.scene;
-      if(newParent != null) {
-        parentGroup = newParent.transform.hierarchyGroup;
+      if(!this.parent.isPrefab) {
+        var parentGroup = $editCanvas.scene;
+        if(newParent != null) {
+          parentGroup = newParent.transform.hierarchyGroup;
+        }
+        this._parentGroup.remove(this.hierarchyGroup);
+        parentGroup.add(this.hierarchyGroup);
+        this._parentGroup = parentGroup;
       }
-      this._parentGroup.remove(this.hierarchyGroup);
-      parentGroup.add(this.hierarchyGroup);
-      this._parentGroup = parentGroup;
     }
   }, Transform.prototype);
 

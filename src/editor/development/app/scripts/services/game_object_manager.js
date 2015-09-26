@@ -11,6 +11,7 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'edi
   // AngularJS will instantiate a singleton by calling "new" on this function
 
   var currentlySelectedGameObj = null;
+  var currentlySelectedPrefab = null;
   var gameObjects = [];
 
   var editorGameObjects_; // Backup for the real gameobjects from the edit mode
@@ -21,10 +22,9 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'edi
 
   function selectGameObject(gameObj) {
     if(gameObj != null) {
-      let gameObjBefore = selectedGameObject();
       if($esm.isEditMode()) {
         $hm.pushCommand({
-          _selectedGameObjBefore: gameObjBefore==null?null:gameObjBefore.instanceId,
+          _selectedGameObjBefore: currentlySelectedGameObj==null?null:currentlySelectedGameObj.instanceId,
           _selectedGameObjAfter: gameObj==null?null:gameObj.instanceId,
           redo: function() {
             if(this._selectedGameObjAfter != null)
@@ -42,9 +42,24 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'edi
     }
     currentlySelectedGameObj = gameObj;
   }
+
+  function selectPrefab(prefab) {
+    let gameObj = null;
+    if(prefab != null)
+      gameObj = prefab.gameObject;
+
+    selectGameObject(gameObj);
+    currentlySelectedPrefab = prefab;
+  }
+
   function selectedGameObject() {
     return currentlySelectedGameObj;
   }
+
+  function selectedPrefab() {
+    return currentlySelectedPrefab;
+  }
+
   function pushGameObject(go) {
     gameObjects.push(go);
 
@@ -302,7 +317,9 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'edi
   return {
     getGameObjects: getGameObjects,
     selectGameObject: selectGameObject,
+    selectPrefab: selectPrefab,
     selectedGameObject: selectedGameObject,
+    selectedPrefab: selectedPrefab,
     pushGameObject: pushGameObject,
     moveGameObjectTo: moveGameObjectTo,
     removeGameObject: removeGameObject,
