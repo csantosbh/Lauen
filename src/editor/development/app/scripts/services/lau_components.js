@@ -33,12 +33,13 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       // Check which elements of this field are up to date with my prefab
       if(this.parent.parentPrefabId) {
         let myPrefab = $gom.prefabManager.getPrefab(this.parent.parentPrefabId);
+        let correspondingGameObj = myPrefab.getObjectInHierarchy(this.parent.hierarchyId);
         // TODO create a game-object specific id for components to tell duplicate components from eachother
         let prefabComponent;
         if(this.type == 'transform')
-          prefabComponent = myPrefab.gameObject.transform;
+          prefabComponent = correspondingGameObj.transform;
         else
-          prefabComponent = myPrefab.gameObject.getComponentsById(this.flyweight.id)[0];
+          prefabComponent = correspondingGameObj.getComponentsById(this.flyweight.id)[0];
 
         function recurseCmp(prefabSyncObj, levelFields, prefabCorrespondents) {
           for(let i in levelFields) {
@@ -51,6 +52,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
             }
           }
         }
+
         if(typeof(this.fields[field]) == 'object')
           recurseCmp(this.prefabSync[field], this.fields[field], prefabComponent.fields[field]);
         else
@@ -63,12 +65,13 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         this.resetPrefabSync();
       } else {
         let myPrefab = $gom.prefabManager.getPrefab(prefabId);
+        let correspondingGameObj = myPrefab.getObjectInHierarchy(this.parent.hierarchyId);
         // TODO create a game-object specific id for components to tell duplicate components from eachother
         let prefabComponent;
         if(this.type == 'transform')
-          prefabComponent = myPrefab.gameObject.transform;
+          prefabComponent = correspondingGameObj.transform;
         else
-          prefabComponent = myPrefab.gameObject.getComponentsById(this.flyweight.id)[0];
+          prefabComponent = correspondingGameObj.getComponentsById(this.flyweight.id)[0];
 
         function recurseUpdate(levelFields, prefabSync, prefabCorrespondents) {
           for(let i in levelFields) {

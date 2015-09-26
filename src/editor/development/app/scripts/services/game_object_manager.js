@@ -105,10 +105,10 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'edi
   }
 
   // Makes `gameObj` child of `destination`
-  function moveGameObjectTo(gameObj, destination) {
+  function moveGameObjectTo(gameObj, destination, dstHierarchyId) {
     // First, remove `gameObj` from whatever array it is
     if(popGameObject_(gameObj.instanceId)) {
-      gameObj.setParent(destination);
+      gameObj.setParent(destination, dstHierarchyId);
       if(destination == null) {
         // Move gameObj to root node
         gameObjects.push(gameObj);
@@ -206,11 +206,13 @@ angular.module('lauEditor').service('gameObjectManager', ['historyManager', 'edi
     parentChildren.splice(newPos, 0, gameObject);
   }
 
-  function getInstancesOfPrefab(prefabId) {
+  function getInstancesOfPrefab(prefabId, hierarchyId) {
     function recurse_(gameObjs) {
       let results = [];
       for(let i = 0; i < gameObjs.length; ++i) {
-        if(gameObjs[i].parentPrefabId == prefabId) {
+        if(gameObjs[i].parentPrefabId == prefabId &&
+           (gameObjs[i].hierarchyId == hierarchyId ||
+            hierarchyId == undefined)) {
           results.push(gameObjs[i]);
         }
         results = results.concat(recurse_(gameObjs[i].children));

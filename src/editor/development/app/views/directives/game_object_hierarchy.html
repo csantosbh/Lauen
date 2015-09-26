@@ -1,7 +1,7 @@
 <div ng-if="gameObjectHierarchy.selectedPrefab() != null">
   <div>
     Selected Prefab
-    <div class="glyphicon glyphicon-remove-circle pull-right" ng-click="gameObjectHierarchy.selectPrefab(null)"></div>
+    <div class="glyphicon glyphicon-remove-sign pull-right" ng-click="gameObjectHierarchy.selectPrefab(null)"></div>
   </div>
 <hierarchy-level level="0" game-object="gameObjectHierarchy.selectedPrefab().gameObject" history-handler-callback="gameObjectHierarchy.historyHandlerCallback"></hierarchy-level>
 </div>

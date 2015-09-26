@@ -65,17 +65,21 @@ angular.module('lauEditor')
               _oldParentId: oldParent,
               _oldPosition: $gom.getMenuPosition(draggedGameObj.instanceId),
               _newParentId: newParent,
+              _oldHierarchyId: draggedGameObj.hierarchyId,
               undo: function() {
                 let dst = this._oldParentId == null ? null :
                   $gom.getGameObject(this._oldParentId);
                 let gameObj = $gom.getGameObject(this._objId);
-                $gom.moveGameObjectTo(gameObj, dst);
+
+                this._newHierarchyId = gameObj.hierarchyId;
+
+                $gom.moveGameObjectTo(gameObj, dst, this._oldHierarchyId);
                 $gom.setMenuPosition(gameObj, this._oldPosition);
               },
               redo: function() {
                 var dst = this._newParentId == null ? null :
                   $gom.getGameObject(this._newParentId);
-                $gom.moveGameObjectTo($gom.getGameObject(this._objId), dst);
+                $gom.moveGameObjectTo($gom.getGameObject(this._objId), dst, this._newHierarchyId);
               }
             });
           },

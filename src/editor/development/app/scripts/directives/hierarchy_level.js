@@ -23,12 +23,13 @@ angular.module('lauEditor').directive('hierarchyLevel', ['gameObjectManager', '$
           _serializedGameObj: gameObj.export(),
           _instanceId: gameObj.instanceId,
           _parentId: gameObj.parent==null?null:gameObj.parent.instanceId,
+          _hierarchyId: gameObj.hierarchyId,
           _position: $gom.getMenuPosition(gameObj.instanceId),
           undo: function() {
             var newGameObj = new $lgo.GameObject(this._serializedGameObj, this._instanceId);
             $gom.pushGameObject(newGameObj);
             if(this._parentId != null) {
-              $gom.moveGameObjectTo(newGameObj, $gom.getGameObject(this._parentId));
+              $gom.moveGameObjectTo(newGameObj, $gom.getGameObject(this._parentId), this._hierarchyId);
             }
             $gom.setMenuPosition(newGameObj, this._position);
           },

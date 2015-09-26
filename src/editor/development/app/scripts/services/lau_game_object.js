@@ -31,6 +31,11 @@ angular.module('lauEditor')
       this._managedId = true;
     }
 
+    if(fields.hasOwnProperty('hierarchyId'))
+      this.hierarchyId = fields.hierarchyId;
+    else
+      this.hierarchyId = 0;
+
     if(fields.parentPrefabId && $gom.prefabManager.prefabExists(fields.parentPrefabId)) {
       this.parentPrefabId = fields.parentPrefabId;
     }
@@ -60,7 +65,7 @@ angular.module('lauEditor')
       var child = fields.children;
       for(var g = 0; g < child.length; ++g) {
         var newChild = new GameObject(child[g], child[g].instanceId, isPrefab);
-        newChild.setParent(this);
+        newChild.setParent(this, child[g].hierarchyId);
       }
     }
 
@@ -107,7 +112,7 @@ angular.module('lauEditor')
 
       if(this.isPrefab) {
         let myPrefab = $gom.prefabManager.getPrefab(this.parentPrefabId);
-        myPrefab.componentWasAdded(component);
+        myPrefab.componentWasAdded(this.hierarchyId, component);
       }
     },
     removeComponent: function(componentId) {
@@ -123,7 +128,7 @@ angular.module('lauEditor')
       if(compIdx >= 0) {
         if(this.isPrefab) {
           let myPrefab = $gom.prefabManager.getPrefab(this.parentPrefabId);
-          myPrefab.componentBeingRemoved(this.components[compIdx]);
+          myPrefab.componentBeingRemoved(this.hierarchyId, this.components[compIdx]);
         }
 
         this.components.splice(compIdx, 1);
@@ -150,15 +155,45 @@ angular.module('lauEditor')
     _addChild: function(childGameObj) {
       this.children.push(childGameObj);
     },
-    setParent: function(parentGameObj) {
-      if(parentGameObj != null)
+    setParent: function(parentGameObj, hierarchyId) {
+      if(parentGameObj != null) {
+        if(hierarchyId == undefined)
+          this.hierarchyId = parentGameObj._generateHierarchyId();
+        else
+          this.hierarchyId = hierarchyId;
+
         parentGameObj._addChild(this);
+      } else {
+        this.hierarchyId = 0;
+      }
 
       if($esm.isEditMode()) {
         this.transform.setHierarchyParent(parentGameObj);
       }
 
       this.parent = parentGameObj;
+    },
+    _generateHierarchyId: function() {
+      if(this.parent == null) {
+        let allIds = new Set([this.hierarchyId]);
+
+        function _getAllIdsRec(children) {
+          for(let i = 0; i < children.length; ++i) {
+            allIds.add(children[i].hierarchyId);
+            _getAllIdsRec(children[i].children);
+          }
+        }
+        _getAllIdsRec(this.children);
+
+        let newId = randomInteger();
+        while(allIds.has(newId)) {
+          newId = randomInteger();
+        }
+
+        return newId;
+      } else {
+        return this.parent._generateHierarchyId();
+      }
     },
     isParentOf: function(gameObj) {
       for(var g = 0; g < this.children.length; ++g) {
@@ -190,10 +225,20 @@ angular.module('lauEditor')
         components: exportedComps,
         children: children,
         parentPrefabId: this.parentPrefabId,
+        hierarchyId: this.hierarchyId,
       };
     },
     setPrefabParent: function(prefabId) {
+      function recurse_(children) {
+        for(let i = 0; i < children.length; ++i) {
+          children[i].parentPrefabId = prefabId;
+          recurse_(children[i].children);
+        }
+      }
+
       this.parentPrefabId = prefabId;
+      recurse_(this.children);
+
       if(!this.isPrefab)
         this.syncComponentsToPrefab();
     },
@@ -266,17 +311,18 @@ angular.module('lauEditor')
     this.gameObject.setPrefabParent(this.instanceId);
     this.name = serializedData.name;
 
-    function makeObserver(id) {
+    function makeObserver(hierarchyId, componentId) {
       return function(changes) {
         let changedComponentId;
-        if(id != 'transform') {
-          changedComponentId = $this.gameObject.getComponentByInstanceId(id).flyweight.id;
+        if(componentId != 'transform') {
+          let gameObj = $this.getObjectInHierarchy(hierarchyId);
+          changedComponentId = gameObj.getComponentByInstanceId(componentId).flyweight.id;
         }
         else {
-          changedComponentId = id;
+          changedComponentId = componentId;
         }
 
-        let gameObjs = $gom.getInstancesOfPrefab($this.instanceId);
+        let gameObjs = $gom.getInstancesOfPrefab($this.instanceId, hierarchyId);
 
         for(let i = 0; i < gameObjs.length; ++i) {
           gameObjs[i].syncComponentToPrefab(changedComponentId);
@@ -287,24 +333,27 @@ angular.module('lauEditor')
     let observers_ = {};
     function initializeWatchCallback(gameObj) {
       // TODO watch for newly added components
-      observers_['transform'] = makeObserver('transform');
+      observers_[gameObj.hierarchyId] = {
+        transform: makeObserver(gameObj.hierarchyId, 'transform')
+      };
+
       for(let i in gameObj.transform.fields)
-        Object.observe(gameObj.transform.fields[i], observers_['transform']);
+        Object.observe(gameObj.transform.fields[i], observers_[gameObj.hierarchyId]['transform']);
 
       for(let i = 0; i < gameObj.components.length; ++i) {
         if(gameObj.components[i].hasOwnProperty('fields')) {
           let cId = gameObj.components[i].instanceId;
-          if(!observers_.hasOwnProperty(cId))
-            observers_[cId] = makeObserver(cId);
+          if(!observers_[gameObj.hierarchyId].hasOwnProperty(cId))
+            observers_[gameObj.hierarchyId][cId] = makeObserver(gameObj.hierarchyId, cId);
 
           let fields = gameObj.components[i].fields;
           // We have to observe the whole fields object to account for changes
           // in primitive types
-          Object.observe(fields, observers_[cId]);
+          Object.observe(fields, observers_[gameObj.hierarchyId][cId]);
           for(let f in fields) {
             if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
               // And we have to deep watch objects/arrays
-              Object.observe(fields[f], observers_[cId]);
+              Object.observe(fields[f], observers_[gameObj.hierarchyId][cId]);
             }
           }
         }
@@ -313,16 +362,16 @@ angular.module('lauEditor')
 
     function destroyWatchCallback(gameObj) {
       for(let i in gameObj.transform.fields)
-        Object.unobserve(gameObj.transform.fields[i], observers_['transform']);
+        Object.unobserve(gameObj.transform.fields[i], observers_[gameObj.hierarchyId]['transform']);
 
       for(let i = 0; i < gameObj.components.length; ++i) {
         let cId = gameObj.components[i].instanceId;
-        if(gameObj.components[i].hasOwnProperty('fields') && observers_.hasOwnProperty(cId)) {
+        if(gameObj.components[i].hasOwnProperty('fields') && observers_[gameObj.hierarchyId].hasOwnProperty(cId)) {
           let fields = gameObj.components[i].fields;
-          Object.unobserve(fields, observers_[cId]);
+          Object.unobserve(fields, observers_[gameObj.hierarchyId][cId]);
           for(let f in fields) {
             if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
-              Object.unobserve(fields[f], observers_[cId]);
+              Object.unobserve(fields[f], observers_[gameObj.hierarchyId][cId]);
             }
           }
         }
@@ -330,38 +379,45 @@ angular.module('lauEditor')
     }
 
     this.destroy = function() {
-      destroyWatchCallback(this.gameObject);
-      this.gameObject.destroy();
+      function recurse_(gameObj) {
+        for(let i = 0; i < gameObj.children.length; ++i)
+          recurse_(gameObj.children[i]);
+
+        destroyWatchCallback(gameObj);
+        gameObj.destroy();
+      }
+      recurse_(this.gameObject);
+
       $gom.prefabManager.destroyPrefab(this.instanceId);
     };
 
-    this.componentWasAdded = function(component) {
+    this.componentWasAdded = function(hierarchyId, component) {
       let cId = component.instanceId;
-      let gameObjs = $gom.getInstancesOfPrefab(this.instanceId);
+      let gameObjs = $gom.getInstancesOfPrefab(this.instanceId, hierarchyId);
 
       for(let i = 0; i < gameObjs.length; ++i) {
         gameObjs[i].addComponent($lc.createComponentFromFlyWeight(gameObjs[i], component.flyweight));
       }
 
       // Update watchers
-      observers_[cId] = makeObserver(cId);
+      observers_[hierarchyId][cId] = makeObserver(cId);
 
       let fields = component.fields;
       // We have to observe the whole fields object to account for changes
       // in primitive types
-      Object.observe(fields, observers_[cId]);
+      Object.observe(fields, observers_[hierarchyId][cId]);
       for(let f in fields) {
         if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
           // And we have to deep watch objects/arrays
-          Object.observe(fields[f], observers_[cId]);
+          Object.observe(fields[f], observers_[hierarchyId][cId]);
         }
       }
     };
 
-    this.componentBeingRemoved = function(component) {
+    this.componentBeingRemoved = function(hierarchyId, component) {
       let componentId = component.flyweight.id;
       let cId = component.instanceId;
-      let gameObjs = $gom.getInstancesOfPrefab(this.instanceId);
+      let gameObjs = $gom.getInstancesOfPrefab(this.instanceId, hierarchyId);
 
       for(let i = 0; i < gameObjs.length; ++i) {
         let comp = gameObjs[i].getComponentsById(componentId)[0];
@@ -369,16 +425,21 @@ angular.module('lauEditor')
       }
 
       let fields = component.fields;
-      Object.unobserve(fields, observers_[cId]);
+      Object.unobserve(fields, observers_[hierarchyId][cId]);
       for(let f in fields) {
         if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
-          Object.unobserve(fields[f], observers_[cId]);
+          Object.unobserve(fields[f], observers_[hierarchyId][cId]);
         }
       }
-      delete observers_[cId];
+      delete observers_[hierarchyId][cId];
     };
 
-    initializeWatchCallback(this.gameObject);
+    (function recurse_(gameObj){
+      initializeWatchCallback(gameObj);
+      for(let i = 0; i < gameObj.children.length; ++i) {
+        recurse_(gameObj.children[i]);
+      }
+    })(this.gameObject);
   }
   Prefab.prototype = {
     export: function() {
@@ -393,6 +454,19 @@ angular.module('lauEditor')
       $gom.pushGameObject(gameObj);
       gameObj.setPrefabParent(this.instanceId);
       return gameObj;
+    },
+    getObjectInHierarchy: function(hierarchyId) {
+      function recurse_(obj) {
+        if(obj.hierarchyId == hierarchyId)
+          return obj;
+        for(let i = 0; i < obj.children.length; ++i) {
+          let recRes = recurse_(obj.children[i]);
+          if(recRes != null)
+            return recRes;
+        }
+        return null;
+      }
+      return recurse_(this.gameObject);
     }
   };
 
@@ -412,14 +486,14 @@ angular.module('lauEditor')
   // Internal logic
   ///
   var _gameObjIds = new Set();
-  function _allocGameObjectId() {
-    function genId() {
-      return Math.pow(2,32)*Math.random();
-    }
+  function randomInteger() {
+    return Math.pow(2,32)*Math.random();
+  }
 
-    let id = genId();
+  function _allocGameObjectId() {
+    let id = randomInteger();
     while(_gameObjIds.has(id))
-      id = genId();
+      id = randomInteger();
     _gameObjIds.add(id);
 
     return id;
