@@ -7,7 +7,7 @@
  * # editCanvasManager
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '$timeout', 'editorStateManager', function ($gom, $timeout, $esm) {
+angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '$timeout', 'editorStateManager', '$http', function ($gom, $timeout, $esm, $http) {
   ////
   // Public fields
   var scene = new THREE.Scene();
@@ -18,10 +18,17 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     return new THREE.Group();
   }
 
-  function createMesh(modelPath) {
-    var modelGeometry = new THREE.BoxGeometry( 100, 100, 100 ); // TODO load the actual model
+  function createMesh(modelPath, callback) {
+    //var modelGeometry = new THREE.BoxGeometry( 100, 100, 100 ); // TODO load the actual model
+    let loader = new THREE.JSONLoader();
+    loader.load('http://localhost:9002/'+modelPath,
+      function onLoad(geometry, materials) {
+        var material = new THREE.MeshFaceMaterial( materials );
+        let obj = new THREE.Mesh(geometry, material);
+        callback(obj);
+    });
+
     // TODO after that, cache models
-    return new THREE.Mesh(modelGeometry, boundingBoxMaterial);
   }
 
   function createBoundingBox() {

@@ -203,33 +203,42 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       ////
       // Bind to edit canvas
       var $this = this;
-      this.meshGeometry = $editCanvas.createMesh(this.mesh);
+      if(!this.parent.isPrefab) {
+        $this.meshGeometry = null;
+        this._reloadMesh = function() {
+          $editCanvas.createMesh($this.fields.mesh, function(newMesh) {
+            // Update mesh model
+            $this.meshGeometry = newMesh;
 
-      function updateMesh(newValue) {
-        if(newValue != null) {
-          // TODO update THREE.js mesh
-          // remove old mesh...
-          // $this.meshGeometry = ...;
-          // transform.group.add($this.meshGeometry)... if theres a mesh renderer
+            // Draw the mesh, if there's a mesh renderer
+            var meshRenderer = $this.parent.getComponentsByType('mesh_renderer');
+            if(meshRenderer.length != 0) {
+              meshRenderer = meshRenderer[0];
+              meshRenderer.updateModels();
+            }
+          });
         }
-      }
-      Object.observe(this.fields, function(changes) {
-        // TODO investigate if this will leak memory (Im not-explicitly ceasing to observe the older position)
-        // Only the last change to this.mesh interests us. Break after it's found.
-        for(var i = changes.length-1; i >= 0; --i) {
-          var cng = changes[i];
-          if(cng.name == "mesh" && cng.type=="update") {
-            updateMesh($this.mesh);
-            break;
+
+        this._reloadMesh();
+
+        function updateMesh(newValue) {
+          if(newValue != null) {
+            // Remove old mesh
+            $this.removeCurrentMesh();
+            $this._reloadMesh();
           }
         }
-      });
-
-      // Draw the mesh, if there's a mesh renderer
-      var meshRenderer = this.parent.getComponentsByType('mesh_renderer');
-      if(meshRenderer.length != 0) {
-        meshRenderer = meshRenderer[0];
-        meshRenderer.updateModels();
+        Object.observe(this.fields, function(changes) {
+          // TODO investigate if this will leak memory (Im not-explicitly ceasing to observe the older position)
+          // Only the last change to this.mesh interests us. Break after it's found.
+          for(var i = changes.length-1; i >= 0; --i) {
+            var cng = changes[i];
+            if(cng.name == "mesh" && cng.type=="update") {
+              updateMesh($this.fields.mesh);
+              break;
+            }
+          }
+        });
       }
     }
   }
@@ -248,13 +257,16 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     setValues: function(flyweight) {
       this.fields.mesh = flyweight.fields.mesh;
     },
-    destroy: function() {
+    removeCurrentMesh: function() {
       if($esm.isEditMode()) {
         // Remove this mesh from the hierarchy that groups everything from this
         // game object
         if(!this.parent.isPrefab)
           this.parent.transform.hierarchyGroup.remove(this.meshGeometry);
       }
+    },
+    destroy: function() {
+      this.removeCurrentMesh();
       _freeComponentId(this.instanceId);
     }
   }, MeshComponent.prototype);
@@ -294,7 +306,8 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         var transform = this.parent.transform;
         var meshComponents = this.parent.getComponentsByType('mesh');
         for(var i = 0; i < meshComponents.length; ++i) {
-          transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
+          if(meshComponents[i].meshGeometry != null)
+            transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
         }
       }
     }
@@ -318,12 +331,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       };
     }
     this.resetPrefabSync();
-
-    if($esm.isEditMode()) {
-      ////
-      // Bind to edit canvas
-      this.updateModels();
-    }
   }
   LightComponent.prototype = Object.create(Component.prototype);
   LAU.Utils.deepCopy({
@@ -342,13 +349,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     },
     destroy: function() {
       _freeComponentId(this.instanceId);
-    },
-    updateModels: function() {
-      var transform = this.parent.transform;
-      var meshComponents = this.parent.getComponentsByType('mesh');
-      for(var i = 0; i < meshComponents.length; ++i) {
-        transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
-      }
     },
     _editorCommitCallback: function(field) {
       if($esm.isEditMode()) {

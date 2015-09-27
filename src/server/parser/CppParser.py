@@ -174,6 +174,7 @@ def parseCPPFile(fileName):
         pass
 
     # Get list of pragmas
+    # TODO use custom c++11 attributes in the form [[hidden]] [[visible]] etc.
     dependencies = set()
     parseResult = dict(symbols=[])
     if success:

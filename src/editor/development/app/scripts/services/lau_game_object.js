@@ -229,18 +229,29 @@ angular.module('lauEditor')
       };
     },
     setPrefabParent: function(prefabId) {
-      function recurse_(children) {
+      function setParentRecurse_(children) {
         for(let i = 0; i < children.length; ++i) {
           children[i].parentPrefabId = prefabId;
-          recurse_(children[i].children);
+          setParentRecurse_(children[i].children);
         }
       }
 
-      this.parentPrefabId = prefabId;
-      recurse_(this.children);
+      function syncComponentsRecurse_(children) {
+        for(let i = 0; i < children.length; ++i) {
+          children[i].syncComponentsToPrefab();
+          setParentRecurse_(children[i].children);
+        }
+      }
 
-      if(!this.isPrefab)
-        this.syncComponentsToPrefab();
+      let rootParent = this;
+      while(rootParent.parent != null)
+        rootParent = rootParent.parent;
+
+      rootParent.parentPrefabId = prefabId;
+      setParentRecurse_(rootParent.children);
+
+      if(!rootParent.isPrefab)
+        syncComponentsRecurse_(rootParent.children);
     },
     checkPrefabSynchronization: function() {
       this.transform.checkPrefabSynchronization();
