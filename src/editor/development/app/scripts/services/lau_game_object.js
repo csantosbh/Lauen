@@ -540,9 +540,9 @@ angular.module('lauEditor')
         ////
         // Bind transform to edit canvas
         this.hierarchyGroup = $editCanvas.createGroup();
-        this.translateHandle = $editCanvas.createBoundingBox();
-        this.translateHandle.__lauGameObject = this.parent;
-        this.hierarchyGroup.add(this.translateHandle);
+        this.canvasHandle = $editCanvas.createAxesHandle();
+        this.canvasHandle.__lauGameObject = this.parent;
+        this.hierarchyGroup.add(this.canvasHandle);
         this._parentGroup = $editCanvas.scene;
 
         $editCanvas.scene.add(this.hierarchyGroup);

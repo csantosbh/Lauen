@@ -31,8 +31,37 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     // TODO after that, cache models
   }
 
-  function createBoundingBox() {
-    return new THREE.Mesh(boundingBoxGeometry, boundingBoxMaterial);
+  function createAxesHandle() {
+    let axesMeshes = [
+      new THREE.Mesh(axisCylinderGeometry, axisCylinderMaterials[0]),
+      new THREE.Mesh(axisCylinderGeometry, axisCylinderMaterials[1]),
+      new THREE.Mesh(axisCylinderGeometry, axisCylinderMaterials[2])
+    ];
+
+    axesMeshes[0].rotation.z = -90*Math.PI/180.0;
+    axesMeshes[2].rotation.x = 90*Math.PI/180.0;
+
+    let offset = 4.0/2; // Cylinder height/2
+    axesMeshes[0].position.x = 4.0/2;
+    axesMeshes[1].position.y = 4.0/2;
+    axesMeshes[2].position.z = 4.0/2;
+
+    // Whenever the __lauGameObject field is requested, return the field
+    // originally defined in its parent, the axes object.
+    function defineLauGameObjectGetter(axis) {
+      Object.defineProperty(axis, '__lauGameObject', {
+        get: function() {
+          return this.parent.__lauGameObject;
+        }
+      });
+    }
+
+    let axes = new THREE.Group();
+    for(let i = 0; i < axesMeshes.length; ++i) {
+      defineLauGameObjectGetter(axesMeshes[i]);
+      axes.add(axesMeshes[i]);
+    }
+    return axes;
   }
 
   function getObjectsUnderCursor() {
@@ -43,9 +72,8 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
       let objsUnderCursor = [];
       for(let i in objs) {
         if(objs.hasOwnProperty(i)) {
-          objs[i].transform.translateHandle.nome = objs[i].name;
-          let handle = objs[i].transform.translateHandle;
-          var intersect = raycaster.intersectObject(handle);
+          let handle = objs[i].transform.canvasHandle;
+          var intersect = raycaster.intersectObject(handle, true);
 
           objsUnderCursor = objsUnderCursor.concat(intersect.concat(recurse_(objs[i].children)));
         }
@@ -69,8 +97,21 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
 
   ////
   // Internal functions
-  var boundingBoxGeometry = new THREE.BoxGeometry( 200, 200, 200 );
-  var boundingBoxMaterial = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
+  var axisCylinderGeometry = new THREE.CylinderGeometry( 0.1, 0.1, 4, 32 );
+  var axisCylinderMaterials = [
+    new THREE.MeshBasicMaterial({
+        color: 0xff0000, depthTest: false,
+        depthWrite: false, transparent: true
+    }),
+    new THREE.MeshBasicMaterial({
+        color: 0x00ff00, depthTest: false,
+        depthWrite: false, transparent: true
+    }),
+    new THREE.MeshBasicMaterial({
+        color: 0x0000ff, depthTest: false,
+        depthWrite: false, transparent: true
+    }),
+  ];
 
   var camera, renderer, planeMesh = null;
 
@@ -85,9 +126,9 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
       scene.add( planeMesh );
   }
   function initCamera() {
-    // TODO: Handle scroll (maybe change pivot and sensitivities)
-    var pivot_distance = 1000.00;
-    var translate_sensitivity = 3.0;
+    var rotation_pivot_distance = 20.00;
+    var translate_sensitivity = 0.10;
+    var scroll_sensitivity = 0.05;
 
     ////
     // Object handles
@@ -127,7 +168,10 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     function rotateObject(threeObject) {
       let object = threeObject.object.__lauGameObject;
       let rotation_sensitivity = 0.01;
-      let radius = (new THREE.Vector3()).subVectors(threeObject.point, threeObject.object.parent.position);
+      let rootObject = threeObject.object;
+      while(rootObject.parent.type != 'Scene')
+        rootObject = rootObject.parent;
+      let radius = (new THREE.Vector3()).subVectors(threeObject.point, rootObject.position);
       return {
         begin: function() {
           let rotation = object.transform.fields.rotation;
@@ -138,7 +182,7 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
           var X = new THREE.Vector3(1,0,0).applyQuaternion(cameraQuat);
           var Y = new THREE.Vector3(0,1,0).applyQuaternion(cameraQuat);
 
-          let objRot = new THREE.Quaternion().setFromEuler(threeObject.object.parent.rotation);
+          let objRot = new THREE.Quaternion().setFromEuler(rootObject.rotation);
 
           X.multiplyScalar(moveE.movementX);
           Y.multiplyScalar(-moveE.movementY);
@@ -172,6 +216,9 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     function scaleObject(threeObject) {
       let object = threeObject.object.__lauGameObject;
       let scale_sensitivity = 0.1;
+      let rootObject = threeObject.object;
+      while(rootObject.parent.type != 'Scene')
+        rootObject = rootObject.parent;
       return {
         begin: function() {
           let scale = object.transform.fields.scale;
@@ -182,7 +229,7 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
           var X = new THREE.Vector3(1,0,0).applyQuaternion(cameraQuat);
           var Y = new THREE.Vector3(0,1,0).applyQuaternion(cameraQuat);
 
-          let rot = new THREE.Quaternion().setFromEuler(threeObject.object.parent.rotation);
+          let rot = new THREE.Quaternion().setFromEuler(rootObject.rotation);
           X.applyQuaternion(rot);
           Y.applyQuaternion(rot);
 
@@ -221,12 +268,10 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
 
     let rotateCamera = {
       move: function(moveE) {
-        var focalLength = 10.0;
-
-        var pivot = new THREE.Vector3(0,0,-pivot_distance);
+        var pivot = new THREE.Vector3(0,0,-rotation_pivot_distance);
         var rotationAxis = new THREE.Vector3().crossVectors(
-          new THREE.Vector3(0,0,-focalLength).normalize(),
-          new THREE.Vector3(moveE.movementX, -moveE.movementY, -focalLength).normalize()
+          new THREE.Vector3(0,0,-1.0).normalize(),
+          new THREE.Vector3(moveE.movementX, -moveE.movementY, -1.0).normalize()
         ).normalize();
         var movement = Math.sqrt(moveE.movementY*moveE.movementY +
                                  moveE.movementX*moveE.movementX);
@@ -245,6 +290,14 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
 
     // Prevent context menu
     $(renderer.domElement).on('contextmenu', function(e){return false;});
+    // Setup scropp
+    renderer.domElement.onmousewheel= function(scrollE) {
+      let lookDir = camera.getWorldDirection().normalize();
+      let scrollFactor = scrollE.wheelDelta * scroll_sensitivity;
+      lookDir.multiplyScalar(scrollFactor);
+      camera.position.add(lookDir);
+      rotation_pivot_distance -= scrollFactor;
+    };
     // Setup mousedown
     renderer.domElement.onmousedown = function(downE) {
       downE.preventDefault();
@@ -309,10 +362,10 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
 
   function initCanvas(containerElement) {
       var width = containerElement.width(), height = containerElement.height();
-      camera = new THREE.PerspectiveCamera( 75, width / height, 1, 10000 );
-      camera.position.z = 1000;
+      camera = new THREE.PerspectiveCamera( 50, width / height, 0.1, 2000 );
+      camera.position.z = 10;
 
-      renderer = new THREE.WebGLRenderer();
+      renderer = new THREE.WebGLRenderer({antialias: true});
       renderer.setSize( width, height );
       renderer.setClearColor(0x393939, 1.0);
       renderer.domElement.setAttribute('class', 'inner-canvas');
@@ -331,7 +384,7 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
     scene: scene,
     createGroup: createGroup,
     createMesh: createMesh,
-    createBoundingBox: createBoundingBox,
+    createAxesHandle: createAxesHandle,
     getObjectsUnderCursor: getObjectsUnderCursor,
     initCanvas: initCanvas,
   };
