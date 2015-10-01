@@ -15,7 +15,7 @@ public:
 
     void bindAttributes(const GLuint* attributeIds);
 	void bindForDrawing(const GLuint* attributeIds);
-	int vertexCount();
+	int primitivesCount();
 
 private:
     enum VBOFormat {
@@ -26,7 +26,7 @@ private:
     };
 
     uint8_t dimensions_;
-	int vertexCount_;
+	int primitivesCount_;
     GLuint bufferIds_[2];
     VBOFormat bufferFormat_;
     GLsizei stride_;

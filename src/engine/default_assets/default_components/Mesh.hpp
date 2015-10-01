@@ -21,9 +21,23 @@ public:
     VBO* getVBO();
 
 private:
-    void onLoadMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);
+    enum FacePrimitive { Triangle, Quad };
+
+    void onLoadJsonMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);
 
     std::shared_ptr<VBO> vbo;
+    void computeFaceParameters(
+            uint8_t facesFormat,
+            int indexRemainders[8],
+            Mesh::FacePrimitive& primitive,
+            int& primitiveSize,
+            bool& hasFaceMaterial,
+            bool& hasFaceUV,
+            bool& hasVertexUVs,
+            bool& hasFaceNormal,
+            bool& hasVertexNormals,
+            bool& hasFaceColor,
+            bool& hasVertexColors);
 };
 
 } // namespace

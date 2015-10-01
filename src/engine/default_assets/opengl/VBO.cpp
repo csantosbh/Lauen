@@ -5,14 +5,15 @@ using namespace std;
 namespace lau {
 
 VBO::VBO() {
-	vertexCount_ = 0;
+	primitivesCount_ = 0;
 }
 
 VBO::~VBO() {
     glDeleteBuffers(2, bufferIds_);
 }
 
-VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : dimensions_(dimensions), vertexCount_(vertices.size()/dimensions) {
+VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : dimensions_(dimensions), primitivesCount_(indices.size()) {
+    int vertexCount = vertices.size()/dimensions;
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
 
@@ -60,7 +61,9 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : di
     stride_ = sizeof(float) * dimensions_;
 }
 
-VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices) : dimensions_(dimensions), vertexCount_(vertices.size()/dimensions) {
+VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices) : dimensions_(dimensions), primitivesCount_(vertices.size()) {
+    int vertexCount = vertices.size()/dimensions;
+
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
 
@@ -74,8 +77,8 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
 #endif
 
     vector<float> verticesAndNormals;
-    verticesAndNormals.reserve(dimensions_ * vertexCount_ * 2);
-    for(int i = 0; i < vertexCount_; ++i) {
+    verticesAndNormals.reserve(dimensions_ * vertexCount * 2);
+    for(int i = 0; i < vertexCount; ++i) {
         int baseIdx = i*dimensions_;
         // Vertex
         for(int d = 0; d < dimensions_; ++d)
@@ -157,8 +160,8 @@ void VBO::bindForDrawing(const GLuint* attributeIds) {
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIds_[1]);
 }
 
-int VBO::vertexCount() {
-	return this->vertexCount_;
+int VBO::primitivesCount() {
+	return this->primitivesCount_;
 }
 
 } // namespace lau

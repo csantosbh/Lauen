@@ -137,7 +137,7 @@ void MeshRenderer::draw(float alpha) {
             glUniform3fv(lightPositionsUniformLocation, lights.size(), lightPositions.data());
             glUniform4fv(lightColorsUniformLocation, lights.size(), lightColors.data());
 
-            glDrawElements(GL_TRIANGLE_STRIP, vbo->vertexCount(), GL_UNSIGNED_INT, 0);
+            glDrawElements(GL_TRIANGLES, vbo->primitivesCount(), GL_UNSIGNED_INT, 0);
         }
 	}
 }
