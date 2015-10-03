@@ -29,7 +29,7 @@ void ThreadPool::startJob_(const function<void()>& job) {
 }
 
 void ThreadPool::worker() {
-    for(;;) {
+    while(ThreadPool::isRunning_) {
         std::function<void()> job;
         {
             unique_lock<mutex> lock(mtx_);
