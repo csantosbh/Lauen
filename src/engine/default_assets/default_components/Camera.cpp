@@ -14,7 +14,7 @@ namespace lau {
 std::set<Camera*, bool(*)(const Camera*,const Camera*)> Camera::cameras_ STATIC_INITIALIZER_GROUP_A (CameraPriorityComparison);
 const Camera* Camera::current = nullptr;
 
-Camera::Camera(const rapidjson::Value& fields) {
+Camera::Camera(const rapidjson::Value& fields) : totalT_(0) {
     nearPlane_ = static_cast<float>(fields["near"].GetDouble());
     farPlane_ = static_cast<float>(fields["far"].GetDouble());
     nearPlaneWidth_ = static_cast<float>(fields["width"].GetDouble());
@@ -46,11 +46,13 @@ void Camera::update(float dt) {
     world2camera.block<3,3>(0,0) = gameObject->transform.getRotationMatrix().transpose();
     Vector3f t = world2camera.block<3,3>(0,0)*-gameObject->transform.position;
     world2camera.block<3,1>(0,3) = t;
+
+    totalT_ += dt;
 }
 
 void Camera::draw(float temporalAlpha) {
-    int c[3]={rand()%100,rand()%100,rand()%100};
-    glClearColor(c[0]/100.0f,c[0]/100.0f,c[0]/100.0f,1);
+    float c=cos(totalT_*8.0)*0.5+0.5;
+    glClearColor(c,c,c,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     const Camera* prevCamera = current;
     current = this;

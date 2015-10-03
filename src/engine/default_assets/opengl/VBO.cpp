@@ -83,8 +83,9 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
     verticesAndNormals.reserve(vertices.size()+normals.size());
     for(int i = 0; i < vertices.size(); i += dimensions_) {
         // Vertex
-        for(int d = 0; d < dimensions_; ++d)
+        for(int d = 0; d < dimensions_; ++d) {
             verticesAndNormals.push_back(vertices[i + d]);
+        }
         // Normal
         for(int d = 0; d < dimensions_; ++d)
             verticesAndNormals.push_back(normals[i + d]);
@@ -155,10 +156,12 @@ void VBO::bindAttributes(const GLuint* attributeIds) {
 void VBO::bindForDrawing(const GLuint* attributeIds) {
 	glBindBuffer(GL_ARRAY_BUFFER, bufferIds_[0]);
 
-    if((bufferFormat_&VBOFormat::Vf) != 0)
+    if((bufferFormat_&0x1) != 0) {
         glVertexAttribPointer(attributeIds[0], dimensions_, GL_FLOAT, GL_FALSE, stride_, 0);
-    if((bufferFormat_&VBOFormat::VNf) != 0)
+    }
+    if((bufferFormat_&0x2) != 0) {
         glVertexAttribPointer(attributeIds[1], dimensions_, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_));
+    }
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIds_[1]);
 }

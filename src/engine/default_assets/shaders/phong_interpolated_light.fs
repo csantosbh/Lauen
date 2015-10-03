@@ -30,7 +30,6 @@ varying vec3 worldPosition;
 
 void main( void )
 {
-	/*
 	vec3 finalColor = vec3(0,0,0);
 	vec3 normal = normalize(normalAtFragment);
 	for(int i = 0; i < numLights && i < MAX_LIGHTS; ++i) {
@@ -38,8 +37,7 @@ void main( void )
 		float intensity = clamp(dot(-lightToFragmentDir, normal), 0.0, 1.0);
 		finalColor += intensity * lightColors[i].w * lightColors[i].xyz * surfaceColor;
 	}
-	*/
-	gl_FragColor = vec4(vec3(1.0,0.0,0.0),1.0);
+	gl_FragColor = vec4(finalColor,1.0);
 }
 
 #endif

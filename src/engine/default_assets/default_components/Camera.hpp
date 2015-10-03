@@ -62,6 +62,8 @@ private:
     float aspect_;
     bool customAspectProvided_;
     Callback<int,int>::CallbackID screenCallback_;
+
+    float totalT_;
 };
 
 } // namespace lau
