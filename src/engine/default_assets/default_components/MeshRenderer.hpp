@@ -22,6 +22,7 @@ private:
     bool wasInitialized = false;
 
     void onLoadShaders(std::deque<std::pair<bool, std::vector<uint8_t>>>&shaderFiles);
+    void processLoadedShaders(std::deque<std::pair<bool, std::vector<uint8_t>>>&shaderFiles);
 
     // TODO move this to a Shader class
     GLuint program;

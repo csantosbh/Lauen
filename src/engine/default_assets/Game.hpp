@@ -3,6 +3,7 @@
 #include <vector>
 #include <deque>
 #include <memory>
+#include <mutex>
 
 #include "LauCommon.h"
 #include "GameObject.hpp"
@@ -23,7 +24,11 @@ public:
 
     void terminate();
 
+    static void scheduleMainThreadTask(const std::function<void()>& task);
+
 private:
+    static std::deque<std::function<void()>> enqueuedSequentialTasks_;
+    static std::mutex enqueuedSequentialTasksMtx_;
 };
 
 } // namespace lau

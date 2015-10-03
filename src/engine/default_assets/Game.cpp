@@ -11,6 +11,9 @@ namespace lau {
 
 using namespace std;
 
+std::deque<std::function<void()>> Game::enqueuedSequentialTasks_;
+std::mutex Game::enqueuedSequentialTasksMtx_;
+
 Game::Game() {
 }
 
@@ -45,9 +48,15 @@ void Game::update(double dt) {
     }
 
     // Handle IO requests
-    while(utils::IO::hasCompletedRequests()) {
-        utils::IO::dispatchCompletedRequest();
+    while(!enqueuedSequentialTasks_.empty()) {
+        enqueuedSequentialTasks_.front()();
+        enqueuedSequentialTasks_.pop_front();
     }
+}
+
+void Game::scheduleMainThreadTask(const std::function<void()>& task) {
+    unique_lock<mutex> lock(enqueuedSequentialTasksMtx_);
+    enqueuedSequentialTasks_.push_back(task);
 }
 
 void Game::terminate() {

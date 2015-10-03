@@ -22,8 +22,12 @@ public:
 
 private:
     enum FacePrimitive { Triangle, Quad };
+    std::vector<float> vertices_;
+    std::vector<float> normals_;
+    std::vector<int> faces_;
 
     void onLoadJsonMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);
+    void processLoadedMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile);
 
     std::shared_ptr<VBO> vbo;
     void computeFaceParameters(

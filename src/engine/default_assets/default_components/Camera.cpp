@@ -49,6 +49,8 @@ void Camera::update(float dt) {
 }
 
 void Camera::draw(float temporalAlpha) {
+    int c[3]={rand()%100,rand()%100,rand()%100};
+    glClearColor(c[0]/100.0f,c[0]/100.0f,c[0]/100.0f,1);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     const Camera* prevCamera = current;
     current = this;

@@ -1,7 +1,10 @@
+#include "Game.hpp"
 #include "Factories.hpp"
 #include "Mesh.hpp"
 #include "utils/IO.h"
+#include "utils/Time.h"
 #include "LauCommon.h"
+#include "utils/ThreadPool.hpp"
 
 using namespace std;
 using namespace rapidjson;
@@ -38,7 +41,7 @@ VBO* Mesh::getVBO() {
 
 void Mesh::computeFaceParameters(
         uint8_t facesFormat,
-        int indexRemainders[8],
+        int* indexRemainders,
         Mesh::FacePrimitive& primitive,
         int& primitiveSize,
         bool& hasFaceMaterial,
@@ -49,14 +52,14 @@ void Mesh::computeFaceParameters(
         bool& hasFaceColor,
         bool& hasVertexColors) {
 
-    primitive = (facesFormat&0x01)==0?Mesh::Triangle:Mesh::Quad;
+    primitive = ((facesFormat&0x01u)==0) ? Mesh::Triangle:Mesh::Quad;
     hasFaceMaterial = (facesFormat&0x02)!=0;
-    hasFaceUV = (facesFormat&0x04)!=0;
-    hasVertexUVs = (facesFormat&0x08)!=0;
-    hasFaceNormal = (facesFormat&0x10)!=0;
-    hasVertexNormals = (facesFormat&0x20)!=0;
-    hasFaceColor = (facesFormat&0x40)!=0;
-    hasVertexColors = (facesFormat&0x80)!=0;
+    hasFaceUV = (facesFormat&0x04u)!=0;
+    hasVertexUVs = (facesFormat&0x08u)!=0;
+    hasFaceNormal = (facesFormat&0x10u)!=0;
+    hasVertexNormals = (facesFormat&0x20u)!=0;
+    hasFaceColor = (facesFormat&0x40u)!=0;
+    hasVertexColors = (facesFormat&0x80u)!=0;
 
     primitiveSize = (primitive == Mesh::Triangle) ? 3 : 4;
 
@@ -64,7 +67,7 @@ void Mesh::computeFaceParameters(
     indexRemainders[1] = indexRemainders[0] + (hasFaceMaterial ? 1 : 0);
     // You either have face uv or vertex uvs (or none, but never both)
     indexRemainders[2] = indexRemainders[1] + (hasFaceUV ? 1 : 0);
-    indexRemainders[3] = indexRemainders[1] + (hasVertexUVs ? primitiveSize : 0);
+    indexRemainders[3] = indexRemainders[2] + (hasVertexUVs ? primitiveSize : 0);
     // You either have face normal or vertex normals (or none, but never both)
     indexRemainders[4] = indexRemainders[3] + (hasFaceNormal ? 1 : 0);
     indexRemainders[5] = indexRemainders[4] + (hasVertexNormals ? primitiveSize : 0);
@@ -77,116 +80,109 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
     if(!meshFile.begin()->first) {
         lerr << "[Mesh] Error loading mesh file \"" << fname << "\"" << endl;
     } else {
-        meshFile.begin()->second.push_back('\0');
-        rapidjson::Document serializedMesh;
-        serializedMesh.Parse((char*)(meshFile.begin()->second.data()));
+        double a = utils::time::now();
+        auto f = bind(&Mesh::processLoadedMesh, this, meshFile);
+        double b = utils::time::now();
+        lout << (b-a) << "s elapsed" << endl;
+        ThreadPool::startJob(f);
+        a = utils::time::now();
+        lout << (a-b) << "s on thread" << endl;
+    }
+}
 
-        vector<float> cachedVertices;
-        vector<float> cachedNormals;
-        vector<int> cachedFaces;
+void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
+    meshFile.begin()->second.push_back('\0');
+    rapidjson::Document serializedMesh;
+    serializedMesh.Parse((char*)(meshFile.begin()->second.data()));
 
-        cachedVertices.reserve(serializedMesh["vertices"].Size());
-        cachedFaces.reserve(serializedMesh["faces"].Size());
+    vector<float> cachedVertices;
+    vector<float> cachedNormals;
 
-        // Grab vertices
-        const Value& _verts=serializedMesh["vertices"];
-        for (Value::ConstValueIterator itr = _verts.Begin();
-                itr != _verts.End(); ++itr) {
-            cachedVertices.push_back(itr->GetDouble());
-        }
+    cachedVertices.reserve(serializedMesh["vertices"].Size());
 
-        // Grab normals
-        const Value& _norms=serializedMesh["normals"];
-        for (Value::ConstValueIterator itr = _norms.Begin();
-                itr != _norms.End(); ++itr) {
-            cachedNormals.push_back(itr->GetDouble());
-        }
+    // Grab vertices
+    const Value& _verts=serializedMesh["vertices"];
+    for (Value::ConstValueIterator itr = _verts.Begin();
+            itr != _verts.End(); ++itr) {
+        cachedVertices.push_back(itr->GetDouble());
+    }
 
-        // Grab faces
-        const Value& _inds=serializedMesh["faces"];
-        
-        // Cache indices
-        for (Value::ConstValueIterator facesItr = _inds.Begin();
-                facesItr != _inds.End(); ++facesItr) {
-            cachedFaces.push_back(facesItr->GetInt());
-        }
+    // Grab normals
+    const Value& _norms=serializedMesh["normals"];
+    for (Value::ConstValueIterator itr = _norms.Begin();
+            itr != _norms.End(); ++itr) {
+        cachedNormals.push_back(itr->GetDouble());
+    }
+
+    // Grab faces
+    const Value& serializedFaces=serializedMesh["faces"];
+
+    // Reassemble mesh into an internal, VBO friendly format
+    FacePrimitive primitive;
+    int faceStep, primitiveSize;
+    int indexRemainders[8];
+    bool hasFaceMaterial, hasFaceUV, hasVertexUVs, hasFaceNormal,
+         hasVertexNormals, hasFaceColor, hasVertexColors;
+    uint8_t facesFormat;
+
+    int currentIndex = 0;
+    const int DIMS = 3;
+    const int PRIMITIVE_SIZE = 3;
+
+    for(int i = 1; i < serializedFaces.Size(); i+= faceStep) {
+        facesFormat = static_cast<uint8_t>(serializedFaces[i-1].GetInt());
 
         // Reassemble mesh into an internal, VBO friendly format
-        FacePrimitive primitive;
-        int primitiveSize;
-        int indexRemainders[8];
-        bool hasFaceMaterial, hasFaceUV, hasVertexUVs, hasFaceNormal,
-             hasVertexNormals, hasFaceColor, hasVertexColors;
-        uint8_t facesFormat = static_cast<uint8_t>(_inds[0].GetInt());
-
         computeFaceParameters(facesFormat, indexRemainders, primitive,
-                                primitiveSize, hasFaceMaterial, hasFaceUV,
-                                hasVertexUVs, hasFaceNormal, hasVertexNormals,
-                                hasFaceColor, hasVertexColors);
+                primitiveSize, hasFaceMaterial, hasFaceUV,
+                hasVertexUVs, hasFaceNormal, hasVertexNormals,
+                hasFaceColor, hasVertexColors);
 
-        int faceStep = indexRemainders[7] + 1;
-
-        vector<float> vertices;
-        vector<float> normals;
-        vector<int> faces;
-        int currentIndex = 0;
-        const int DIMS = 3;
-        const int PRIMITIVE_SIZE = 3;
-
-        for(int i = 1; i < cachedFaces.size(); i+= faceStep) {
-            facesFormat = static_cast<uint8_t>(cachedFaces[i-1]);
-
-            // Reassemble mesh into an internal, VBO friendly format
-            computeFaceParameters(facesFormat, indexRemainders, primitive,
-                                   primitiveSize, hasFaceMaterial, hasFaceUV,
-                                   hasVertexUVs, hasFaceNormal, hasVertexNormals,
-                                   hasFaceColor, hasVertexColors);
-
-            faceStep = indexRemainders[7]+1;
+        faceStep = indexRemainders[7]+1;
 
 
-            for(int v = 0; v < PRIMITIVE_SIZE; ++v) {
-                for(int d = 0; d < DIMS; ++d) {
-                    vertices.push_back(cachedVertices[cachedFaces[i+v]*DIMS + d]);
-                }
-                faces.push_back(currentIndex);
-                currentIndex++;
+        for(int v = 0; v < PRIMITIVE_SIZE; ++v) {
+            for(int d = 0; d < DIMS; ++d) {
+                vertices_.push_back(cachedVertices[serializedFaces[i+v].GetInt()*DIMS + d]);
             }
-            if(primitive == Quad) {
-                // Transform the quad into two triangles by pushing the fourth
-                // vertex and adding the remaining ones to the faces list
-                for(int d = 0; d < DIMS; ++d) {
-                    vertices.push_back(cachedVertices[cachedFaces[i+PRIMITIVE_SIZE]*DIMS + d]);
-                }
-                faces.push_back(currentIndex-3);
-                faces.push_back(currentIndex-1);
-                faces.push_back(currentIndex);
-                currentIndex++;
+            faces_.push_back(currentIndex);
+            currentIndex++;
+        }
+        if(primitive == Quad) {
+            // Transform the quad into two triangles by pushing the fourth
+            // vertex and adding the remaining ones to the faces list
+            for(int d = 0; d < DIMS; ++d) {
+                vertices_.push_back(cachedVertices[serializedFaces[i+PRIMITIVE_SIZE].GetInt()*DIMS + d]);
             }
+            faces_.push_back(currentIndex-3);
+            faces_.push_back(currentIndex-1);
+            faces_.push_back(currentIndex);
+            currentIndex++;
+        }
 
-            if(hasVertexNormals) {
-                for(int n = 0; n < PRIMITIVE_SIZE; ++n) {
-                    for(int d = 0; d < DIMS; ++d) {
-                        normals.push_back(cachedNormals[cachedFaces[i+indexRemainders[4]+n]*DIMS + d]);
-                    }
+        if(hasVertexNormals) {
+            for(int n = 0; n < primitiveSize; ++n) {
+                for(int d = 0; d < DIMS; ++d) {
+                    normals_.push_back(cachedNormals[serializedFaces[i+indexRemainders[4]+n].GetInt()*DIMS + d]);
                 }
-                if(primitive == Quad) {
-                    for(int d = 0; d < DIMS; ++d) {
-                        normals.push_back(cachedNormals[cachedFaces[i+indexRemainders[4]+PRIMITIVE_SIZE]*DIMS + d]);
-                    }
-                }
-            } else if(hasFaceNormal) {
-                for(int n = 0; n < primitiveSize; ++n) {
-                    for(int d = 0; d < DIMS; ++d) {
-                        normals.push_back(cachedNormals[cachedFaces[i+indexRemainders[4]]*DIMS + d]);
-                    }
+            }
+        } else if(hasFaceNormal) {
+            for(int n = 0; n < primitiveSize; ++n) {
+                for(int d = 0; d < DIMS; ++d) {
+                    normals_.push_back(cachedNormals[serializedFaces[i+indexRemainders[4]].GetInt()*DIMS + d]);
                 }
             }
         }
-
-        // Initialize VBO
-        vbo = shared_ptr<VBO>(new VBO(DIMS, vertices, normals, faces));
     }
+
+    // Initialize VBO. Since it plays with the OpenGL context (which is not
+    // thread safe), it must take place in the main thread.
+    Game::scheduleMainThreadTask([this]() {
+        vbo = shared_ptr<VBO>(new VBO(DIMS, vertices_, normals_, faces_));
+        vertices_.clear();
+        normals_.clear();
+        faces_.clear();
+    });
 }
 
 //////

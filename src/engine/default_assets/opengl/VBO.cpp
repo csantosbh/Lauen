@@ -1,3 +1,5 @@
+#include <cassert>
+#include <stdio.h>
 #include <sstream>
 #include "VBO.h"
 
@@ -61,7 +63,8 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : di
     stride_ = sizeof(float) * dimensions_;
 }
 
-VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices) : dimensions_(dimensions), primitivesCount_(vertices.size()) {
+VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices) : dimensions_(dimensions), primitivesCount_(indices.size()) {
+    assert(vertices.size() == normals.size());
     int vertexCount = vertices.size()/dimensions;
 
     // Create two VBOs: one for indices and another for vertices
@@ -77,15 +80,14 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
 #endif
 
     vector<float> verticesAndNormals;
-    verticesAndNormals.reserve(dimensions_ * vertexCount * 2);
-    for(int i = 0; i < vertexCount; ++i) {
-        int baseIdx = i*dimensions_;
+    verticesAndNormals.reserve(vertices.size()+normals.size());
+    for(int i = 0; i < vertices.size(); i += dimensions_) {
         // Vertex
         for(int d = 0; d < dimensions_; ++d)
-            verticesAndNormals.push_back(vertices[baseIdx + d]);
+            verticesAndNormals.push_back(vertices[i + d]);
         // Normal
         for(int d = 0; d < dimensions_; ++d)
-            verticesAndNormals.push_back(normals[baseIdx + d]);
+            verticesAndNormals.push_back(normals[i + d]);
     }
 
     // Bind vertex buffer so we can start using it
@@ -130,13 +132,14 @@ void VBO::bindAttributes(const GLuint* attributeIds) {
     glBindBuffer(GL_ARRAY_BUFFER, bufferIds_[0]);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIds_[1]);
 
-    if((bufferFormat_&VBOFormat::Vf) != 0) {
+    // TODO usar switch
+    if((bufferFormat_&0x1) != 0) {
         glEnableVertexAttribArray(attributeIds[0]);
         glVertexAttribPointer(attributeIds[0], dimensions_, GL_FLOAT, GL_FALSE, stride_, 0);
     }
-    if((bufferFormat_&VBOFormat::VNf) != 0) {
+    if((bufferFormat_&0x2) != 0) {
         glEnableVertexAttribArray(attributeIds[1]);
-        glVertexAttribPointer(attributeIds[1], dimensions_, GL_FLOAT, GL_FALSE, stride_, reinterpret_cast<GLvoid*>(sizeof(float)*dimensions_));
+        glVertexAttribPointer(attributeIds[1], dimensions_, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_));
     }
 
 #ifdef DEBUG
@@ -155,7 +158,7 @@ void VBO::bindForDrawing(const GLuint* attributeIds) {
     if((bufferFormat_&VBOFormat::Vf) != 0)
         glVertexAttribPointer(attributeIds[0], dimensions_, GL_FLOAT, GL_FALSE, stride_, 0);
     if((bufferFormat_&VBOFormat::VNf) != 0)
-        glVertexAttribPointer(attributeIds[1], dimensions_, GL_FLOAT, GL_FALSE, stride_, reinterpret_cast<GLvoid*>(sizeof(float)*dimensions_));
+        glVertexAttribPointer(attributeIds[1], dimensions_, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_));
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIds_[1]);
 }

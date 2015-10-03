@@ -18,6 +18,7 @@
 #include <fstream>
 #endif
 
+#include "Game.hpp"
 #include "window/NaCl.hpp"
 #include "utils/IO.h"
 #include "utils/ThreadPool.hpp"
@@ -28,38 +29,35 @@ namespace lau {
 
 namespace utils {
 
-std::mutex IO::completedRequestMtx_;
-std::deque<IO::IORequestResponse> IO::completedRequests_;
-
 #ifdef NACL
 
 using namespace pp;
 
 class NaClIO: public IO {
 public:
-    virtual void requestFiles(const std::initializer_list<std::string>& filenames,
-            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    virtual void requestFiles(const initializer_list<string>& filenames,
+            const function<void(deque<pair<bool, vector<uint8_t>>>&)>& callback)
     {
         requestFiles<const initializer_list<string>&>(filenames, callback);
     }
 
-    virtual void requestFiles(const std::vector<std::string>& filenames,
-            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    virtual void requestFiles(const vector<string>& filenames,
+            const function<void(deque<pair<bool, vector<uint8_t>>>&)>& callback)
     {
         requestFiles<const vector<string>&>(filenames, callback);
     }
 
     NaClIO() :
         handler(NULL),
-        onLoadDone(bind(&NaClIO::onLoadDoneImpl, this, std::placeholders::_1, std::placeholders::_2))
+        onLoadDone(bind(&NaClIO::onLoadDoneImpl, this, placeholders::_1, placeholders::_2))
     {}
 
 private:
     URLLoaderHandler* handler;
-    std::function<void(bool success, const std::string& data)> onLoadDone;
+    function<void(bool success, const string& data)> onLoadDone;
 
     queue<queue<string>> pendingRequests;
-    queue<std::function<void(std::deque<std::pair<bool,std::vector<uint8_t>>>&)>> pendingCallbacks;
+    queue<function<void(deque<pair<bool,vector<uint8_t>>>&)>> pendingCallbacks;
     deque<pair<bool, vector<uint8_t>>> filesRead;
 
     void onLoadDoneImpl(bool success, const string& data) {
@@ -72,10 +70,8 @@ private:
             handler->Start();
         } else {
             // The current request is done! Forward the requested data
-            {
-                unique_lock<mutex> lock(completedRequestMtx_);
-                completedRequests_.push_back(IORequestResponse(pendingCallbacks.front(), filesRead));
-            }
+            function<void()> mainThreadCallback = bind(pendingCallbacks.front(), filesRead);
+            Game::scheduleMainThreadTask(mainThreadCallback);
 
             // Clear filesRead container
             filesRead.clear();
@@ -96,7 +92,7 @@ private:
     }
 
     template<class Container>
-    void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)>& callback)
+    void requestFiles(Container requestedFiles, const function<void(deque<pair<bool, vector<uint8_t>>>&)>& callback)
     {
         queue<string> pendingFiles;
         for(const auto& file: requestedFiles)
@@ -123,14 +119,18 @@ private:
 
 class DesktopIO: public IO {
 public:
-    virtual void requestFiles(const std::initializer_list<std::string>& filenames,
-            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    virtual void requestFiles(const initializer_list<string>& filenames,
+            const function<void(deque<pair<bool, vector<uint8_t>>>&)>& callback)
     {
-        requestFiles<const initializer_list<string>&>(filenames, callback);
+        vector<string> filenamesCopy;
+        for(auto& fname: filenames)
+            filenamesCopy.push_back(fname);
+
+        ThreadPool::startJob(bind(&DesktopIO::requestFiles<const vector<string>&>, this, filenamesCopy, callback));
     }
 
-    virtual void requestFiles(const std::vector<std::string>& filenames,
-            const std::function<void(std::deque<std::pair<bool, std::vector<uint8_t>>>&)>& callback)
+    virtual void requestFiles(const vector<string>& filenames,
+            const function<void(deque<pair<bool, vector<uint8_t>>>&)>& callback)
     {
         ThreadPool::startJob(bind(&DesktopIO::requestFiles<const vector<string>&>, this, filenames, callback));
     }
@@ -140,24 +140,22 @@ public:
 
 private:
     template<class Container>
-    void requestFiles(Container requestedFiles, const std::function<void(std::deque<pair<bool, std::vector<uint8_t>>>&)> callback)
+    void requestFiles(Container requestedFiles, const function<void(deque<pair<bool, vector<uint8_t>>>&)> callback)
     {
         deque<pair<bool, vector<uint8_t>>> filesRead;
 
         for(const auto& filename: requestedFiles) {
-            std::ifstream in;
-            in.open(filename.c_str(), std::ios::in | std::ios::binary);
+            ifstream in;
+            in.open(filename.c_str(), ios::in | ios::binary);
             if (in) {
-                filesRead.push_back(make_pair(true, std::vector<uint8_t>((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>())));
+                filesRead.push_back(make_pair(true, vector<uint8_t>((istreambuf_iterator<char>(in)), istreambuf_iterator<char>())));
             } else {
                 filesRead.push_back(make_pair(false, vector<uint8_t>()));
             }
         }
-        // Make the requested files available
-        {
-            unique_lock<mutex> lock(completedRequestMtx_);
-            completedRequests_.push_back(IORequestResponse(callback, filesRead));
-        }
+
+        function<void()> mainThreadCallback = bind(callback, filesRead);
+        Game::scheduleMainThreadTask(mainThreadCallback);
     }
 };
 
