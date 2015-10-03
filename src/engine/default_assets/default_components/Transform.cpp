@@ -78,11 +78,11 @@ void Transform::updateObject2World(const Matrix4f& parent2world, const Eigen::Ma
     obj2parentTranspOfInvMatrix_.block<3,1>(0,3) = obj2parentTranspOfInvMatrix_.block<3,3>(0,0) * -position;
     ptr = obj2parentTranspOfInvMatrix_.data();
 
-    // Multiply by scale. This is equivalent to performing Affine = R*S.
-    float inv_scale[] = {1.0f/scale[0], 1.0f/scale[1], 1.0f/scale[2]};
-    ptr[0] *= inv_scale[0]; ptr[4] *= inv_scale[0]; ptr[8] *= inv_scale[0];
-    ptr[1] *= inv_scale[1]; ptr[5] *= inv_scale[1]; ptr[9] *= inv_scale[1];
-    ptr[2] *= inv_scale[2]; ptr[6] *= inv_scale[2]; ptr[10] *= inv_scale[2];
+    // Multiply by scale. This is equivalent to performing M = S^-1*M.
+    const float inv_scale[] = {1.0f/scale[0], 1.0f/scale[1], 1.0f/scale[2]};
+    ptr[0] *= inv_scale[0]; ptr[4] *= inv_scale[0]; ptr[8]  *= inv_scale[0]; ptr[12] *= inv_scale[0];
+    ptr[1] *= inv_scale[1]; ptr[5] *= inv_scale[1]; ptr[9]  *= inv_scale[1]; ptr[13] *= inv_scale[1];
+    ptr[2] *= inv_scale[2]; ptr[6] *= inv_scale[2]; ptr[10] *= inv_scale[2]; ptr[14] *= inv_scale[2];
     ptr[3] = ptr[7] = ptr[11] = 0.0;
     ptr[15] = 1.0f;
 
@@ -103,6 +103,8 @@ void Transform::updateObject2World() {
     ptr[0] *= scale[0]; ptr[4] *= scale[1]; ptr[8] *= scale[2];
     ptr[1] *= scale[0]; ptr[5] *= scale[1]; ptr[9] *= scale[2];
     ptr[2] *= scale[0]; ptr[6] *= scale[1]; ptr[10] *= scale[2];
+    ptr[3] = ptr[7] = ptr[11] = 0.0;
+    ptr[15] = 1.0f;
 
 	////
     // Update the object2world^-1^t matrix
@@ -110,11 +112,13 @@ void Transform::updateObject2World() {
     object2WorldTranspOfInvMatrix_.block<3,1>(0,3) = object2WorldTranspOfInvMatrix_.block<3,3>(0,0) * -position;
     ptr = object2WorldTranspOfInvMatrix_.data();
 
-    // Multiply by scale. This is equivalent to performing Affine = R*S.
-    float inv_scale[] = {1.0f/scale[0], 1.0f/scale[1], 1.0f/scale[2]};
-    ptr[0] *= inv_scale[0]; ptr[4] *= inv_scale[0]; ptr[8] *= inv_scale[0];
-    ptr[1] *= inv_scale[1]; ptr[5] *= inv_scale[1]; ptr[9] *= inv_scale[1];
-    ptr[2] *= inv_scale[2]; ptr[6] *= inv_scale[2]; ptr[10] *= inv_scale[2];
+    // Multiply by scale. This is equivalent to performing M = S^-1*M.
+    const float inv_scale[] = {1.0f/scale[0], 1.0f/scale[1], 1.0f/scale[2]};
+    ptr[0] *= inv_scale[0]; ptr[4] *= inv_scale[0]; ptr[8]  *= inv_scale[0]; ptr[12] *= inv_scale[0];
+    ptr[1] *= inv_scale[1]; ptr[5] *= inv_scale[1]; ptr[9]  *= inv_scale[1]; ptr[13] *= inv_scale[1];
+    ptr[2] *= inv_scale[2]; ptr[6] *= inv_scale[2]; ptr[10] *= inv_scale[2]; ptr[14] *= inv_scale[2];
+    ptr[3] = ptr[7] = ptr[11] = 0.0;
+    ptr[15] = 1.0f;
 
     // Transpose it
     object2WorldTranspOfInvMatrix_.transposeInPlace();
