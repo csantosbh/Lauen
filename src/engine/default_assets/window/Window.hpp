@@ -15,8 +15,8 @@ public:
     virtual ~Window() {}
 
 protected:
-    const double MS_PER_FRAME = 1.0/60.0;
-    const double MAXIMUM_LAG = 1.0/60.0*5.0;
+    static const double MS_PER_FRAME;
+    static const double MAXIMUM_LAG;
 
     Game game;
 };

@@ -19,6 +19,9 @@ defaults={
         'pepper_folder': '/home/csantos/workspace/nacl_sdk/pepper_41',
         'compiler': 'toolchain/linux_pnacl/bin/pnacl-clang++'
     },
+    'javascript': {
+        'g++': 'PATH=/home/csantos/workspace/emsdk_portable:/home/csantos/workspace/emsdk_portable/clang/tag-e1.34.11/build_tag-e1.34.11_64/bin:/home/csantos/workspace/emsdk_portable/emscripten/tag-1.34.11:$PATH em++'
+    },
     'third_party_folder': '/home/csantos/workspace/LauEngine/third_party'
   }
 }

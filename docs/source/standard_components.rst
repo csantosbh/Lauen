@@ -13,10 +13,6 @@ The Transform component is required by all components that perform any kind of
 rendering, since it specifies the position, scale and rotation of the object
 being rendered in the 3D space.
 
-.. warning::
-    Although a game object doesn't have to have a Transform component, you must
-    make sure never to have more than one Transform per game object.
-
 ------------
 Public members
 ------------

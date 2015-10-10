@@ -32,7 +32,7 @@ void main( void )
 {
 	vec3 finalColor = vec3(0,0,0);
 	vec3 normal = normalize(normalAtFragment);
-	for(int i = 0; i < numLights && i < MAX_LIGHTS; ++i) {
+	for(int i = 0; i < MAX_LIGHTS; ++i) {
 		vec3 lightToFragmentDir = normalize(worldPosition-lightPositions[i]);
 		float intensity = clamp(dot(-lightToFragmentDir, normal), 0.0, 1.0);
 		finalColor += intensity * lightColors[i].w * lightColors[i].xyz * surfaceColor;

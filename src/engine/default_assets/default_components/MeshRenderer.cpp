@@ -9,6 +9,10 @@
 
 #include "Light.hpp"
 
+#ifdef JAVASCRIPT
+#include <emscripten.h>
+#endif
+
 using namespace std;
 using namespace Eigen;
 
@@ -151,9 +155,12 @@ void MeshRenderer::checkShaderCompilation(GLuint shaderId) {
         vector<char> infoLog(logSize);
         glGetShaderInfoLog(shaderId, logSize, &logSize, (char*)&infoLog[0]);
         // TODO proper error handling here
+        lerr << "[Shader Error]"<<endl;
         lerr << (char*)&infoLog[0] << endl;
-#ifndef NACL
-        exit(0);
+#if defined(DESKTOP)
+        exit(1);
+#elif defined(JAVASCRIPT)
+        emscripten_force_exit(1);
 #endif
     }
 }

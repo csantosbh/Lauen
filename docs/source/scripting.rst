@@ -11,5 +11,6 @@ sure to have its documentation at hand.
 
 .. toctree::
    
+   preprocessors
    components
    standard_components

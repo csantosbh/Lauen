@@ -19,7 +19,11 @@ queue<function<void()>> ThreadPool::work_queue_;
 ThreadPool ThreadPool::singleton_;
 
 void ThreadPool::startJob(const function<void()>& job) {
+#ifndef JAVASCRIPT
     singleton_.startJob_(job);
+#else
+    job();
+#endif
 }
 
 void ThreadPool::startJob_(const function<void()>& job) {
@@ -63,11 +67,14 @@ int getNumberAvailableCores() {
 }
 
 ThreadPool::ThreadPool() {
+#ifndef JAVASCRIPT
     int number_cores = getNumberAvailableCores();
     lout << "Got " << number_cores << " cores!" << endl;
     for(int i = 0; i < number_cores; ++i) {
         this->pool_.push_back(thread(worker));
     }
+#endif
+    // TODO implement support for webworkers (http://flohofwoe.blogspot.com.br/2013/01/multithreading-in-emscripten-with-html5.html)
 }
 
 ThreadPool::~ThreadPool() {

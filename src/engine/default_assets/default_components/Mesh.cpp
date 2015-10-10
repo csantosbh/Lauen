@@ -5,6 +5,9 @@
 #include "utils/Time.h"
 #include "LauCommon.h"
 #include "utils/ThreadPool.hpp"
+#ifdef JAVASCRIPT
+#include <emscripten.h>
+#endif
 
 using namespace std;
 using namespace rapidjson;
@@ -104,14 +107,14 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
     const Value& _verts=serializedMesh["vertices"];
     for (Value::ConstValueIterator itr = _verts.Begin();
             itr != _verts.End(); ++itr) {
-        cachedVertices.push_back(itr->GetDouble());
+        cachedVertices.push_back(static_cast<float>(itr->GetDouble()));
     }
 
     // Grab normals
     const Value& _norms=serializedMesh["normals"];
     for (Value::ConstValueIterator itr = _norms.Begin();
             itr != _norms.End(); ++itr) {
-        cachedNormals.push_back(itr->GetDouble());
+        cachedNormals.push_back(static_cast<float>(itr->GetDouble()));
     }
 
     // Grab faces
@@ -139,7 +142,6 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
                 hasFaceColor, hasVertexColors);
 
         faceStep = indexRemainders[7]+1;
-
 
         for(int v = 0; v < PRIMITIVE_SIZE; ++v) {
             for(int d = 0; d < DIMS; ++d) {
