@@ -28,6 +28,8 @@ private:
     GLuint program;
     const int vertexAttribId = 0;
     const int normalAttribId = 1;
+    const int skinIndexAttribId = 2;
+    const int skinWeightAttribId = 3;
     void checkShaderCompilation(GLuint shaderId);
     GLint projectionUniformLocation;
     GLint world2cameraUniformLocation;

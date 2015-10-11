@@ -41,15 +41,15 @@ def _getFlags(compilationMode):
             'windows': '-lglew32 -lglfw3 -lglu32 -lopengl32 -lgdi32 -luser32 -lkernel32 -mwindows -L '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/lib/ -L '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/build/src/',
             # TODO Add the Native Client target to the export menu on the editor
             'nacl': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm -fms-extensions',
-            'preview': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm -fms-extensions',
-            'javascript': '--bind -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1'
+            'preview': '-L'+naclFolder+'/lib/pnacl/'+modeFolder[compilationMode]+' -lppapi_cpp -lppapi -lppapi_gles2 -lm -fPIC',
+            'javascript': '--bind -s USE_SDL=2 -s ALLOW_MEMORY_GROWTH=1 -g3 -O1'
         },
         'cxx_flags': {
             'linux': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ ' + cxxModeFlags[compilationMode],
             'windows': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -I '+thirdPartyFolder+'/cross_compiling/windows/glfw-3.1.1/include/ -I '+thirdPartyFolder+'/cross_compiling/windows/glew-1.12.0/include/ -std=c++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/',
-            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
-            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode],
-            'javascript': '--bind -s USE_SDL=2'+' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/'
+            'nacl': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fms-extensions ' + cxxModeFlags[compilationMode] + ' -fPIC',
+            'preview': ' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=gnu++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ -I' + naclFolder+'/include -fPIC -O1',
+            'javascript': '--bind -s USE_SDL=2'+' -I'+thirdPartyFolder+'/Eigen -I'+thirdPartyFolder+'/rapidjson/include -std=c++11 -I'+Project.getProjectFolder()+' -I'+Project.getProjectFolder()+'/default_assets/ -O1 -g3'
         },
         'output_extension': {
             'linux': '',
@@ -178,6 +178,7 @@ def BuildProject(platform = 'linux', runGame = True, compilationMode='DEBUG', ou
         startTime = time.time()
         outputFile = outputFolder+'/game'+compilationFlags['output_extension'][platform]
         if compilationStatus['returncode'] == 0 and isOutputOutdated(outputFile, internalCompStatus['precompiledFiles']):
+            print cxx_compiler[platform] + ' ' + (' '.join(internalCompStatus['precompiledFiles'])) +' -o '+outputFile+' ' + compilationFlags['link_flags'][platform]
             compilationStatus['message'] += subprocess.check_output(cxx_compiler[platform] + ' ' + (' '.join(internalCompStatus['precompiledFiles'])) +' -o '+outputFile+' ' + compilationFlags['link_flags'][platform], shell=True, stderr=subprocess.STDOUT)
             Utils.Console.info('Linking done ('+str(time.time()-startTime)+'s)')
         else:
@@ -244,7 +245,7 @@ def ExportGame(platform, buildAndRun, compilationMode, outputFolder, cleanObject
     pass
 
 def previewGame(event_msg):
-    ExportGame('javascript', False, 'DEBUG', Project.getProjectFolder()+'/build/javascript/', cleanObjects=False)
+    ExportGame('preview', False, 'DEBUG', Project.getProjectFolder()+'/build/nacl/', cleanObjects=False)
     return True
 
 def BuildPreviewObject(inputFile, callback=None):
@@ -255,7 +256,8 @@ def BuildPreviewObject(inputFile, callback=None):
             pass
         pass
 
-    _buildObjectFile(inputFile, Project.getProjectFolder()+'/build/javascript/', 'javascript', _getFlags('DEBUG'), buildResult)
+    #_buildObjectFile(inputFile, Project.getProjectFolder()+'/build/nacl/', 'preview', _getFlags('DEBUG'), buildResult)
+    _buildObjectFile(inputFile, Project.getProjectFolder(), 'linux', _getFlags('DEBUG'), buildResult)
     pass
 
 class ObjectBuilderThread(threading.Thread):

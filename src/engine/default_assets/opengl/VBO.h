@@ -11,6 +11,7 @@ public:
     VBO();
     VBO(uint8_t dimensions, std::vector<float>& vertices, std::vector<int>& indices);
     VBO(uint8_t dimensions, std::vector<float>& vertices, std::vector<float>& normals, std::vector<int>& indices);
+    VBO(uint8_t dimensions, std::vector<float>& vertices, std::vector<float>& normals, std::vector<int>& indices, std::vector<int>& skinIndices, std::vector<float>& skinWeights);
 	~VBO();
 
     void bindAttributes(const GLuint* attributeIds);
@@ -21,8 +22,7 @@ private:
     enum VBOFormat {
         Vf = 0x1,
         VNf = 0x3,
-        VNTf = 0x7,
-        VNTBf = 0xf,
+        VNfSkinIW = 0x7,
     };
 
     uint8_t dimensions_;

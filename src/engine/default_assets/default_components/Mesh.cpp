@@ -100,8 +100,16 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
 
     vector<float> cachedVertices;
     vector<float> cachedNormals;
+    vector<int> cachedSkinIndices;
+    vector<float> cachedSkinWeights;
+
+    const int DIMS = 3;
+    const int PRIMITIVE_SIZE = 3;
+    const int BONES_PER_VERTEX = 2;
 
     cachedVertices.reserve(serializedMesh["vertices"].Size());
+
+    bool modelHasAnimation = false;
 
     // Grab vertices
     const Value& _verts=serializedMesh["vertices"];
@@ -117,6 +125,43 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
         cachedNormals.push_back(static_cast<float>(itr->GetDouble()));
     }
 
+    if(serializedMesh.HasMember("skinIndices")) {
+        modelHasAnimation = true;
+
+        // Grab skin indices
+        cachedSkinIndices.reserve(BONES_PER_VERTEX*cachedVertices.size());
+        int modelBonesPerVertex = serializedMesh["skinIndices"].Size() / (cachedVertices.size()/DIMS);
+        const Value& _skinIdx = serializedMesh["skinIndices"];
+        for (int v = 0; v < cachedVertices.size(); ++v) {
+            int upperLim = min(modelBonesPerVertex, BONES_PER_VERTEX);
+            for(int s = 0; s < upperLim; ++s) {
+                int s_i = v/DIMS*modelBonesPerVertex + s;
+                cachedSkinIndices.push_back(_skinIdx[s_i].GetInt());
+            }
+            // When the model has fewer bones per vertices than we actually
+            // support, we must fill the remaining indices. I select the last
+            // index to at least take advantage of data locality, even though
+            // we wont be using the fetched data from the uniform buffer.
+            for(int s = 0; s < BONES_PER_VERTEX-upperLim; ++s)
+                cachedSkinIndices.push_back(cachedSkinIndices.back());
+        }
+
+        // Grab skin weights
+        cachedSkinWeights.reserve(BONES_PER_VERTEX*cachedVertices.size());
+        const Value& _skinWs = serializedMesh["skinWeights"];
+        for (int v = 0; v < cachedVertices.size(); ++v) {
+            int upperLim = min(modelBonesPerVertex, BONES_PER_VERTEX);
+            for(int s = 0; s < upperLim; ++s) {
+                int s_i = v/DIMS*modelBonesPerVertex + s;
+                cachedSkinWeights.push_back(static_cast<float>(_skinWs[s_i].GetDouble()));
+            }
+            // When the model has fewer bones per vertices than we actually
+            // support, we must fill the remaining weights
+            for(int s = 0; s < BONES_PER_VERTEX-upperLim; ++s)
+                cachedSkinWeights.push_back(0.0f);
+        }
+    }
+
     // Grab faces
     const Value& serializedFaces=serializedMesh["faces"];
 
@@ -129,9 +174,6 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
     uint8_t facesFormat;
 
     int currentIndex = 0;
-    const int DIMS = 3;
-    const int PRIMITIVE_SIZE = 3;
-
     for(int i = 1; i < serializedFaces.Size(); i+= faceStep) {
         facesFormat = static_cast<uint8_t>(serializedFaces[i-1].GetInt());
 
@@ -149,6 +191,14 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
             }
             faces_.push_back(currentIndex);
             currentIndex++;
+
+            if(modelHasAnimation) {
+                // Prepare skin data
+                for(int s = 0; s < BONES_PER_VERTEX; ++s) {
+                    skinIndices_.push_back(cachedSkinIndices[serializedFaces[i+v].GetInt()*BONES_PER_VERTEX + s]);
+                    skinWeights_.push_back(cachedSkinWeights[serializedFaces[i+v].GetInt()*BONES_PER_VERTEX + s]);
+                }
+            }
         }
         if(primitive == Quad) {
             // Transform the quad into two triangles by pushing the fourth
@@ -160,6 +210,14 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
             faces_.push_back(currentIndex-1);
             faces_.push_back(currentIndex);
             currentIndex++;
+
+            if(modelHasAnimation) {
+                // Prepare skin data
+                for(int s = 0; s < BONES_PER_VERTEX; ++s) {
+                    skinIndices_.push_back(cachedSkinIndices[serializedFaces[i+PRIMITIVE_SIZE].GetInt()*BONES_PER_VERTEX + s]);
+                    skinWeights_.push_back(cachedSkinWeights[serializedFaces[i+PRIMITIVE_SIZE].GetInt()*BONES_PER_VERTEX + s]);
+                }
+            }
         }
 
         if(hasVertexNormals) {
@@ -179,11 +237,19 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
 
     // Initialize VBO. Since it plays with the OpenGL context (which is not
     // thread safe), it must take place in the main thread.
-    Game::scheduleMainThreadTask([this]() {
-        vbo = shared_ptr<VBO>(new VBO(DIMS, vertices_, normals_, faces_));
+    Game::scheduleMainThreadTask([this, modelHasAnimation]() {
+        if(modelHasAnimation) {
+            vbo = shared_ptr<VBO>(new VBO(DIMS, vertices_, normals_, faces_, skinIndices_, skinWeights_));
+        }
+        else {
+            vbo = shared_ptr<VBO>(new VBO(DIMS, vertices_, normals_, faces_));
+        }
+
         vertices_.clear();
         normals_.clear();
         faces_.clear();
+        skinIndices_.clear();
+        skinWeights_.clear();
     });
 }
 

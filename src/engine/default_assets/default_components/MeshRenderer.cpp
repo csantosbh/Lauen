@@ -21,7 +21,7 @@ namespace lau {
 MeshRenderer::MeshRenderer() : shaderIsReady_(false) {
     // Create shaders
     utils::IO::getInstance().requestFiles({
-        "default_assets/shaders/phong_interpolated_light.vs",
+        "default_assets/shaders/phong_interp_animated.vs",
         "default_assets/shaders/phong_interpolated_light.fs"
     }, std::bind(&MeshRenderer::onLoadShaders, this, std::placeholders::_1));
 }
@@ -74,6 +74,8 @@ void MeshRenderer::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles)
     glAttachShader(program, fsId);
     glBindAttribLocation(program, vertexAttribId, "in_Position");
     glBindAttribLocation(program, normalAttribId, "in_Normal");
+    glBindAttribLocation(program, skinIndexAttribId, "in_SkinIndex");
+    glBindAttribLocation(program, skinWeightAttribId, "in_SkinWeight");
     glLinkProgram(program);
     glUseProgram(program);
 	lout << "shader OK!" << endl;
@@ -116,14 +118,14 @@ void MeshRenderer::draw(float alpha) {
     auto camera = Camera::current;
 	if(mesh != nullptr) {
 		if(!wasInitialized && mesh->getVBO() != nullptr) {
-            GLuint attrs[] = {static_cast<GLuint>(vertexAttribId), static_cast<GLuint>(normalAttribId)};
+            GLuint attrs[] = {static_cast<GLuint>(vertexAttribId), static_cast<GLuint>(normalAttribId), static_cast<GLuint>(skinIndexAttribId), static_cast<GLuint>(skinWeightAttribId)};
 			mesh->getVBO()->bindAttributes(attrs);
 			wasInitialized = true;
 		}
 
 		auto vbo = mesh->getVBO();
         if(vbo != nullptr) {
-            GLuint attrs[] = {static_cast<GLuint>(vertexAttribId), static_cast<GLuint>(normalAttribId)};
+            GLuint attrs[] = {static_cast<GLuint>(vertexAttribId), static_cast<GLuint>(normalAttribId), static_cast<GLuint>(skinIndexAttribId), static_cast<GLuint>(skinWeightAttribId)};
 			vbo->bindForDrawing(attrs);
             // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
             glUniformMatrix4fv(projectionUniformLocation, 1, GL_FALSE, camera->projection.data());

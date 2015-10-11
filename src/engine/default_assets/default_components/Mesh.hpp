@@ -25,6 +25,8 @@ private:
     std::vector<float> vertices_;
     std::vector<float> normals_;
     std::vector<int> faces_;
+    std::vector<int> skinIndices_;
+    std::vector<float> skinWeights_;
 
     void onLoadJsonMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);
     void processLoadedMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile);
