@@ -11,6 +11,7 @@
 
 using namespace std;
 using namespace rapidjson;
+using namespace Eigen;
 
 namespace lau {
 
@@ -40,6 +41,18 @@ void Mesh::update(float dt) {
 
 VBO* Mesh::getVBO() {
 	return this->vbo.get();
+}
+
+const std::map<std::string, Animation>& Mesh::getAnimations() const {
+    return animations_;
+}
+
+const std::vector<int>& Mesh::getBoneParents() const {
+    return boneParents_;
+}
+
+const std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>& Mesh::getBonePoses() const {
+    return bonePoses_;
 }
 
 void Mesh::computeFaceParameters(
@@ -93,6 +106,75 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
     }
 }
 
+void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
+    Animation animation;
+    animation.name = serializedAnim["name"].GetString();
+    animation.fps = serializedAnim["fps"].GetDouble();
+    animation.length = serializedAnim["length"].GetDouble();
+
+    const Value& _bones = serializedAnim["hierarchy"];
+    // TODO provavelmente o membro parent nao era pra significar meu id! nesse caso, mudar a variavel teste pra algo decente nesse for.
+    int teste = 0;
+    for(Value::ConstValueIterator boneItr = _bones.Begin();
+                    boneItr != _bones.End(); ++boneItr) {
+
+        const Value& _keys = (*boneItr)["keys"];
+        int boneId = teste++;//(*boneItr)["parent"].GetInt()+1;
+
+        assert((*boneItr)["parent"].GetInt() < boneId);
+
+        vector<Animation::Keyframe> boneKeyframes;
+        for(Value::ConstValueIterator keyItr = _keys.Begin();
+                keyItr != _keys.End(); ++keyItr) {
+            Animation::Keyframe key;
+
+            // Translation
+            if(keyItr->HasMember("pos")) {
+                assert((*keyItr)["pos"].Size()==3);
+                key.position = Vector3f((*keyItr)["pos"][0].GetDouble(),
+                        (*keyItr)["pos"][1].GetDouble(),
+                        (*keyItr)["pos"][2].GetDouble());
+            } else {
+                //key.position = Vector3f::Zero();
+                key.position = boneKeyframes.back().position;
+            }
+
+            // Rotation
+            if(keyItr->HasMember("rot")) {
+                assert((*keyItr)["rot"].Size()==4);
+                key.rotation = Quaternionf((*keyItr)["rot"][3].GetDouble(),
+                        (*keyItr)["rot"][0].GetDouble(),
+                        (*keyItr)["rot"][1].GetDouble(),
+                        (*keyItr)["rot"][2].GetDouble());
+            } else {
+                assert(!keyItr->HasMember("rotq"));
+                //key.rotation = Quaternionf::Identity();
+                key.rotation = boneKeyframes.back().rotation;
+            }
+
+            // Scale
+            if(keyItr->HasMember("scl")) {
+                assert((*keyItr)["scl"].Size()==3);
+                key.scale = Vector3f((*keyItr)["scl"][0].GetDouble(),
+                        (*keyItr)["scl"][1].GetDouble(),
+                        (*keyItr)["scl"][2].GetDouble());
+            } else {
+                //key.scale = Vector3f::Ones();
+                key.scale = boneKeyframes.back().scale;
+            }
+
+            // Time
+            key.time = (*keyItr)["time"].GetDouble();
+            key.tmpParent = (*boneItr)["parent"].GetInt();
+
+            boneKeyframes.push_back(key);
+        }
+        animation.boneKeyframes[boneId] = boneKeyframes;
+    }
+
+    animations_[animation.name] = animation;
+}
+
 void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
     meshFile.begin()->second.push_back('\0');
     rapidjson::Document serializedMesh;
@@ -108,6 +190,7 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
     const int BONES_PER_VERTEX = 2;
 
     cachedVertices.reserve(serializedMesh["vertices"].Size());
+    int nVerts = serializedMesh["vertices"].Size()/DIMS;
 
     bool modelHasAnimation = false;
 
@@ -118,47 +201,140 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
         cachedVertices.push_back(static_cast<float>(itr->GetDouble()));
     }
 
-    // Grab normals
-    const Value& _norms=serializedMesh["normals"];
-    for (Value::ConstValueIterator itr = _norms.Begin();
-            itr != _norms.End(); ++itr) {
-        cachedNormals.push_back(static_cast<float>(itr->GetDouble()));
+    if(serializedMesh["metadata"]["normals"].GetInt() > 0) {
+        // Grab normals
+        const Value& _norms=serializedMesh["normals"];
+        for (Value::ConstValueIterator itr = _norms.Begin();
+                itr != _norms.End(); ++itr) {
+            cachedNormals.push_back(static_cast<float>(itr->GetDouble()));
+        }
     }
 
     if(serializedMesh.HasMember("skinIndices")) {
         modelHasAnimation = true;
 
-        // Grab skin indices
-        cachedSkinIndices.reserve(BONES_PER_VERTEX*cachedVertices.size());
-        int modelBonesPerVertex = serializedMesh["skinIndices"].Size() / (cachedVertices.size()/DIMS);
+        // Grab skin indices/weights
+        int modelBonesPerVertex = serializedMesh["skinIndices"].Size() / nVerts;
+        cachedSkinIndices.reserve(BONES_PER_VERTEX*nVerts);
+        cachedSkinWeights.reserve(BONES_PER_VERTEX*nVerts);
         const Value& _skinIdx = serializedMesh["skinIndices"];
-        for (int v = 0; v < cachedVertices.size(); ++v) {
+        const Value& _skinWs = serializedMesh["skinWeights"];
+
+        for (int v = 0; v < nVerts; ++v) {
             int upperLim = min(modelBonesPerVertex, BONES_PER_VERTEX);
+            float sumWeights = 0.0f;
             for(int s = 0; s < upperLim; ++s) {
-                int s_i = v/DIMS*modelBonesPerVertex + s;
+                int s_i = v*modelBonesPerVertex + s;
+                // Indices
                 cachedSkinIndices.push_back(_skinIdx[s_i].GetInt());
+                // Weights
+                float w = static_cast<float>(_skinWs[s_i].GetDouble());
+                sumWeights += w;
+                cachedSkinWeights.push_back(w);
             }
             // When the model has fewer bones per vertices than we actually
             // support, we must fill the remaining indices. I select the last
             // index to at least take advantage of data locality, even though
             // we wont be using the fetched data from the uniform buffer.
-            for(int s = 0; s < BONES_PER_VERTEX-upperLim; ++s)
+            for(int s = 0; s < BONES_PER_VERTEX-upperLim; ++s) {
                 cachedSkinIndices.push_back(cachedSkinIndices.back());
+                cachedSkinWeights.push_back(0.0f);
+            }
+
+            // Normalize weights
+            if(sumWeights > 0.0f) {
+                for(int s = static_cast<int>(cachedSkinWeights.size())-1;
+                        s >= static_cast<int>(cachedSkinWeights.size())-BONES_PER_VERTEX;
+                      --s) {
+                    assert(s>=0);
+                    cachedSkinWeights[s] /= sumWeights;
+                }
+            }
         }
 
-        // Grab skin weights
-        cachedSkinWeights.reserve(BONES_PER_VERTEX*cachedVertices.size());
-        const Value& _skinWs = serializedMesh["skinWeights"];
-        for (int v = 0; v < cachedVertices.size(); ++v) {
-            int upperLim = min(modelBonesPerVertex, BONES_PER_VERTEX);
-            for(int s = 0; s < upperLim; ++s) {
-                int s_i = v/DIMS*modelBonesPerVertex + s;
-                cachedSkinWeights.push_back(static_cast<float>(_skinWs[s_i].GetDouble()));
+        // Grab bones
+        // TODO perform topological sorting of bones so that during rendering I can always assume that the parent has already been processed
+        const Value& _bones = serializedMesh["bones"];
+        const int boneCount = serializedMesh["metadata"]["bones"].GetInt();
+
+        boneParents_.reserve(boneCount);
+        bonePoses_.reserve(boneCount);
+
+        for (Value::ConstValueIterator itr = _bones.Begin();
+            itr != _bones.End(); ++itr) {
+            // Parent
+            boneParents_.push_back((*itr)["parent"].GetInt());
+            // Translation
+            Vector3f t;
+            if(itr->HasMember("pos")) {
+                assert((*itr)["pos"].Size()==3);
+                t = Vector3f((*itr)["pos"][0].GetDouble(),
+                        (*itr)["pos"][1].GetDouble(),
+                        (*itr)["pos"][2].GetDouble());
+            } else {
+                t = Vector3f::Zero();
             }
-            // When the model has fewer bones per vertices than we actually
-            // support, we must fill the remaining weights
-            for(int s = 0; s < BONES_PER_VERTEX-upperLim; ++s)
-                cachedSkinWeights.push_back(0.0f);
+
+            // Rotation
+            // TODO pode ter erro aqui: quat idx 0 vs 3
+            Quaternionf r;
+            if(itr->HasMember("rotq")) {
+                assert((*itr)["rotq"].Size()==4);
+                r = Quaternionf((*itr)["rotq"][3].GetDouble(),
+                        (*itr)["rotq"][0].GetDouble(),
+                        (*itr)["rotq"][1].GetDouble(),
+                        (*itr)["rotq"][2].GetDouble());
+            } else {
+                r = Quaternionf::Identity();
+            }
+
+            // Scale
+            Vector3f s;
+            if(itr->HasMember("scl")) {
+                assert((*itr)["scl"].Size()==3);
+                s = Vector3f((*itr)["scl"][0].GetDouble(),
+                        (*itr)["scl"][1].GetDouble(),
+                        (*itr)["scl"][2].GetDouble());
+            } else {
+                s = Vector3f::Ones();
+            }
+
+            // Bone pose Affine matrix
+            Matrix4f M;
+            M.block<3,3>(0,0) = r.matrix();
+            M.block<3,1>(0,3) = t;
+            float* ptr = M.data();
+
+            // Multiply by scale. This is equivalent to performing Affine = R*S.
+            ptr[0] *= s[0]; ptr[4] *= s[1]; ptr[8] *= s[2];
+            ptr[1] *= s[0]; ptr[5] *= s[1]; ptr[9] *= s[2];
+            ptr[2] *= s[0]; ptr[6] *= s[1]; ptr[10] *= s[2];
+            ptr[3] = ptr[7] = ptr[11] = 0.0;
+            ptr[15] = 1.0f;
+            // TODO inverter na mao!
+
+#ifdef DEBUG
+            if(boneParents_.back() >= static_cast<int>(boneParents_.size()-1)) {
+                lout << "Requested parent " << boneParents_.back() << ", but I am at index " << boneParents_.size()-1 << endl;
+                exit(0);
+            }
+#endif
+
+            if(boneParents_.back() >= 0)
+                bonePoses_.push_back(M.inverse()*bonePoses_[boneParents_.back()]);
+            else
+                bonePoses_.push_back(M.inverse());
+        }
+
+        // Grab animations
+        if(serializedMesh.HasMember("animation"))
+            grabAnimation(serializedMesh["animation"]);
+        else {
+            const Value& _anims = serializedMesh["animations"];
+            for(Value::ConstValueIterator itr = _anims.Begin();
+                    itr != _anims.End(); ++itr) {
+                grabAnimation(*itr);
+            }
         }
     }
 
@@ -231,6 +407,24 @@ void Mesh::processLoadedMesh(deque<pair<bool, vector<uint8_t>>>& meshFile) {
                 for(int d = 0; d < DIMS; ++d) {
                     normals_.push_back(cachedNormals[serializedFaces[i+indexRemainders[4]].GetInt()*DIMS + d]);
                 }
+            }
+        } else {
+            // Compute normals from face vertices
+            int n = vertices_.size()/DIMS-3;
+            Vector3f p0(vertices_[n*DIMS],
+                        vertices_[n*DIMS+1],
+                        vertices_[n*DIMS+2]);
+            Vector3f p1(vertices_[(n+1)*DIMS],
+                        vertices_[(n+1)*DIMS+1],
+                        vertices_[(n+1)*DIMS+2]);
+            Vector3f p2(vertices_[(n+2)*DIMS],
+                        vertices_[(n+2)*DIMS+1],
+                        vertices_[(n+2)*DIMS+2]);
+            Vector3f normal = (p1-p0).cross(p2-p0).normalized();
+            for(int n = 0; n < primitiveSize; ++n) {
+                normals_.push_back(normal[0]);
+                normals_.push_back(normal[1]);
+                normals_.push_back(normal[2]);
             }
         }
     }

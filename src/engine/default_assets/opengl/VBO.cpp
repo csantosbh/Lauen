@@ -146,23 +146,29 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
     const int BONES_PER_VERTEX = 2; // TODO make the number of vertices a globally available constant (it is also defined on Mesh.cpp). This must also reflect on the shader.
     vector<uint8_t> modelBuffer;
     modelBuffer.reserve(vertices.size()*sizeof(float)+normals.size()*sizeof(float)+BONES_PER_VERTEX*sizeof(int)+BONES_PER_VERTEX*sizeof(int));
-    for(int i = 0; i < vertices.size(); i += dimensions_) {
+	int nVerts = static_cast<int>(vertices.size())/dimensions_;
+    for(int i = 0; i < nVerts; ++i) {
         // Vertex
+		const int Vi = i*dimensions_;
         modelBuffer.insert(modelBuffer.end(),
-                reinterpret_cast<uint8_t*>(vertices.data()+i),
-                reinterpret_cast<uint8_t*>(vertices.data()+i+dimensions_));
+                reinterpret_cast<uint8_t*>(vertices.data()+Vi),
+                reinterpret_cast<uint8_t*>(vertices.data()+Vi+dimensions_));
         // Normal
+		const int Ni = Vi;
         modelBuffer.insert(modelBuffer.end(),
-                reinterpret_cast<uint8_t*>(normals.data()+i),
-                reinterpret_cast<uint8_t*>(normals.data()+i+dimensions_));
+                reinterpret_cast<uint8_t*>(normals.data()+Ni),
+                reinterpret_cast<uint8_t*>(normals.data()+Ni+dimensions_));
+
         // Skin indices
+		const int Ii = i*BONES_PER_VERTEX;
         modelBuffer.insert(modelBuffer.end(),
-                reinterpret_cast<uint8_t*>(skinIndices.data()+i),
-                reinterpret_cast<uint8_t*>(skinIndices.data()+i+dimensions_));
+                reinterpret_cast<uint8_t*>(skinIndices.data()+Ii),
+                reinterpret_cast<uint8_t*>(skinIndices.data()+Ii+BONES_PER_VERTEX));
         // Skin weights
+		const int Wi = Ii;
         modelBuffer.insert(modelBuffer.end(),
-                reinterpret_cast<uint8_t*>(skinWeights.data()+i),
-                reinterpret_cast<uint8_t*>(skinWeights.data()+i+dimensions_));
+                reinterpret_cast<uint8_t*>(skinWeights.data()+Wi),
+                reinterpret_cast<uint8_t*>(skinWeights.data()+Wi+BONES_PER_VERTEX));
     }
 
     // Bind vertex buffer so we can start using it
@@ -197,7 +203,7 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
 #endif
 
     bufferFormat_ = VBOFormat::VNfSkinIW;
-    stride_ = modelBuffer.size()/vertices.size()*dimensions_;
+    stride_ = modelBuffer.size()/nVerts;
 }
 
 // TODO make this generic as to support IPointer (int) and LPointer (double)
@@ -226,7 +232,7 @@ void VBO::bindAttributes(const GLuint* attributeIds) {
 #ifndef GL_ES
         glVertexAttribIPointer(attributeIds[2], BONES_PER_VERTEX, GL_INT, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #else
-        glVertexAttribPointer(attributeIds[2], BONES_PER_VERTEX, GL_INT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
+        glVertexAttribPointer(attributeIds[2], BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #endif
         glVertexAttribPointer(attributeIds[3], BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2 + sizeof(int)*BONES_PER_VERTEX));
     }
@@ -256,7 +262,7 @@ void VBO::bindForDrawing(const GLuint* attributeIds) {
 #ifndef GL_ES
         glVertexAttribIPointer(attributeIds[2], BONES_PER_VERTEX, GL_INT, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #else
-        glVertexAttribPointer(attributeIds[2], BONES_PER_VERTEX, GL_INT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
+        glVertexAttribPointer(attributeIds[2], BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #endif
         glVertexAttribPointer(attributeIds[3], BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2 + sizeof(int)*BONES_PER_VERTEX));
     }

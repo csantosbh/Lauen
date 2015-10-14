@@ -18,6 +18,7 @@ public:
 	void update(float dt);
     void draw(float alpha);
 private:
+    void animUpdate(float dt);
     // TODO create the post creation initialization method, like Unity, and get rid of this
     bool wasInitialized = false;
 
@@ -38,6 +39,7 @@ private:
     GLint numLightsUniformLocation;
     GLint lightPositionsUniformLocation;
     GLint lightColorsUniformLocation;
+    GLint bonePosesUniformLocation;
     bool shaderIsReady_;
 };
 
