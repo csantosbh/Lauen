@@ -22,7 +22,6 @@ public:
         Eigen::Quaternionf rotation;
         Eigen::Vector3f scale;
         float time;
-        int tmpParent;
     };
 
     std::string name;

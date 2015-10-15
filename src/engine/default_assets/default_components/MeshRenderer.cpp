@@ -160,9 +160,10 @@ void MeshRenderer::animUpdate(float dt) {
                 ptr[3] = ptr[7] = ptr[11] = 0.0;
                 ptr[15] = 1.0f;
 
-                assert(currKF.tmpParent < b);
-                if(currKF.tmpParent >= 0)
-                    boneAccum = Map<Matrix4f>(accumBones[currKF.tmpParent].fields)*M;
+                int boneParent = mesh->getBoneParents()[b];
+                assert(boneParent < b);
+                if(boneParent >= 0)
+                    boneAccum = Map<Matrix4f>(accumBones[boneParent].fields)*M;
                 else
                     boneAccum = M;
 
@@ -176,8 +177,6 @@ void MeshRenderer::animUpdate(float dt) {
         }
 
         glUniformMatrix4fv(bonePosesUniformLocation, bones.size(), GL_FALSE, reinterpret_cast<const GLfloat*>(bones.data()));
-        //lout << "Aqui:" << endl << Map<Matrix4f>(reinterpret_cast<float*>(bones.data())) << endl;
-        //exit(0);
     }
 }
 

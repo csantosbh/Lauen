@@ -165,7 +165,6 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
 
             // Time
             key.time = (*keyItr)["time"].GetDouble();
-            key.tmpParent = (*boneItr)["parent"].GetInt();
 
             boneKeyframes.push_back(key);
         }
