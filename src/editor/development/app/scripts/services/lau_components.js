@@ -212,6 +212,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
 
             // Draw the mesh, if there's a mesh renderer
             var meshRenderer = $this.parent.getComponentsByType('mesh_renderer');
+            if(meshRenderer.length == 0)
+              meshRenderer = $this.parent.getComponentsByType('skinned_mesh_renderer');
+
             if(meshRenderer.length != 0) {
               meshRenderer = meshRenderer[0];
               meshRenderer.updateModels();
@@ -382,6 +385,48 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     },
   }, LightComponent.prototype);
 
+  // Skinned Mesh Renderer component
+  function SkinnedMeshRendererComponent(gameObject, componentFlyWeight, instanceId) {
+    this.type = 'skinned_mesh_renderer';
+    this.flyweight = componentFlyWeight;
+    this.parent = gameObject;
+
+    this.resetPrefabSync = function() {}
+
+    this.instanceId = _allocComponentId(instanceId);
+
+    if($esm.isEditMode()) {
+      ////
+      // Bind to edit canvas
+      this.updateModels();
+    }
+  }
+  SkinnedMeshRendererComponent.prototype = Object.create(Component.prototype);
+  LAU.Utils.deepCopy({
+    export: function() {
+      return {
+        type: this.flyweight.type,
+        id: this.flyweight.id,
+        fields: {},
+        instanceId: this.instanceId,
+      };
+    },
+    setValues: function(flyweight) { },
+    destroy: function() {
+      _freeComponentId(this.instanceId);
+    },
+    updateModels: function() {
+      if(!this.parent.isPrefab) {
+        var transform = this.parent.transform;
+        var meshComponents = this.parent.getComponentsByType('mesh');
+        for(var i = 0; i < meshComponents.length; ++i) {
+          if(meshComponents[i].meshGeometry != null)
+            transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
+        }
+      }
+    }
+  }, SkinnedMeshRendererComponent.prototype);
+
   // Script Component
   function ScriptComponent(gameObject, componentFlyWeight, instanceId) {
     this.type = 'script';
@@ -532,6 +577,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       case 'light':
         result = new LightComponent(gameObject, componentFlyWeight, instanceId);
         break;
+      case 'skinned_mesh_renderer':
+        result = new SkinnedMeshRendererComponent(gameObject, componentFlyWeight, instanceId);
+      break;
       case 'script':
         result = new ScriptComponent(gameObject, componentFlyWeight, instanceId);
       break;

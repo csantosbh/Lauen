@@ -22,6 +22,8 @@ angular.module('lauEditor')
           return 'views/directives/component_editors/mesh_renderer_editor.html';
         case 'light':
           return 'views/directives/component_editors/light_editor.html';
+        case 'skinned_mesh_renderer':
+          return 'views/directives/component_editors/skinned_mesh_renderer_editor.html';
       }
     }
     return {

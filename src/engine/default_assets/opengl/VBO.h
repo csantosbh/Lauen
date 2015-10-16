@@ -2,6 +2,7 @@
 #include <vector>
 
 #include "LauCommon.h"
+#include "ShaderProgram.hpp"
 
 namespace lau {
 
@@ -14,8 +15,8 @@ public:
     VBO(uint8_t dimensions, std::vector<float>& vertices, std::vector<float>& normals, std::vector<int>& indices, std::vector<int>& skinIndices, std::vector<float>& skinWeights);
 	~VBO();
 
-    void bindAttributes(const GLuint* attributeIds);
-	void bindForDrawing(const GLuint* attributeIds);
+    void bindAttributes(const ShaderProgram& shader);
+	void bindForDrawing(const ShaderProgram& shader);
 	int primitivesCount();
 
 private:

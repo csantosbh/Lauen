@@ -45,7 +45,15 @@ _defaultComponents = {
         'fields': {
             'color': 0xffffffff
         }
-    }
+    },
+    'skinned_mesh_renderer': {
+        'id': 4,
+        'type': 'skinned_mesh_renderer', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
+        'path': 'default_components/SkinnedMeshRenderer.hpp',
+        'fields': {
+            'animation': None
+        }
+    },
 }
 
 def getDefaultComponents(evData=None):
