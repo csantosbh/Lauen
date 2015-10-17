@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <deque>
+#include <string>
 
 #include <rapidjson/document.h>
 
@@ -20,6 +21,7 @@ public:
     void start();
 	void update(float dt);
     void draw(float alpha);
+    std::string currentAnimation;
 private:
     // TODO create the post creation initialization method, like Unity, and get rid of this
     float animationTime;

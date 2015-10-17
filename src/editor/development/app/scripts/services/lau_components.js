@@ -390,15 +390,45 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     this.type = 'skinned_mesh_renderer';
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
+    this.fields = {
+      animation: componentFlyWeight.animation
+    };
 
-    this.resetPrefabSync = function() {}
+    this.resetPrefabSync = function() {
+      this.prefabSync = {
+        animation: true,
+      };
+    }
+    this.resetPrefabSync();
 
     this.instanceId = _allocComponentId(instanceId);
 
-    if($esm.isEditMode()) {
+    // Used by the component editor to list the current model animations
+    this.getAvailableAnimations = function() {
+      let mesh = this.parent.getComponentsByType('mesh');
+      if(mesh.length > 0) {
+        mesh = mesh[0];
+        let animNames = [];
+        if(mesh.meshGeometry.geometry.animations) {
+          let animList = mesh.meshGeometry.geometry.animations;
+          for(let i = 0; i < animList.length; ++i) {
+            animNames.push(animList[i].name);
+          }
+        }
+        else
+          animNames.push(mesh.meshGeometry.geometry.animation.name);
+
+        return animNames;
+      }
+      return [];
+    }
+
+    if($esm.isEditMode() && !this.parent.isPrefab) {
       ////
       // Bind to edit canvas
       this.updateModels();
+      Object.observe(this.fields, function(changes) {
+      });
     }
   }
   SkinnedMeshRendererComponent.prototype = Object.create(Component.prototype);
@@ -407,7 +437,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       return {
         type: this.flyweight.type,
         id: this.flyweight.id,
-        fields: {},
+        fields: {
+          animation: this.fields.animation
+        },
         instanceId: this.instanceId,
       };
     },

@@ -21,6 +21,7 @@ SkinnedMeshRenderer::SkinnedMeshRenderer() {
 }
 
 SkinnedMeshRenderer::SkinnedMeshRenderer(const rapidjson::Value& fields) : SkinnedMeshRenderer() {
+    currentAnimation = fields["animation"].GetString();
 }
 
 void SkinnedMeshRenderer::start() {
@@ -48,7 +49,6 @@ void SkinnedMeshRenderer::update(float dt) {
         const auto& bonePoses = mesh->getBonePoses();
 
         if(anims.size() == 0) return;
-        const string currAnimationName = anims.begin()->first;
 
         struct MatrixBlock {
             float fields[16];
@@ -56,7 +56,7 @@ void SkinnedMeshRenderer::update(float dt) {
         vector<MatrixBlock> accumBones(bonePoses.size());
         bones.resize(bonePoses.size());
 
-        const auto& currAnim = anims.at(currAnimationName);
+        const auto& currAnim = anims.at(currentAnimation);
         animationTime = fmod(animationTime+dt, currAnim.length);
 
         for(int b = 0; b < bonePoses.size(); ++b) {

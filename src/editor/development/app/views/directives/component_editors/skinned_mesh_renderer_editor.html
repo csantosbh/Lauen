@@ -1,6 +1,6 @@
 <div>
   <div>Skinned Mesh Renderer</div>
   <div>
-    Animation <select><option value="TODO ngSelect"></option></select>
+    Animation <select ng-model="component.fields.animation"><option ng-value="anim" ng-repeat="anim in component.getAvailableAnimations()">{{anim}}</option></select>
   </div>
 </div>
