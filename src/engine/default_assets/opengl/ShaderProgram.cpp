@@ -9,16 +9,12 @@ using namespace std;
 
 namespace lau {
 
-ShaderProgram::ShaderProgram() : shaderIsReady_(false) {
+ShaderProgram::ShaderProgram() {
 }
 
 void ShaderProgram::loadShaders(const char* vs, const char* fs) {
     utils::IO::getInstance().requestFiles({ vs, fs },
             std::bind(&ShaderProgram::onLoadShaders, this, std::placeholders::_1));
-}
-
-bool ShaderProgram::isReady() {
-    return shaderIsReady_;
 }
 
 void ShaderProgram::uniform1i(int location, int data) {
@@ -87,7 +83,6 @@ void ShaderProgram::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles
     glBindAttribLocation(program, skinWeightAttribId, "in_SkinWeight");
     glLinkProgram(program);
     glUseProgram(program);
-	lout << "shader OK!" << endl;
 
     // Get uniform locations
     projectionUniformLocation = glGetUniformLocation(program, "projection");
@@ -108,7 +103,7 @@ void ShaderProgram::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles
        lightPositionsUniformLocation == -1 ||
        lightColorsUniformLocation == -1 ||
        bonePosesUniformLocation == -1) {
-        lerr << "[error] Could not get uniform location(s)!" << endl;
+        lerr << "[info] Could not get one or more uniform locations:" << endl;
         lerr << projectionUniformLocation << "; "
              << world2cameraUniformLocation << "; "
              << object2worldUniformLocation << "; "
@@ -119,7 +114,6 @@ void ShaderProgram::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles
              << bonePosesUniformLocation << endl;
     }
 #endif
-    shaderIsReady_ = true;
 }
 
 

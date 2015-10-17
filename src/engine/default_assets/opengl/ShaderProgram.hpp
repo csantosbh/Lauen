@@ -10,7 +10,6 @@ class ShaderProgram {
 public:
     ShaderProgram();
     void loadShaders(const char* vs, const char* fs);
-    bool isReady();
 
     void uniform1i(int location, int value);
     void uniform3fv(int location, unsigned int count, const float* buffer);
@@ -37,7 +36,6 @@ private:
 
     GLuint program;
     void checkShaderCompilation(GLuint shaderId);
-    bool shaderIsReady_;
 };
 
 } // namespace

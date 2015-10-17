@@ -22,11 +22,31 @@ SkinnedMeshRenderer::SkinnedMeshRenderer() {
 SkinnedMeshRenderer::SkinnedMeshRenderer(const rapidjson::Value& fields) : SkinnedMeshRenderer() {
 }
 
+void SkinnedMeshRenderer::start() {
+    const int DIMS = 3;
+	auto mesh = gameObject->getComponent<Mesh>();
+    if(mesh->isLoaded()) {
+        vbo.create(DIMS, mesh->vertices, mesh->normals, mesh->faces, mesh->skinIndices, mesh->skinWeights);
+        vbo.bindAttributes(shader);
+    }
+    else {
+        mesh->onLoad.subscribe([this]() {
+          //Game::scheduleMainThreadTask([]() {
+            auto mesh = gameObject->getComponent<Mesh>();
+            vbo.create(DIMS, mesh->vertices, mesh->normals, mesh->faces, mesh->skinIndices, mesh->skinWeights);
+            vbo.bindAttributes(shader);
+          //});
+        });
+    }
+}
+
 void SkinnedMeshRenderer::update(float dt) {
 	auto mesh = gameObject->getComponent<Mesh>();
-    if(wasInitialized && shader.isReady() && mesh != nullptr) {
+    if(mesh != nullptr && mesh->isLoaded()) {
         const auto& anims = mesh->getAnimations();
         const auto& bonePoses = mesh->getBonePoses();
+
+        if(anims.size() == 0) return;
         const string currAnimationName = anims.begin()->first;
 
         struct MatrixBlock {
@@ -50,12 +70,10 @@ void SkinnedMeshRenderer::update(float dt) {
                     kfIdx++;
                 }
                 const Animation::Keyframe& currKF = kfs[kfIdx]; // TODO properly handle time!
-                const Animation::Keyframe& nextKF = kfs[(kfIdx+1)%kfs.size()]; // TODO properly handle time!
+                const Animation::Keyframe& nextKF = kfs[kfIdx+1];
                 // TODO create a function for building the Affine matrix!
                 // Bone pose Affine matrix
                 float t = (animationTime-currKF.time)/(nextKF.time-currKF.time);
-                assert(t>=0.0f);
-                assert(t<=1.0f);
                 M.block<3,3>(0,0) = (currKF.rotation.slerp(t, nextKF.rotation)).matrix();
                 M.block<3,1>(0,3) = currKF.position*(1.0f-t) + nextKF.position*t;
                 float* ptr = M.data();
@@ -87,41 +105,32 @@ void SkinnedMeshRenderer::update(float dt) {
 }
 
 void SkinnedMeshRenderer::draw(float alpha) {
-    if(!shader.isReady()) return;
-
 	auto mesh = gameObject->getComponent<Mesh>();
+    if(mesh == nullptr || !mesh->isLoaded())
+        return;
+
     auto& transform = gameObject->transform;
     auto camera = Camera::current;
-	if(mesh != nullptr) {
-		if(!wasInitialized && mesh->getVBO() != nullptr) {
-			mesh->getVBO()->bindAttributes(shader);
-			wasInitialized = true;
-		}
+    shader.uniformMatrix4fv(shader.bonePosesUniformLocation, bones.size(), reinterpret_cast<const float*>(bones.data()));
 
-        shader.uniformMatrix4fv(shader.bonePosesUniformLocation, bones.size(), reinterpret_cast<const float*>(bones.data()));
+    vbo.bindForDrawing(shader);
+    // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
+    shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data());
+    shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data());
+    const Matrix4f& object2world = transform.getObject2WorldMatrix();
+    shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data());
+    const Matrix4f& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
+    shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data());
 
-		auto vbo = mesh->getVBO();
-        if(vbo != nullptr) {
-			vbo->bindForDrawing(shader);
-            // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
-            shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data());
-            shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data());
-            const Matrix4f& object2world = transform.getObject2WorldMatrix();
-            shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data());
-            const Matrix4f& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
-            shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data());
+    // Lights
+    auto& lights = Light::allLights();
+    auto lightPositions = Light::allLightPositions();
+    auto lightColors = Light::allLightColors();
+    shader.uniform1i(shader.numLightsUniformLocation, lights.size());
+    shader.uniform3fv(shader.lightPositionsUniformLocation, lights.size(), lightPositions.data());
+    shader.uniform4fv(shader.lightColorsUniformLocation, lights.size(), lightColors.data());
 
-            // Lights
-            auto& lights = Light::allLights();
-            auto lightPositions = Light::allLightPositions();
-            auto lightColors = Light::allLightColors();
-            shader.uniform1i(shader.numLightsUniformLocation, lights.size());
-            shader.uniform3fv(shader.lightPositionsUniformLocation, lights.size(), lightPositions.data());
-            shader.uniform4fv(shader.lightColorsUniformLocation, lights.size(), lightColors.data());
-
-            glDrawElements(GL_TRIANGLES, vbo->primitivesCount(), GL_UNSIGNED_INT, 0);
-        }
-	}
+    glDrawElements(GL_TRIANGLES, vbo.primitivesCount(), GL_UNSIGNED_INT, 0);
 }
 
 /////

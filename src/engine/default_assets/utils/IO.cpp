@@ -33,6 +33,10 @@ namespace lau {
 
 namespace utils {
 
+const IO::LoadStatus& IO::loadStatus() const {
+    return loadStatus_;
+}
+
 #ifdef NACL
 
 using namespace pp;
@@ -66,6 +70,7 @@ private:
 
     void onLoadDoneImpl(bool success, const string& data) {
         filesRead.push_back(make_pair(success, vector<uint8_t>(data.begin(), data.end())));
+        loadStatus_.completedRequests++;
         if(!pendingRequests.front().empty()) {
             // We still have files to load
             handler = URLLoaderHandler::Create(NaCl::getInstance(), pendingRequests.front().front());
@@ -100,6 +105,14 @@ private:
     void requestFiles(Container requestedFiles, const function<void(deque<pair<bool, vector<uint8_t>>>&)>& callback)
     {
         queue<string> pendingFiles;
+
+        if(pendingRequests.size() > 0) {
+            loadStatus_.totalRequests += requestedFiles.size();
+        } else {
+            loadStatus_.totalRequests = requestedFiles.size();
+            loadStatus_.completedRequests = 0;
+        }
+
         for(const auto& file: requestedFiles)
         {
             pendingFiles.push("http://localhost:9002/"+file);
@@ -151,6 +164,14 @@ private:
         // checked in other places in this class where
         // pendingRequests/pendingCallbacks are touched.
         queue<string> pendingFiles;
+
+        if(pendingRequests.size() > 0) {
+            loadStatus_.totalRequests += requestedFiles.size();
+        } else {
+            loadStatus_.totalRequests = requestedFiles.size();
+            loadStatus_.completedRequests = 0;
+        }
+
         for(const auto& file: requestedFiles) {
             pendingFiles.push("http://localhost:9002/"+file);
         }
@@ -177,6 +198,8 @@ private:
     }
     static void onLoadDone(JavaScriptIO* _this, void* data, int size) {
         vector<uint8_t> data_vec;
+
+        loadStatus_.completedRequests++;
 
         if(data != nullptr) {
             data_vec.assign((uint8_t*)data, (uint8_t*)data+size);
@@ -217,12 +240,16 @@ public:
         for(auto& fname: filenames)
             filenamesCopy.push_back(fname);
 
+        accountForRequests(filenames.size());
+
         ThreadPool::startJob(bind(&DesktopIO::requestFiles<const vector<string>&>, this, filenamesCopy, callback));
     }
 
     virtual void requestFiles(const vector<string>& filenames,
             const function<void(deque<pair<bool, vector<uint8_t>>>&)>& callback)
     {
+        accountForRequests(filenames.size());
+
         ThreadPool::startJob(bind(&DesktopIO::requestFiles<const vector<string>&>, this, filenames, callback));
     }
 
@@ -230,6 +257,21 @@ public:
     {}
 
 private:
+    mutex mtx_;
+    int runningRequests = 0;
+
+    void accountForRequests(unsigned short size) {
+        unique_lock<mutex> lock(mtx_);
+        if(runningRequests > 0) {
+            loadStatus_.totalRequests += size;
+        } else {
+            loadStatus_.totalRequests = size;
+            loadStatus_.completedRequests = 0;
+        }
+
+        runningRequests++;
+    }
+
     template<class Container>
     void requestFiles(Container requestedFiles, const function<void(deque<pair<bool, vector<uint8_t>>>&)> callback)
     {
@@ -247,7 +289,14 @@ private:
 
         function<void()> mainThreadCallback = bind(callback, filesRead);
         Game::scheduleMainThreadTask(mainThreadCallback);
+
+        {
+        unique_lock<mutex> lock(mtx_);
+        loadStatus_.completedRequests += requestedFiles.size();
+        runningRequests--;
+        }
     }
+
 };
 
 #endif

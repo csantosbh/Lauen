@@ -14,6 +14,7 @@ public:
     }
 
     virtual void update(float dt) {}
+    virtual void start() {}
 	virtual ~Component() {}
 
     template<typename T>

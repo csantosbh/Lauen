@@ -39,6 +39,16 @@ GameObject::~GameObject() {
 #endif
 }
 
+void GameObject::start() {
+    for(auto& comp: updateableComponents_) {
+        comp->start();
+    }
+
+    for(auto& child: children_) {
+        child->start();
+    }
+}
+
 void GameObject::update(float dt) {
 #ifdef PREVIEW_MODE
 	pp::VarDictionary currentState;
@@ -199,6 +209,11 @@ int GameObject::getComponentByInstanceId(int id) {
 
 void GameObject::instantiateScene(const rapidjson::Document& serializedGameObjs) {
     gameObjects_ = Factories::gameObjectFactory(serializedGameObjs);
+
+    // Start game objects
+    for(auto& go: gameObjects_) {
+        go->start();
+    }
 }
 
 void GameObject::clearScene() {

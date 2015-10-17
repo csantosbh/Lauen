@@ -21,6 +21,7 @@ public:
     GameObject(const rapidjson::Value& serializedObject, const GameObject* parent = nullptr);
     ~GameObject();
 
+    void start();
     void update(float dt);
     void update(GameObject* parent, float dt);
 
@@ -38,6 +39,7 @@ public:
         return nullptr;
     }
 
+    // TODO doc it is the library user's responsability to ALWAYS call .start() on a component created manually AFTER addComponent().
     void addComponent(const std::shared_ptr<Component>& component);
     template<typename T>
     T* addComponent() {

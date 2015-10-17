@@ -9,8 +9,8 @@
 #include <Eigen/Eigen>
 
 #include "LauCommon.h"
-#include "opengl/VBO.h"
 #include "Component.hpp"
+#include "utils/Callback.hpp"
 
 namespace lau {
 
@@ -37,29 +37,32 @@ public:
 	Mesh(const rapidjson::Value& fields);
 
 	void update(float dt);
-    VBO* getVBO();
+    void load(const std::string& path);
+    bool isLoaded();
+    Callback<> onLoad;
 
     const std::map<std::string, Animation>& getAnimations() const;
     const std::vector<int>& getBoneParents() const;
     const std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>& getBonePoses() const;
 
+    std::vector<float> vertices;
+    std::vector<float> normals;
+    std::vector<int> faces;
+    std::vector<int> skinIndices;
+    std::vector<float> skinWeights;
+
 private:
     enum FacePrimitive { Triangle, Quad };
-    std::vector<float> vertices_;
-    std::vector<float> normals_;
-    std::vector<int> faces_;
-    std::vector<int> skinIndices_;
-    std::vector<float> skinWeights_;
 
     // Animation related data
     std::vector<int> boneParents_;
+    bool isLoaded_;
     std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> bonePoses_;
     std::map<std::string, Animation> animations_;
 
     void onLoadJsonMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);
     void processLoadedMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile);
 
-    std::shared_ptr<VBO> vbo;
     void computeFaceParameters(
             uint8_t facesFormat,
             int indexRemainders[8],

@@ -26,41 +26,49 @@ MeshRenderer::MeshRenderer(const rapidjson::Value& fields) : MeshRenderer() {
 void MeshRenderer::update(float dt) {
 }
 
+void MeshRenderer::start() {
+    const int DIMS = 3;
+	auto mesh = gameObject->getComponent<Mesh>();
+    if(mesh->isLoaded()) {
+        vbo.create(DIMS, mesh->vertices, mesh->normals, mesh->faces);
+        vbo.bindAttributes(shader);
+    } else {
+        mesh->onLoad.subscribe([this]() {
+          //Game::scheduleMainThreadTask([]() {
+            auto mesh = gameObject->getComponent<Mesh>();
+            vbo.create(DIMS, mesh->vertices, mesh->normals, mesh->faces);
+            vbo.bindAttributes(shader);
+          //});
+        });
+    }
+}
+
 // TODO move this to the animation component
 void MeshRenderer::draw(float alpha) {
-    if(!shader.isReady()) return;
-
 	auto mesh = gameObject->getComponent<Mesh>();
+    if(mesh == nullptr || !mesh->isLoaded())
+        return;
+
     auto& transform = gameObject->transform;
     auto camera = Camera::current;
-	if(mesh != nullptr) {
-		if(!wasInitialized && mesh->getVBO() != nullptr) {
-			mesh->getVBO()->bindAttributes(shader);
-			wasInitialized = true;
-		}
+    vbo.bindForDrawing(shader);
+    // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
+    shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data());
+    shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data());
+    const Matrix4f& object2world = transform.getObject2WorldMatrix();
+    shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data());
+    const Matrix4f& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
+    shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data());
 
-		auto vbo = mesh->getVBO();
-        if(vbo != nullptr) {
-			vbo->bindForDrawing(shader);
-            // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
-            shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data());
-            shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data());
-            const Matrix4f& object2world = transform.getObject2WorldMatrix();
-            shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data());
-            const Matrix4f& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
-            shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data());
+    // Lights
+    auto& lights = Light::allLights();
+    auto lightPositions = Light::allLightPositions();
+    auto lightColors = Light::allLightColors();
+    shader.uniform1i(shader.numLightsUniformLocation, lights.size());
+    shader.uniform3fv(shader.lightPositionsUniformLocation, lights.size(), lightPositions.data());
+    shader.uniform4fv(shader.lightColorsUniformLocation, lights.size(), lightColors.data());
 
-            // Lights
-            auto& lights = Light::allLights();
-            auto lightPositions = Light::allLightPositions();
-            auto lightColors = Light::allLightColors();
-            shader.uniform1i(shader.numLightsUniformLocation, lights.size());
-            shader.uniform3fv(shader.lightPositionsUniformLocation, lights.size(), lightPositions.data());
-            shader.uniform4fv(shader.lightColorsUniformLocation, lights.size(), lightColors.data());
-
-            glDrawElements(GL_TRIANGLES, vbo->primitivesCount(), GL_UNSIGNED_INT, 0);
-        }
-	}
+    glDrawElements(GL_TRIANGLES, vbo.primitivesCount(), GL_UNSIGNED_INT, 0);
 }
 
 /////

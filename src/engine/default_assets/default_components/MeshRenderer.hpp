@@ -7,6 +7,7 @@
 
 #include "LauCommon.h"
 #include "DrawableComponent.hpp"
+#include "opengl/VBO.hpp"
 #include "opengl/ShaderProgram.hpp"
 
 namespace lau {
@@ -16,12 +17,13 @@ public:
     MeshRenderer();
 	MeshRenderer(const rapidjson::Value& fields);
 
+    void start();
 	void update(float dt);
     void draw(float alpha);
 private:
     // TODO create the post creation initialization method, like Unity, and get rid of this
-    bool wasInitialized = false;
     ShaderProgram shader;
+    VBO vbo;
 };
 
 } // namespace

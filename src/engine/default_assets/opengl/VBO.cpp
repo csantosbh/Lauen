@@ -1,12 +1,12 @@
 #include <cassert>
 #include <stdio.h>
 #include <sstream>
-#include "VBO.h"
+#include "VBO.hpp"
 
 using namespace std;
 namespace lau {
 
-VBO::VBO() {
+VBO::VBO() : dimensions_(0), primitivesCount_(0), bufferFormat_(static_cast<VBOFormat>(0)) {
 	primitivesCount_ = 0;
 }
 
@@ -14,7 +14,16 @@ VBO::~VBO() {
     glDeleteBuffers(2, bufferIds_);
 }
 
-VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : dimensions_(dimensions), primitivesCount_(indices.size()) {
+void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) {
+    if(bufferFormat_ != 0) {
+        glDeleteBuffers(2, bufferIds_);
+    }
+
+    dimensions_ = dimensions;
+    primitivesCount_ = indices.size();
+    bufferFormat_ = VBOFormat::Vf;
+    stride_= sizeof(float) * dimensions_;
+
     int vertexCount = vertices.size()/dimensions;
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
@@ -58,12 +67,17 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<int>& indices) : di
     }
     }
 #endif
-
-    bufferFormat_ = VBOFormat::Vf;
-    stride_ = sizeof(float) * dimensions_;
 }
 
-VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices) : dimensions_(dimensions), primitivesCount_(indices.size()) {
+void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices) {
+    if(bufferFormat_ != 0) {
+        glDeleteBuffers(2, bufferIds_);
+    }
+
+    dimensions_ = dimensions;
+    primitivesCount_ = indices.size();
+    bufferFormat_ = VBOFormat::VNf;
+
     assert(vertices.size() == normals.size());
     int vertexCount = vertices.size()/dimensions;
 
@@ -122,12 +136,19 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
     }
 #endif
 
-    bufferFormat_ = VBOFormat::VNf;
     const int numComponents_ = 2;
     stride_ = sizeof(float) * dimensions_ * numComponents_;
 }
 
-VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices, vector<int>& skinIndices, vector<float>& skinWeights) : dimensions_(dimensions), primitivesCount_(indices.size()) {
+void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices, vector<int>& skinIndices, vector<float>& skinWeights) {
+    if(bufferFormat_ != 0) {
+        glDeleteBuffers(2, bufferIds_);
+    }
+
+    dimensions_ = dimensions;
+    primitivesCount_ = indices.size();
+    bufferFormat_ = VBOFormat::VNfSkinIW;
+
     assert(vertices.size() == normals.size());
     int vertexCount = vertices.size()/dimensions;
 
@@ -202,7 +223,6 @@ VBO::VBO(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, ve
     }
 #endif
 
-    bufferFormat_ = VBOFormat::VNfSkinIW;
     stride_ = modelBuffer.size()/nVerts;
 }
 

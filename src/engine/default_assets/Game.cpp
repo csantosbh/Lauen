@@ -43,15 +43,19 @@ void Game::draw(double temporalAlpha) {
 }
 
 void Game::update(double dt) {
-    for(auto& gameObject: GameObject::allGameObjects()) {
-        gameObject->update(dt);
-    }
-
-    // Handle IO requests
+    // Handle main thread events
     while(!enqueuedSequentialTasks_.empty()) {
         enqueuedSequentialTasks_.front()();
         enqueuedSequentialTasks_.pop_front();
     }
+
+    const auto& loadStatus = utils::IO::getInstance().loadStatus();
+    if(loadStatus.completedRequests == loadStatus.totalRequests) {
+        for(auto& gameObject: GameObject::allGameObjects()) {
+            gameObject->update(dt);
+        }
+    }
+
 }
 
 void Game::scheduleMainThreadTask(const std::function<void()>& task) {
