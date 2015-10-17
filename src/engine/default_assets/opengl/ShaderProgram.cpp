@@ -1,5 +1,6 @@
 #include "utils/IO.h"
 #include "ShaderProgram.hpp"
+#include "Game.hpp"
 
 #ifdef JAVASCRIPT
 #include <emscripten.h>
@@ -38,6 +39,10 @@ void ShaderProgram::uniformMatrix4fv(int location, unsigned int count, const flo
 }
 
 void ShaderProgram::onLoadShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles) {
+    Game::scheduleMainThreadTask(bind(&ShaderProgram::processLoadedShaders, this, shaderFiles));
+}
+
+void ShaderProgram::processLoadedShaders(deque<pair<bool, vector<uint8_t>>>&shaderFiles) {
     program = glCreateProgram();
     GLuint vsId = glCreateShader(GL_VERTEX_SHADER);
     GLuint fsId = glCreateShader(GL_FRAGMENT_SHADER);

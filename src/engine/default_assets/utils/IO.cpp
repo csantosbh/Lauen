@@ -79,8 +79,7 @@ private:
             handler->Start();
         } else {
             // The current request is done! Forward the requested data
-            function<void()> mainThreadCallback = bind(pendingCallbacks.front(), filesRead);
-            Game::scheduleMainThreadTask(mainThreadCallback);
+            pendingCallbacks.front()(filesRead);
 
             // Clear filesRead container
             // TODO this is BAD. I should use a smart pointer and never clear here -- rather just create a new deque and let the smart pointer decide when to kill the filesRead.
@@ -212,8 +211,7 @@ private:
             _this->pendingRequests.front().pop();
         } else {
             // The current request is done! Forward the requested data
-            function<void()> mainThreadCallback = bind(_this->pendingCallbacks.front(), _this->filesRead);
-            Game::scheduleMainThreadTask(mainThreadCallback);
+            _this->pendingCallbacks.front()(_this->filesRead);
 
             // Clear filesRead container
             _this->filesRead = deque<pair<bool, vector<uint8_t>>>();
@@ -287,8 +285,7 @@ private:
             }
         }
 
-        function<void()> mainThreadCallback = bind(callback, filesRead);
-        Game::scheduleMainThreadTask(mainThreadCallback);
+        callback(filesRead);
 
         {
         unique_lock<mutex> lock(mtx_);

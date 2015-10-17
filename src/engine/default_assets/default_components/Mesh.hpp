@@ -48,7 +48,7 @@ public:
     std::vector<float> vertices;
     std::vector<float> normals;
     std::vector<int> faces;
-    std::vector<int> skinIndices;
+    std::vector<unsigned short> skinIndices;
     std::vector<float> skinWeights;
 
 private:

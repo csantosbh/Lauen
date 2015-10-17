@@ -37,7 +37,7 @@ void main( void )
 		float intensity = clamp(dot(-lightToFragmentDir, normal), 0.0, 1.0);
 		finalColor += intensity * lightColors[i].w * lightColors[i].xyz * surfaceColor;
 	}
-	gl_FragColor = vec4(finalColor+vec3(0.5,0.5,0.5),1.0);
+	gl_FragColor = vec4(finalColor,1.0);
 }
 
 #endif

@@ -12,7 +12,7 @@ public:
     VBO();
     void create(uint8_t dimensions, std::vector<float>& vertices, std::vector<int>& indices);
     void create(uint8_t dimensions, std::vector<float>& vertices, std::vector<float>& normals, std::vector<int>& indices);
-    void create(uint8_t dimensions, std::vector<float>& vertices, std::vector<float>& normals, std::vector<int>& indices, std::vector<int>& skinIndices, std::vector<float>& skinWeights);
+    void create(uint8_t dimensions, std::vector<float>& vertices, std::vector<float>& normals, std::vector<int>& indices, std::vector<unsigned short>& skinIndices, std::vector<float>& skinWeights);
 	~VBO();
 
     void bindAttributes(const ShaderProgram& shader);

@@ -1,4 +1,5 @@
 #include "LauCommon.h"
+#include "Game.hpp"
 #include "Factories.hpp"
 #include "utils/IO.h"
 #include "GameObject.hpp"
@@ -31,11 +32,11 @@ void SkinnedMeshRenderer::start() {
     }
     else {
         mesh->onLoad.subscribe([this]() {
-          //Game::scheduleMainThreadTask([]() {
+          Game::scheduleMainThreadTask([this]() {
             auto mesh = gameObject->getComponent<Mesh>();
             vbo.create(DIMS, mesh->vertices, mesh->normals, mesh->faces, mesh->skinIndices, mesh->skinWeights);
             vbo.bindAttributes(shader);
-          //});
+          });
         });
     }
 }

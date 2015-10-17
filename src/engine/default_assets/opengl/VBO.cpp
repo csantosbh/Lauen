@@ -140,7 +140,7 @@ void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& nor
     stride_ = sizeof(float) * dimensions_ * numComponents_;
 }
 
-void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices, vector<int>& skinIndices, vector<float>& skinWeights) {
+void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& normals, vector<int>& indices, vector<unsigned short>& skinIndices, vector<float>& skinWeights) {
     if(bufferFormat_ != 0) {
         glDeleteBuffers(2, bufferIds_);
     }
@@ -166,7 +166,7 @@ void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& nor
 
     const int BONES_PER_VERTEX = 2; // TODO make the number of vertices a globally available constant (it is also defined on Mesh.cpp). This must also reflect on the shader.
     vector<uint8_t> modelBuffer;
-    modelBuffer.reserve(vertices.size()*sizeof(float)+normals.size()*sizeof(float)+BONES_PER_VERTEX*sizeof(int)+BONES_PER_VERTEX*sizeof(int));
+    modelBuffer.reserve(vertices.size()*sizeof(float)+normals.size()*sizeof(float)+BONES_PER_VERTEX*sizeof(unsigned short)+BONES_PER_VERTEX*sizeof(float));
 	int nVerts = static_cast<int>(vertices.size())/dimensions_;
     for(int i = 0; i < nVerts; ++i) {
         // Vertex
@@ -250,11 +250,11 @@ void VBO::bindAttributes(const ShaderProgram& shader) {
         glEnableVertexAttribArray(shader.skinIndexAttribId);
         glEnableVertexAttribArray(shader.skinWeightAttribId);
 #ifndef GL_ES
-        glVertexAttribIPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_INT, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
+        glVertexAttribIPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_UNSIGNED_SHORT, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #else
-        glVertexAttribPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
+        glVertexAttribPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_UNSIGNED_SHORT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #endif
-        glVertexAttribPointer(shader.skinWeightAttribId, BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2 + sizeof(int)*BONES_PER_VERTEX));
+        glVertexAttribPointer(shader.skinWeightAttribId, BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2 + sizeof(unsigned short)*BONES_PER_VERTEX));
     }
 
 #ifdef DEBUG
@@ -280,11 +280,11 @@ void VBO::bindForDrawing(const ShaderProgram& shader) {
         // Skin index&weight
         const int BONES_PER_VERTEX = 2;
 #ifndef GL_ES
-        glVertexAttribIPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_INT, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
+        glVertexAttribIPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_UNSIGNED_SHORT, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #else
-        glVertexAttribPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
+        glVertexAttribPointer(shader.skinIndexAttribId, BONES_PER_VERTEX, GL_UNSIGNED_SHORT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2));
 #endif
-        glVertexAttribPointer(shader.skinWeightAttribId, BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2 + sizeof(int)*BONES_PER_VERTEX));
+        glVertexAttribPointer(shader.skinWeightAttribId, BONES_PER_VERTEX, GL_FLOAT, GL_FALSE, stride_, (GLvoid*)(sizeof(float)*dimensions_*2 + sizeof(unsigned short)*BONES_PER_VERTEX));
     }
 
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, bufferIds_[1]);

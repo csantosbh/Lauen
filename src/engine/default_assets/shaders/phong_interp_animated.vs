@@ -38,7 +38,12 @@ varying vec3 normalAtFragment;
 
 void main()
 {
-	vec4 worldPosition4f = object2world * vec4(in_Position.xyz, 1.0);
+	int idxX = int(in_SkinIndex.x);
+	int idxY = int(in_SkinIndex.y);
+	mat4 bonePose = bonePoses[idxX]*in_SkinWeight.x
+		          + bonePoses[idxY]*in_SkinWeight.y;
+
+	vec4 worldPosition4f = object2world * bonePose * vec4(in_Position.xyz, 1.0);
 
 	gl_Position = projection * world2camera * worldPosition4f;
 	worldPosition = worldPosition4f.xyz;

@@ -5,6 +5,7 @@
 #include "default_components/MeshRenderer.hpp"
 #include "default_components/Mesh.hpp"
 #include "default_components/Light.hpp"
+#include "default_components/SkinnedMeshRenderer.hpp"
 
 #ifdef PREVIEW_MODE
 #include "ppapi/cpp/var_array.h"
@@ -64,6 +65,15 @@ void ComponentPeekerImpl<Light>::update() {
     std::stringstream ss;
     ss << impl->color.getRgba32U();
     currentState_.Set("color", ss.str().c_str());
+}
+
+///// SkinnedMeshRenderer
+template<>
+ComponentPeekerImpl<SkinnedMeshRenderer>::ComponentPeekerImpl(std::shared_ptr<Component> actualComponent) : impl(std::dynamic_pointer_cast<SkinnedMeshRenderer>(actualComponent)) {
+}
+
+template<>
+void ComponentPeekerImpl<SkinnedMeshRenderer>::update() {
 }
 
 } // namespace lau

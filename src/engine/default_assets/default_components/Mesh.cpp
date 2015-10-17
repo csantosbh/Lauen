@@ -170,7 +170,7 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
 
         vector<float> cachedVertices;
         vector<float> cachedNormals;
-        vector<int> cachedSkinIndices;
+        vector<unsigned short> cachedSkinIndices;
         vector<float> cachedSkinWeights;
 
         const int DIMS = 3;
@@ -214,7 +214,7 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
                 for(int s = 0; s < upperLim; ++s) {
                     int s_i = v*modelBonesPerVertex + s;
                     // Indices
-                    cachedSkinIndices.push_back(_skinIdx[s_i].GetInt());
+                    cachedSkinIndices.push_back(static_cast<unsigned short>(_skinIdx[s_i].GetInt()));
                     // Weights
                     float w = static_cast<float>(_skinWs[s_i].GetDouble());
                     sumWeights += w;
@@ -225,7 +225,7 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
                 // index to at least take advantage of data locality, even though
                 // we wont be using the fetched data from the uniform buffer.
                 for(int s = 0; s < BONES_PER_VERTEX-upperLim; ++s) {
-                    cachedSkinIndices.push_back(cachedSkinIndices.back());
+                    cachedSkinIndices.push_back(static_cast<unsigned short>(cachedSkinIndices.back()));
                     cachedSkinWeights.push_back(0.0f);
                 }
 
