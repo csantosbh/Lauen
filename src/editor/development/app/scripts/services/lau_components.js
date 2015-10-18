@@ -7,7 +7,7 @@
  * # lauComponents
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'editorStateManager', 'historyManager', 'gameObjectManager', function ($editCanvas, $esm, $hm, $gom) {
+angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'editorStateManager', 'historyManager', 'gameObjectManager', 'dragdropManager', function ($editCanvas, $esm, $hm, $gom, $dm) {
   // Return default initial value for each field type
 
   ///
@@ -200,9 +200,55 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     this.instanceId = _allocComponentId(instanceId);
 
     if($esm.isEditMode()) {
+      var $this = this;
+
+      // Undo/redo support
+      this._editorCommitCallback = function(field) {
+        return function(oldValue, newValue) {
+          $hm.pushCommand({
+            _before: oldValue,
+            _after: newValue,
+            _gameObj: $this.parent.instanceId,
+            _component: $this.instanceId,
+            undo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              let comp = gameObject.getComponentByInstanceId(this._component);
+              comp.fields[field] = this._before;
+              $this.checkPrefabFieldSynchronization(field);
+            },
+            redo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              let comp = gameObject.getComponentByInstanceId(this._component);
+              comp.fields[field] = this._after;
+              $this.checkPrefabFieldSynchronization(field);
+            }
+          });
+
+          $this.checkPrefabFieldSynchronization(field);
+        };
+      }
+      this._meshCommitCallback = this._editorCommitCallback('mesh');
+
+      ////
+      // Bind to game object editor
+      this.getModelName_ = function() {
+        return LAU.IO.getFileNameFromPath(this.fields.mesh);
+      }
+      this.onDrop_ = function(event, draggedElement) {
+        $dm.dispatchAction(draggedElement, this, 'dropid_mesh_component_editor');
+      }
+      this.dragid = 'dropid_mesh_component_editor';
+
+      $dm.registerAction('dragid_project_panel', 'dropid_mesh_component_editor', function(draggedScope, dropScope) {
+        if(draggedScope.file.flyweight.type == 'model') {
+          var previousMesh = dropScope.component.fields.mesh;
+          dropScope.component.fields.mesh = draggedScope.file.flyweight.path;
+          dropScope.component._meshCommitCallback(previousMesh, dropScope.component.fields.mesh);
+        }
+      });
+
       ////
       // Bind to edit canvas
-      var $this = this;
       if(!this.parent.isPrefab) {
         $this.meshGeometry = null;
         this._reloadMesh = function() {
@@ -423,6 +469,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       return [];
     }
 
+    // TODO use $hm service to add undo/redo support to changes in animation
     if($esm.isEditMode() && !this.parent.isPrefab) {
       ////
       // Bind to edit canvas

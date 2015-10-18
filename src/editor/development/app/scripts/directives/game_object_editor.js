@@ -50,7 +50,9 @@ angular.module('lauEditor').directive('gameObjectEditor', ['gameObjectManager', 
     };
 
     $dm.registerAction('dragid_project_panel', 'dropid_game_obj_editor', function(draggedScope, dropScope) {
-      $scope.gameObjectEditor.addComponent(draggedScope.file);
+      if(draggedScope.file.flyweight.type == 'script') {
+        $scope.gameObjectEditor.addComponent(draggedScope.file);
+      }
     });
   }
 
