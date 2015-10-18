@@ -7,6 +7,7 @@
 #include "SkinnedMeshRenderer.hpp"
 #include "Mesh.hpp"
 #include "Camera.hpp"
+#include "Transform.hpp"
 
 #include "Light.hpp"
 
@@ -60,44 +61,31 @@ void SkinnedMeshRenderer::update(float dt) {
         animationTime = fmod(animationTime+dt, currAnim.length);
 
         for(int b = 0; b < bonePoses.size(); ++b) {
-            const auto bkfIt = currAnim.boneKeyframes.find(b);
+            const vector<Animation::Keyframe>& kfs = currAnim.boneKeyframes[b];
             Map<Matrix4f> boneAccum(accumBones[b].fields);
-            if(bkfIt != currAnim.boneKeyframes.end()) {
-                Matrix4f M;
-                const vector<Animation::Keyframe>& kfs = bkfIt->second;
-                int kfIdx = 0;
-                while(kfs[kfIdx+1].time<animationTime) {
-                    assert(kfs[kfIdx+1].time>kfs[kfIdx].time);
-                    kfIdx++;
-                }
-                const Animation::Keyframe& currKF = kfs[kfIdx]; // TODO properly handle time!
-                const Animation::Keyframe& nextKF = kfs[kfIdx+1];
-                // TODO create a function for building the Affine matrix!
-                // Bone pose Affine matrix
-                float t = (animationTime-currKF.time)/(nextKF.time-currKF.time);
-                M.block<3,3>(0,0) = (currKF.rotation.slerp(t, nextKF.rotation)).matrix();
-                M.block<3,1>(0,3) = currKF.position*(1.0f-t) + nextKF.position*t;
-                float* ptr = M.data();
+            int kfIdx = 0;
 
-                // Multiply by scale. This is equivalent to performing Affine = R*S.
-                Vector3f scale = currKF.scale*(1.0f-t) + nextKF.scale*t;
-                ptr[0] *= scale[0]; ptr[4] *= scale[1]; ptr[8]  *= scale[2];
-                ptr[1] *= scale[0]; ptr[5] *= scale[1]; ptr[9]  *= scale[2];
-                ptr[2] *= scale[0]; ptr[6] *= scale[1]; ptr[10] *= scale[2];
-                ptr[3] = ptr[7] = ptr[11] = 0.0;
-                ptr[15] = 1.0f;
-
-                int boneParent = mesh->getBoneParents()[b];
-                assert(boneParent < b);
-                if(boneParent >= 0)
-                    boneAccum = Map<Matrix4f>(accumBones[boneParent].fields)*M;
-                else
-                    boneAccum = M;
-
-            } else {
-                boneAccum = Matrix4f::Identity();
-                lerr << "No animations for bone " << b << endl;
+            while(kfs[kfIdx+1].time<animationTime) {
+                assert(kfs[kfIdx+1].time>kfs[kfIdx].time);
+                kfIdx++;
             }
+            const Animation::Keyframe& currKF = kfs[kfIdx]; // TODO properly handle time!
+            const Animation::Keyframe& nextKF = kfs[kfIdx+1];
+            // Bone pose Affine matrix
+            float t = (animationTime-currKF.time)/(nextKF.time-currKF.time);
+            Matrix4f M;
+            Vector3f position = currKF.position*(1.0f-t) + nextKF.position*t;
+            Quaternionf rotation = currKF.rotation.slerp(t, nextKF.rotation);
+            Vector3f scale = currKF.scale*(1.0f-t) + nextKF.scale*t;
+            Transform::createMat4FromTransforms(position, rotation, scale, M);
+
+            int boneParent = mesh->getBoneParents()[b];
+            assert(boneParent < b);
+            if(boneParent >= 0)
+                boneAccum = Map<Matrix4f>(accumBones[boneParent].fields)*M;
+            else
+                boneAccum = M;
+
 
             Map<Matrix4f> boneTransform(bones[b].fields);
             boneTransform = boneAccum*bonePoses[b];

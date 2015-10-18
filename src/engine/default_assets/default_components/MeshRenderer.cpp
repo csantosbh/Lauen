@@ -44,7 +44,6 @@ void MeshRenderer::start() {
     }
 }
 
-// TODO move this to the animation component
 void MeshRenderer::draw(float alpha) {
 	auto mesh = gameObject->getComponent<Mesh>();
     if(mesh == nullptr || !mesh->isLoaded())

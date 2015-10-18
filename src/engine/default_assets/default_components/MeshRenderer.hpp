@@ -21,7 +21,6 @@ public:
 	void update(float dt);
     void draw(float alpha);
 private:
-    // TODO create the post creation initialization method, like Unity, and get rid of this
     ShaderProgram shader;
     VBO vbo;
 };

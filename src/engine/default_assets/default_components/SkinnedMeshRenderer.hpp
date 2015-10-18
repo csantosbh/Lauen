@@ -23,7 +23,6 @@ public:
     void draw(float alpha);
     std::string currentAnimation;
 private:
-    // TODO create the post creation initialization method, like Unity, and get rid of this
     float animationTime;
     struct Matrix4fBuffer {
         float fields[16];

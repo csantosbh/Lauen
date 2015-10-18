@@ -28,7 +28,7 @@ public:
     float fps;
     float length;
     // TODO this is bones[keyframes]. This is not cache-optimal. The better way would be to make the structure below keyframes[bones]. But this will require normalizing all animations (make them have the same frequencies -- even though they may not have the same durations).
-    std::map<int, std::vector<Keyframe>> boneKeyframes;
+    std::vector<std::vector<Keyframe>> boneKeyframes;
 };
 
 class Mesh : public Component {

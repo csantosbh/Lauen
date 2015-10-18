@@ -5,6 +5,8 @@
 #include "utils/Time.h"
 #include "LauCommon.h"
 #include "utils/ThreadPool.hpp"
+#include "Transform.hpp"
+
 #ifdef JAVASCRIPT
 #include <emscripten.h>
 #endif
@@ -99,15 +101,12 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
     animation.length = serializedAnim["length"].GetDouble();
 
     const Value& _bones = serializedAnim["hierarchy"];
-    // TODO provavelmente o membro parent nao era pra significar meu id! nesse caso, mudar a variavel teste pra algo decente nesse for.
-    int teste = 0;
     for(Value::ConstValueIterator boneItr = _bones.Begin();
                     boneItr != _bones.End(); ++boneItr) {
 
         const Value& _keys = (*boneItr)["keys"];
-        int boneId = teste++;//(*boneItr)["parent"].GetInt()+1;
 
-        assert((*boneItr)["parent"].GetInt() < boneId);
+        assert((*boneItr)["parent"].GetInt() < static_cast<int>(animation.boneKeyframes.size()));
 
         vector<Animation::Keyframe> boneKeyframes;
         for(Value::ConstValueIterator keyItr = _keys.Begin();
@@ -121,7 +120,6 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
                         (*keyItr)["pos"][1].GetDouble(),
                         (*keyItr)["pos"][2].GetDouble());
             } else {
-                //key.position = Vector3f::Zero();
                 key.position = boneKeyframes.back().position;
             }
 
@@ -134,7 +132,6 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
                         (*keyItr)["rot"][2].GetDouble());
             } else {
                 assert(!keyItr->HasMember("rotq"));
-                //key.rotation = Quaternionf::Identity();
                 key.rotation = boneKeyframes.back().rotation;
             }
 
@@ -145,7 +142,6 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
                         (*keyItr)["scl"][1].GetDouble(),
                         (*keyItr)["scl"][2].GetDouble());
             } else {
-                //key.scale = Vector3f::Ones();
                 key.scale = boneKeyframes.back().scale;
             }
 
@@ -154,7 +150,7 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
 
             boneKeyframes.push_back(key);
         }
-        animation.boneKeyframes[boneId] = boneKeyframes;
+        animation.boneKeyframes.push_back(boneKeyframes);
     }
 
     animations_[animation.name] = animation;
@@ -288,22 +284,12 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
 
                 // Bone pose Affine matrix
                 Matrix4f M;
-                M.block<3,3>(0,0) = r.matrix();
-                M.block<3,1>(0,3) = t;
-                float* ptr = M.data();
-
-                // Multiply by scale. This is equivalent to performing Affine = R*S.
-                ptr[0] *= s[0]; ptr[4] *= s[1]; ptr[8] *= s[2];
-                ptr[1] *= s[0]; ptr[5] *= s[1]; ptr[9] *= s[2];
-                ptr[2] *= s[0]; ptr[6] *= s[1]; ptr[10] *= s[2];
-                ptr[3] = ptr[7] = ptr[11] = 0.0;
-                ptr[15] = 1.0f;
-                // TODO inverter na mao!
+                Transform::createInvMat4FromTransforms(t, r, s, M);
 
                 if(boneParents_.back() >= 0)
-                    bonePoses_.push_back(M.inverse()*bonePoses_[boneParents_.back()]);
+                    bonePoses_.push_back(M*bonePoses_[boneParents_.back()]);
                 else
-                    bonePoses_.push_back(M.inverse());
+                    bonePoses_.push_back(M);
             }
 
             // Grab animations
