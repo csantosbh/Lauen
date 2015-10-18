@@ -1,0 +1,24 @@
+{
+    "metadata": {
+        "version": 4,
+        "type": "Geometry",
+        "generator": "GeometryExporter",
+        "normals": 4,
+        "bones": 0
+    },
+    "faces": [33, 0,1,2,3, 0,1,2,3],
+    "vertices": [
+        1,-1,0,
+        1,1,0,  
+        -1,1,0, 
+        -1,-1,0
+    ],
+    "normals": [
+        0,0,1,
+        0,0,1,
+        0,0,1,
+        0,0,1
+    ],
+    "uvs": [[0,0, 0,1, 1,0, 1,1]],
+    "materials": [{}]
+}

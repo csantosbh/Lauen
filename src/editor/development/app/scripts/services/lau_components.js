@@ -391,7 +391,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
     this.fields = {
-      animation: componentFlyWeight.animation
+      animation: componentFlyWeight.fields.animation
     };
 
     this.resetPrefabSync = function() {
@@ -443,7 +443,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         instanceId: this.instanceId,
       };
     },
-    setValues: function(flyweight) { },
+    setValues: function(flyweight) {
+      this.fields.animation = flyweight.fields.animation;
+    },
     destroy: function() {
       _freeComponentId(this.instanceId);
     },

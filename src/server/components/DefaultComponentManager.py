@@ -29,7 +29,7 @@ _defaultComponents = {
         'type': 'mesh', # TODO investigate the cost of dropping component string ids (which is what the type actually is)
         'path': 'default_components/Mesh.hpp',
         'fields': {
-            'mesh': 'default_assets/default_components/primitive_meshes/Cube.lmf',
+            'mesh': 'default_assets/default_components/primitive_meshes/Plane.lmf',
         }
     },
     'mesh_renderer': {

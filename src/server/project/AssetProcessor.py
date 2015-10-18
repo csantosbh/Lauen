@@ -217,6 +217,32 @@ class PrefabProcessor(AssetProcessor):
         pass
     pass
 
+class ModelProcessor(AssetProcessor):
+    def __init__(self, path, persistent_fields):
+        super(ModelProcessor, self).__init__(path, persistent_fields)
+        pass
+
+    def dependsOn(self, path):
+        return False
+
+    # Handle file removal event
+    def remove(self):
+        # Nothing special to do here
+        pass
+
+    def getMetadata(self):
+        with open(Project.getAbsProjFilePath(self.path)) as f:
+            wrapper={
+                'type': 'model',
+                'path': self.path
+            }
+            return wrapper
+            pass
+        pass
+
+    def update(self):
+        pass
+    pass
 
 class UserFactoriesProcessor(AssetProcessor):
     def __init__(self, path, persistent_fields):
@@ -273,6 +299,8 @@ def CreateAssetProcessor(assetPath, persistent_fields=None):
         pass
     elif Utils.IsPrefabFile(assetPath):
         return PrefabProcessor(assetPath, persistent_fields)
+    elif Utils.IsModelFile(assetPath):
+        return ModelProcessor(assetPath, persistent_fields)
     else:
         return None
     pass

@@ -15,10 +15,11 @@ angular.module('lauEditor').service('componentManager', ['$timeout', 'gameObject
     camera: {menu_label: 'Camera', flyweight: null},
     mesh: {menu_label: 'Mesh', flyweight: null},
     mesh_renderer: {menu_label: 'Mesh Renderer', flyweight: null},
-    skinned_mesh_renderer: {menu_label: 'Skinned Mesh Renderer', flyweight: null},
     script: [],
     prefab: [],
     light: {menu_label: 'Light', flyweight: null},
+    skinned_mesh_renderer: {menu_label: 'Skinned Mesh Renderer', flyweight: null},
+    model: [],
   };
   var componentMenu = [
     componentFlyweights.camera,
@@ -128,12 +129,16 @@ angular.module('lauEditor').service('componentManager', ['$timeout', 'gameObject
           switch(compInd.type) {
             case 'script':
               $gom.removeScriptFromGameObjects(componentFlyweights.script[compInd.idx].flyweight);
-            break;
+              break;
             case 'prefab':
               let prefabFlyweight = componentFlyweights.prefab[compInd.idx].flyweight.content;
-            $gom.prefabManager.getPrefab(prefabFlyweight.instanceId).destroy();
-            $sm.saveScene();
-            break;
+              $gom.prefabManager.getPrefab(prefabFlyweight.instanceId).destroy();
+              $sm.saveScene();
+              break;
+            case 'model':
+              // TODO: Remove model from all assets
+              let modelFlyweight = componentFlyweights.model[compInd.idx].flyweight;
+              break;
           }
           componentFlyweights[compInd.type].splice(compInd.idx, 1);
         } else {

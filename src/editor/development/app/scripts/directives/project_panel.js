@@ -29,7 +29,8 @@ angular.module('lauEditor').directive('projectPanel', ['$timeout', 'gameObjectMa
     let components = $cm.getComponents();
     var assets = []
       .concat(components.script)
-      .concat(components.prefab);
+      .concat(components.prefab)
+      .concat(components.model);
     return assets;
   }
 

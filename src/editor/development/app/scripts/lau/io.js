@@ -10,8 +10,8 @@ LAU.IO = (function() {
   function getFileIconFromPath(name) {
     var extensionMappings = {
       prefab: 'prefab',
-      cpp: 'cpp',
-      hpp: 'cpp',
+      hpp: 'script',
+      lmf: 'model',
     };
     return 'images/icons/file-'+extensionMappings[LAU.IO.getFileExtensionFromPath(name)]+'.svg';
   }

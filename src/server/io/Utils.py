@@ -37,6 +37,9 @@ def IsImplementationFile(assetPath):
 def IsCpyFile(assetPath):
     return PathHasExtension(assetPath, ['.cpy'])
 
+def IsModelFile(assetPath):
+    return PathHasExtension(assetPath, ['.lmf'])
+
 def IsScriptFile(assetPath):
     return IsHeaderFile(assetPath) or IsImplementationFile(assetPath)
 
@@ -45,7 +48,7 @@ def IsProcessableFile(path):
 
 def IsTrackableAsset(filePath):
     # TODO also check for other supported file type
-    return IsHeaderFile(filePath) or IsPrefabFile(filePath)
+    return IsHeaderFile(filePath) or IsPrefabFile(filePath) or IsModelFile(filePath)
 
 def ListFilesFromFolder(mypath, extensions = None):
     from server.parser import CppParser

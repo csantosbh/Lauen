@@ -30,7 +30,7 @@ void Mesh::update(float dt) {
 
 void Mesh::load(const string& path) {
     isLoaded_ = false;
-    const string supportedFormats[] = {".json"};
+    const string supportedFormats[] = {".lmf"};
     if(path.length() >= supportedFormats[0].length() &&
             path.compare(path.length()-supportedFormats[0].length(),
                 supportedFormats[0].length(),
@@ -185,7 +185,7 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
             cachedVertices.push_back(static_cast<float>(itr->GetDouble()));
         }
 
-        if(serializedMesh["metadata"]["normals"].GetInt() > 0) {
+        if(serializedMesh["metadata"].HasMember("normals") && serializedMesh["metadata"]["normals"].GetInt() > 0) {
             // Grab normals
             const Value& _norms=serializedMesh["normals"];
             for (Value::ConstValueIterator itr = _norms.Begin();
