@@ -8,7 +8,7 @@
  * Service in the lauEditor.
  */
 angular.module('lauEditor')
-.service('lauGameObject', ['editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', 'lauComponents', 'editorStateManager', function ($editCanvas, $cm, $hm, $gom, $lc, $esm) {
+.service('lauGameObject', ['$timeout', 'editCanvasManager', 'componentManager', 'historyManager', 'gameObjectManager', 'lauComponents', 'editorStateManager', function ($timeout, $editCanvas, $cm, $hm, $gom, $lc, $esm) {
   ///
   // Public GameObject API
   ///
@@ -330,7 +330,7 @@ angular.module('lauEditor')
           changedComponentId = gameObj.getComponentByInstanceId(componentId).flyweight.id;
         }
         else {
-          changedComponentId = componentId;
+          changedComponentId = 'transform';
         }
 
         let gameObjs = $gom.getInstancesOfPrefab($this.instanceId, hierarchyId);
@@ -348,8 +348,7 @@ angular.module('lauEditor')
         transform: makeObserver(gameObj.hierarchyId, 'transform')
       };
 
-      for(let i in gameObj.transform.fields)
-        Object.observe(gameObj.transform.fields[i], observers_[gameObj.hierarchyId]['transform']);
+      gameObj.transform.watchChanges($this.instanceId, observers_[gameObj.hierarchyId]['transform']);
 
       for(let i = 0; i < gameObj.components.length; ++i) {
         if(gameObj.components[i].hasOwnProperty('fields')) {
@@ -360,13 +359,7 @@ angular.module('lauEditor')
           let fields = gameObj.components[i].fields;
           // We have to observe the whole fields object to account for changes
           // in primitive types
-          Object.observe(fields, observers_[gameObj.hierarchyId][cId]);
-          for(let f in fields) {
-            if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
-              // And we have to deep watch objects/arrays
-              Object.observe(fields[f], observers_[gameObj.hierarchyId][cId]);
-            }
-          }
+          gameObj.components[i].watchChanges($this.instanceId, observers_[gameObj.hierarchyId][cId]);
         }
       }
     }
@@ -416,11 +409,11 @@ angular.module('lauEditor')
       let fields = component.fields;
       // We have to observe the whole fields object to account for changes
       // in primitive types
-      Object.observe(fields, observers_[hierarchyId][cId]);
+      //Object.observe(fields, observers_[hierarchyId][cId]);
       for(let f in fields) {
         if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
           // And we have to deep watch objects/arrays
-          Object.observe(fields[f], observers_[hierarchyId][cId]);
+          //Object.observe(fields[f], observers_[hierarchyId][cId]);
         }
       }
     };
@@ -515,6 +508,8 @@ angular.module('lauEditor')
 
   // Transform logic
   function Transform(gameObject) {
+    var $this = this;
+
     this.fields = {
       position: [0,0,0],
       rotation: [0,0,0],
@@ -530,12 +525,54 @@ angular.module('lauEditor')
     }
     this.resetPrefabSync();
 
+    let notificationSystem = LAU.Utils.notificationSystem();
+    this.watchChanges = notificationSystem.watchChanges;
+
+    // TODO send to deepcopy down below...
+    this.propagatePositionChange = function() {
+      if($this.hierarchyGroup !== undefined) {
+        $this.hierarchyGroup.position.fromArray($this.fields.position);
+      }
+
+      notificationSystem.notifySubscribers();
+    }
+
+    this.propagateRotationChange = function() {
+      if($this.hierarchyGroup !== undefined) {
+        $this.hierarchyGroup.rotation.fromArray($this.fields.rotation);
+      }
+
+      notificationSystem.notifySubscribers();
+    }
+
+    this.propagateScaleChange = function() {
+      if($this.hierarchyGroup !== undefined) {
+        $this.hierarchyGroup.scale.fromArray($this.fields.scale);
+      }
+
+      notificationSystem.notifySubscribers();
+    }
+
+    this.propagateChange = function(field) {
+      switch(field) {
+        case 'position':
+          return $this.propagatePositionChange();
+        case 'rotation':
+          return $this.propagateRotationChange();
+        case 'scale':
+          return $this.propagateScaleChange();
+      }
+    }
+    this.propagateGenericChange = function() {
+      $this.propagatePositionChange();
+      $this.propagateRotationChange();
+      $this.propagateScaleChange();
+    }
+
     this.type = "transform";
     this.parent = gameObject;
 
     if($esm.isEditMode()) {
-      var $this = this;
-
       if(!this.parent.isPrefab) {
         ////
         // Bind transform to edit canvas
@@ -546,37 +583,6 @@ angular.module('lauEditor')
         this._parentGroup = $editCanvas.scene;
 
         $editCanvas.scene.add(this.hierarchyGroup);
-
-        function updatePosition(newValue) {
-          if(newValue != null)
-            $this.hierarchyGroup.position.fromArray(newValue);
-        }
-        function positionObserver(changes) {
-          var newValue = changes[changes.length-1].object;
-          updatePosition(newValue);
-        }
-        function updateRotation(newValue) {
-          if(newValue != null)
-            $this.hierarchyGroup.rotation.fromArray(newValue);
-        }
-        function rotationObserver(changes) {
-          var newValue = changes[changes.length-1].object;
-          updateRotation(newValue);
-        }
-        function updateScale(newValue) {
-          if(newValue != null)
-            $this.hierarchyGroup.scale.fromArray(newValue);
-        }
-        function scaleObserver(changes) {
-          var newValue = changes[changes.length-1].object;
-          updateScale(newValue);
-        }
-        updatePosition($this.fields.position);
-        Object.observe($this.fields.position, positionObserver);
-        updateRotation($this.fields.rotation);
-        Object.observe($this.fields.rotation, rotationObserver);
-        updateScale($this.fields.scale);
-        Object.observe($this.fields.scale, scaleObserver);
       }
 
       this._editorCommitCallback = function(field) {
@@ -588,11 +594,13 @@ angular.module('lauEditor')
             undo: function() {
               var gameObj = $gom.getGameObject(this._gameObj);
               LAU.Utils.deepCopy(this._before, gameObj.transform.fields[field]);
+              $this.propagateChange(field);
               $this.checkPrefabFieldSynchronization(field);
             },
             redo: function() {
               var gameObj = $gom.getGameObject(this._gameObj);
               LAU.Utils.deepCopy(this._after, gameObj.transform.fields[field]);
+              $this.propagateChange(field);
               $this.checkPrefabFieldSynchronization(field);
             }
           });
@@ -615,6 +623,7 @@ angular.module('lauEditor')
     },
     setValues: function(flyweight) {
       LAU.Utils.deepCopy(flyweight.fields, this.fields);
+      this.propagateGenericChange();
     },
     destroy: function() {
       if($esm.isEditMode() && !this.parent.isPrefab) {

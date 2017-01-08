@@ -19,6 +19,7 @@ angular.module('lauEditor').directive('colorInput', function () {
     scope: {
       bind: '=',
       commitCallback: '&',
+      changeNotifyCallback: '&',
     },
     restrict: 'E',
     link: function postLink(scope, element, attrs) {
@@ -39,6 +40,8 @@ angular.module('lauEditor').directive('colorInput', function () {
         },
         buttonColorize: true,
         stop: function() {
+          scope.changeNotifyCallback();
+
           var afterValue = scope.bind;
 
           // Do not push commands that dont change anything

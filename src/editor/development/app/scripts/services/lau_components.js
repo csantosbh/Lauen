@@ -60,7 +60,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       }
     },
     syncComponentToPrefab: function() {
+      let $this = this;
       let prefabId = this.parent.parentPrefabId;
+
       if(prefabId == null) { // No prefab
         this.resetPrefabSync();
       } else {
@@ -84,9 +86,18 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
             }
           }
         }
-        recurseUpdate(this.fields, this.prefabSync, prefabComponent.fields);
+
+        recurseUpdate($this.fields, $this.prefabSync, prefabComponent.fields);
+        // TODO standardize propagateGenericChange
+        this.propagateGenericChange();
       }
     },
+    watchChanges: function(instanceId, observer) {
+      console.error('Unimplemented watchChanges called ['+instanceId+']');
+    },
+    propagateGenericChange: function() {
+      console.error('Unimplemented propagateGenericChange called');
+    }
   };
 
   // Camera component
@@ -124,6 +135,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
 
     this.flyweight = componentFlyWeight;
     this.parent = gameObject;
+
+    let notificationSystem = LAU.Utils.notificationSystem();
+
+    this.watchChanges = notificationSystem.watchChanges;
+    this.propagateChange = function(field) {
+      // This function will be called whenever a field is updated
+      notificationSystem.notifySubscribers();
+    }
+    this.propagateGenericChange = function() {
+      notificationSystem.notifySubscribers();
+    }
 
     // TODO add visual interpretation of camera
     if($esm.isEditMode()) {
@@ -176,6 +198,8 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       this.fields.far      = flyweight.fields.far;
       this.fields.width    = flyweight.fields.width;
       this.fields.priority = flyweight.fields.priority;
+
+      this.propagateGenericChange();
     },
     destroy: function() {
       _freeComponentId(this.instanceId);
@@ -213,14 +237,22 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
             undo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
-              comp.fields[field] = this._before;
+              let $hm_this = this;
+
+              comp.fields[field] = $hm_this._before;
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
-              comp.fields[field] = this._after;
+              let $hm_this = this;
+
+              comp.fields[field] = $hm_this._after;
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             }
           });
 
@@ -244,6 +276,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
           var previousMesh = dropScope.component.fields.mesh;
           dropScope.component.fields.mesh = draggedScope.file.flyweight.path;
           dropScope.component._meshCommitCallback(previousMesh, dropScope.component.fields.mesh);
+          dropScope.component.propagateMeshChange();
         }
       });
 
@@ -270,24 +303,24 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
 
         this._reloadMesh();
 
-        function updateMesh(newValue) {
-          if(newValue != null) {
+        // TODO send to deep copy down below...
+        // TODO allow for listener subscription
+        $this.propagateMeshChange = function() {
+          if($this.fields.mesh != null) {
             // Remove old mesh
             $this.removeCurrentMesh();
             $this._reloadMesh();
           }
         }
-        Object.observe(this.fields, function(changes) {
-          // TODO investigate if this will leak memory (Im not-explicitly ceasing to observe the older position)
-          // Only the last change to this.mesh interests us. Break after it's found.
-          for(var i = changes.length-1; i >= 0; --i) {
-            var cng = changes[i];
-            if(cng.name == "mesh" && cng.type=="update") {
-              updateMesh($this.fields.mesh);
-              break;
-            }
+        $this.propagateChange = function(type) {
+          switch(type) {
+            case 'mesh':
+              $this.propagateMeshChange();
+            break;
+            default:
+              console.error('ERROR propagating changer function of type: '+type);
           }
-        });
+        }
       }
     }
   }
@@ -305,6 +338,8 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     },
     setValues: function(flyweight) {
       this.fields.mesh = flyweight.fields.mesh;
+
+      this.propagateGenericChange();
     },
     removeCurrentMesh: function() {
       if($esm.isEditMode()) {
@@ -346,7 +381,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         instanceId: this.instanceId,
       };
     },
-    setValues: function(flyweight) { },
+    setValues: function(flyweight) {
+      this.propagateGenericChange();
+    },
     destroy: function() {
       _freeComponentId(this.instanceId);
     },
@@ -395,6 +432,8 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     },
     setValues: function(flyweight) {
       this.fields.color = Number(flyweight.fields.color).toString(16);
+
+      this.propagateGenericChange();
     },
     destroy: function() {
       _freeComponentId(this.instanceId);
@@ -474,8 +513,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       ////
       // Bind to edit canvas
       this.updateModels();
-      Object.observe(this.fields, function(changes) {
-      });
     }
   }
   SkinnedMeshRendererComponent.prototype = Object.create(Component.prototype);
@@ -492,6 +529,8 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     },
     setValues: function(flyweight) {
       this.fields.animation = flyweight.fields.animation;
+
+      this.propagateGenericChange();
     },
     destroy: function() {
       _freeComponentId(this.instanceId);
@@ -635,6 +674,8 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       LAU.Utils.deepCopy(flyweight.fields, this.fields);
 
       this.resetPrefabSync();
+
+      this.propagateGenericChange();
     },
     destroy: function() {
       _freeComponentId(this.instanceId);

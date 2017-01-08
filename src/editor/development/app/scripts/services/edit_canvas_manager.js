@@ -155,6 +155,7 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
             position[0] += displacement.x;
             position[1] += displacement.y;
             position[2] += displacement.z;
+            object.transform.propagatePositionChange();
           });
         },
         end: function() {
@@ -202,6 +203,7 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
             objRot[0] = newEuler.x;
             objRot[1] = newEuler.y;
             objRot[2] = newEuler.z;
+            object.transform.propagateRotationChange();
           });
         },
         end: function() {
@@ -242,6 +244,7 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
             scale[0] += displacement.x;
             scale[1] += displacement.y;
             scale[2] += displacement.z;
+            object.transform.propagateScaleChange();
           });
         },
         end: function() {

@@ -20,5 +20,27 @@ LAU.Utils = {
       }
     }
     recurse_(src,dst);
+  },
+  notificationSystem: function() {
+    let _changeSubscribers = {};
+
+    function watchChanges(instanceId, watcherFunction) {
+      if(!_changeSubscribers.hasOwnProperty(instanceId)) {
+        _changeSubscribers[instanceId] = watcherFunction;
+      } else {
+        console.error('Object trying to watch changes multiple times');
+      }
+    }
+
+    function notifySubscribers() {
+      for(let i in _changeSubscribers) {
+        _changeSubscribers[i]();
+      }
+    }
+
+    return {
+      watchChanges: watchChanges,
+      notifySubscribers: notifySubscribers
+    };
   }
 }

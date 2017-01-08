@@ -19,6 +19,7 @@ angular.module('lauEditor').directive('stringInput', function () {
     scope: {
       bind: '=',
       commitCallback: '&',
+      changeNotifyCallback: '&',
       lblClass: '@',
       lblId: '@',
       inpClass: '@',
@@ -47,6 +48,7 @@ angular.module('lauEditor').directive('stringInput', function () {
       // Handle <enter>
       .bind('keydown', function(downE) {
         if(downE.keyCode === 13) {
+          scope.changeNotifyCallback();
           inputElement.blur();
         }
       });

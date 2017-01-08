@@ -4,7 +4,7 @@ namespace lau {
 
 class vec2 {
 public:
-    vec2();
+    vec2() {}
     vec2(const vec2& v);
     vec2(float x, float y);
     vec2(float a);
@@ -67,7 +67,7 @@ public:
 
 class vec4 {
 public:
-    vec4();
+    vec4() { }
     vec4(const vec4& v);
     vec4(float x, float y, float z, float w);
     vec4(float a);

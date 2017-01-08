@@ -1,4 +1,4 @@
-<string-input ng-if="gameObjectEditor.selectedGameObject()!=null" label="name" bind="gameObjectEditor.selectedGameObject().name" commit-callback="gameObjectEditor.selectedGameObject()._nameCommitCallback()"></string-input>
+<string-input ng-if="gameObjectEditor.selectedGameObject()!=null" label="name" bind="gameObjectEditor.selectedGameObject().name"  commit-callback="gameObjectEditor.selectedGameObject()._nameCommitCallback()"></string-input>
 <component-editor ng-if="gameObjectEditor.selectedGameObject()!=null" component="gameObjectEditor.selectedGameObject().transform"></component-editor>
 <component-editor ng-repeat="component in gameObjectEditor.selectedGameObject().components" component="component"></component-editor>
 <div style="width: 100%; position: relative; height: 200px; display: inline-block;"><mmenu elements="gameObjectEditor.componentMenu" callback="gameObjectEditor._menuPickup"></mmenu></div>

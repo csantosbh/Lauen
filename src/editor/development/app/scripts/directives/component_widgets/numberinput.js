@@ -27,6 +27,7 @@ angular.module('lauEditor').directive('numberInput', ['historyManager', function
     scope: {
       bind: '=',
       commitCallback: '&',
+      changeNotifyCallback: '&',
       lblClass: '@',
       lblId: '@',
       inpClass: '@',
@@ -52,6 +53,7 @@ angular.module('lauEditor').directive('numberInput', ['historyManager', function
       // Handle <enter>
       .bind('keydown', function(downE) {
         if(downE.keyCode === 13) {
+          scope.changeNotifyCallback();
           inputElement.blur();
         }
       });
@@ -66,6 +68,8 @@ angular.module('lauEditor').directive('numberInput', ['historyManager', function
 
           inputElement.val(parseFloat(scope.bind)+xDiff);
           inputElement.change();
+
+          scope.changeNotifyCallback();
         }
         document.addEventListener('mousemove', mouseMoveDocument);
 

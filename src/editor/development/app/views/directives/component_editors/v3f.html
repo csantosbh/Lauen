@@ -1,6 +1,6 @@
 <div>
   <!-- TODO use bootstrap to align fields -->
-<number-input label="x" bind="bind[0]" inp-class="vector-input" commit-callback="_forwardCommitter(0)"></number-input>
-<number-input label="y" bind="bind[1]" inp-class="vector-input" commit-callback="_forwardCommitter(1)"></number-input>
-<number-input label="z" bind="bind[2]" inp-class="vector-input" commit-callback="_forwardCommitter(2)"></number-input>
+<number-input label="x" bind="bind[0]" inp-class="vector-input" commit-callback="_forwardCommitter(0)" change-notify-callback="changeNotifyCallback()"></number-input>
+<number-input label="y" bind="bind[1]" inp-class="vector-input" commit-callback="_forwardCommitter(1)" change-notify-callback="changeNotifyCallback()"></number-input>
+<number-input label="z" bind="bind[2]" inp-class="vector-input" commit-callback="_forwardCommitter(2)" change-notify-callback="changeNotifyCallback()"></number-input>
 </div>

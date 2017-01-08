@@ -14,6 +14,7 @@ angular.module('lauEditor')
       scope: {
         bind: '=',
         commitCallback: '&',
+        changeNotifyCallback: '&',
       },
       link: function postLink(scope, element, attrs) {
         scope._forwardCommitter = function(axis) {
