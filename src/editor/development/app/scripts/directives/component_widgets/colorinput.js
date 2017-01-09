@@ -40,8 +40,6 @@ angular.module('lauEditor').directive('colorInput', function () {
         },
         buttonColorize: true,
         stop: function() {
-          scope.changeNotifyCallback();
-
           var afterValue = scope.bind;
 
           // Do not push commands that dont change anything
@@ -50,6 +48,9 @@ angular.module('lauEditor').directive('colorInput', function () {
           scope.commitCallback()(preCommitValue, afterValue);
 
           preCommitValue = afterValue;
+        },
+        select: function(color) {
+          scope.changeNotifyCallback();
         }
       });
       // TODO update the preview button color when the model is updated outside

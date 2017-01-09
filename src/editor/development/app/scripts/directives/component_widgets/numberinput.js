@@ -6,6 +6,7 @@
  * @description
  * # numberInput
  */
+// TODO add support for integers
 angular.module('lauEditor').directive('numberInput', ['historyManager', function ($hm) {
   var defaultAttrs = {
     'lblClass': 'number-input',

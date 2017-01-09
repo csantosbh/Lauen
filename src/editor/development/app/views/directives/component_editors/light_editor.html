@@ -4,6 +4,6 @@
     Type <select><option value="point">Point</option></select>
   </div>
   <div>
-    Color <color-input bind="component.fields.color" commit-callback="component._editorCommitCallback('color')"></color-input>
+    Color <color-input bind="component.fields.color" change-notify-callback="component.propagateChange('color')" commit-callback="component._editorCommitCallback('color')"></color-input>
   </div>
 </div>

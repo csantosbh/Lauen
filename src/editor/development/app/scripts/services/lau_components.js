@@ -163,12 +163,16 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._before;
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._after;
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             }
           });
 
@@ -282,9 +286,10 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
 
       ////
       // Bind to edit canvas
+      let reloadMesh = null;
       if(!this.parent.isPrefab) {
         $this.meshGeometry = null;
-        this._reloadMesh = function() {
+        reloadMesh = function() {
           $editCanvas.createMesh($this.fields.mesh, function(newMesh) {
             // Update mesh model
             $this.meshGeometry = newMesh;
@@ -301,26 +306,39 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
           });
         }
 
-        this._reloadMesh();
+        reloadMesh();
+      }
 
-        // TODO send to deep copy down below...
-        // TODO allow for listener subscription
-        $this.propagateMeshChange = function() {
-          if($this.fields.mesh != null) {
-            // Remove old mesh
-            $this.removeCurrentMesh();
-            $this._reloadMesh();
+      // Change propagation mechanism
+      let notificationSystem = LAU.Utils.notificationSystem();
+
+      $this.watchChanges = notificationSystem.watchChanges;
+
+      $this.propagateMeshChange = function() {
+        if($this.fields.mesh != null) {
+          // Remove old mesh
+          $this.removeCurrentMesh();
+
+          if(reloadMesh) {
+            reloadMesh();
           }
+
+          notificationSystem.notifySubscribers();
         }
-        $this.propagateChange = function(type) {
-          switch(type) {
-            case 'mesh':
-              $this.propagateMeshChange();
-            break;
-            default:
-              console.error('ERROR propagating changer function of type: '+type);
-          }
+      }
+
+      $this.propagateChange = function(type) {
+        switch(type) {
+          case 'mesh':
+            $this.propagateMeshChange();
+          break;
+          default:
+            console.error('ERROR propagating changer function of type: '+type);
         }
+      }
+
+      $this.propagateGenericChange = function() {
+        $this.propagateMeshChange();
       }
     }
   }
@@ -381,6 +399,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         instanceId: this.instanceId,
       };
     },
+    propagateGenericChange: function() {},
     setValues: function(flyweight) {
       this.propagateGenericChange();
     },
@@ -410,6 +429,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     this.fields = {
       color: Number(componentFlyWeight.fields.color).toString(16)
     };
+
+    // TODO draw light billboard on scene
+    let notificationSystem = LAU.Utils.notificationSystem();
+    this.watchChanges = notificationSystem.watchChanges;
+    this.propagateChange = function(field) {
+      console.log('mudoooo='+this.fields.color);
+      notificationSystem.notifySubscribers();
+    }
+    this.propagateGenericChange = function() {
+      this.propagateChange('color');
+    }
 
     this.resetPrefabSync = function() {
       this.prefabSync = {
@@ -455,12 +485,16 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._before;
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._after;
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             }
           });
 
@@ -500,8 +534,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
             animNames.push(animList[i].name);
           }
         }
-        else
+        else {
           animNames.push(mesh.meshGeometry.geometry.animation.name);
+        }
 
         return animNames;
       }
