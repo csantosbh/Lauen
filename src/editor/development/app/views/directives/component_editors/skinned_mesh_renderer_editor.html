@@ -1,6 +1,6 @@
 <div>
   <div>Skinned Mesh Renderer</div>
   <div>
-    Animation <select ng-model="component.fields.animation"><option ng-value="anim" ng-repeat="anim in component.getAvailableAnimations()">{{anim}}</option></select>
+    <select-input bind="component.fields.animation" change-notify-callback="component.propagateChange('animation')" commit-callback="component._editorCommitCallback('animation')" list-available-options="component.getAvailableAnimations()" label="Animation"></select-input>
   </div>
 </div>

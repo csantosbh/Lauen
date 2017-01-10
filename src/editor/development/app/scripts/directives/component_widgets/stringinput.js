@@ -44,11 +44,12 @@ angular.module('lauEditor').directive('stringInput', function () {
         scope.commitCallback()(preCommitValue, afterValue);
 
         preCommitValue = afterValue;
+
+        scope.changeNotifyCallback();
       })
       // Handle <enter>
       .bind('keydown', function(downE) {
         if(downE.keyCode === 13) {
-          scope.changeNotifyCallback();
           inputElement.blur();
         }
       });

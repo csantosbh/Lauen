@@ -1,1 +1,1 @@
-<div><number-input label="{{fieldName}}" commit-callback="component._editorCommitCallback(fieldName)" bind="component.fields[fieldName]" /></number-input></div>
+<div><number-input label="{{fieldName}}" change-notify-callback="component.propagateChange(fieldName)" commit-callback="component._editorCommitCallback(fieldName)" bind="component.fields[fieldName]" /></number-input></div>

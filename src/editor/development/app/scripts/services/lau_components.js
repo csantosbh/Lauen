@@ -434,7 +434,6 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     let notificationSystem = LAU.Utils.notificationSystem();
     this.watchChanges = notificationSystem.watchChanges;
     this.propagateChange = function(field) {
-      console.log('mudoooo='+this.fields.color);
       notificationSystem.notifySubscribers();
     }
     this.propagateGenericChange = function() {
@@ -549,6 +548,15 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       // Bind to edit canvas
       this.updateModels();
     }
+
+    let notificationSystem = LAU.Utils.notificationSystem();
+    this.watchChanges = notificationSystem.watchChanges;
+    this.propagateChange = function(field) {
+      notificationSystem.notifySubscribers();
+    }
+    this.propagateGenericChange = function() {
+      this.propagateChange('animation');
+    }
   }
   SkinnedMeshRendererComponent.prototype = Object.create(Component.prototype);
   LAU.Utils.deepCopy({
@@ -579,6 +587,37 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
             transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
         }
       }
+    },
+    _editorCommitCallback: function(field) {
+      if($esm.isEditMode()) {
+        let $this = this;
+
+        return function(oldValue, newValue) {
+          $hm.pushCommand({
+            _before: oldValue,
+            _after: newValue,
+            _gameObj: $this.parent.instanceId,
+            _component: $this.instanceId,
+            undo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              let comp = gameObject.getComponentByInstanceId(this._component);
+              comp.fields[field] = this._before;
+              $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
+            },
+            redo: function() {
+              var gameObject = $gom.getGameObject(this._gameObj);
+              let comp = gameObject.getComponentByInstanceId(this._component);
+              comp.fields[field] = this._after;
+              $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
+            }
+          });
+        }
+
+      }
     }
   }, SkinnedMeshRendererComponent.prototype);
 
@@ -607,6 +646,19 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
 
     this.instanceId = _allocComponentId(instanceId);
 
+    // Notification system
+    let notificationSystem = LAU.Utils.notificationSystem();
+
+    this.watchChanges = notificationSystem.watchChanges;
+    this.propagateChange = function(field) {
+      // This function will be called whenever a field is updated
+      notificationSystem.notifySubscribers();
+    }
+    this.propagateGenericChange = function() {
+      notificationSystem.notifySubscribers();
+    }
+
+    //
     if($esm.isEditMode()) {
       var $this = this;
 
@@ -622,12 +674,16 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
               let comp = gameObject.getComponentByInstanceId(this._component);
               LAU.Utils.deepCopy(this._before, comp.fields[field]);
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               LAU.Utils.deepCopy(this._after, comp.fields[field]);
               $this.checkPrefabFieldSynchronization(field);
+
+              $this.propagateChange(field);
             }
           });
 
