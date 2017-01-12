@@ -139,6 +139,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     let notificationSystem = LAU.Utils.notificationSystem();
 
     this.watchChanges = notificationSystem.watchChanges;
+    this.unsubscribeToChanges = notificationSystem.unsubscribeToChanges;
     this.propagateChange = function(field) {
       // This function will be called whenever a field is updated
       notificationSystem.notifySubscribers();
@@ -313,6 +314,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       let notificationSystem = LAU.Utils.notificationSystem();
 
       $this.watchChanges = notificationSystem.watchChanges;
+      $this.unsubscribeToChanges = notificationSystem.unsubscribeToChanges;
 
       $this.propagateMeshChange = function() {
         if($this.fields.mesh != null) {
@@ -433,6 +435,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     // TODO draw light billboard on scene
     let notificationSystem = LAU.Utils.notificationSystem();
     this.watchChanges = notificationSystem.watchChanges;
+    this.unsubscribeToChanges = notificationSystem.unsubscribeToChanges;
     this.propagateChange = function(field) {
       notificationSystem.notifySubscribers();
     }
@@ -551,6 +554,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
 
     let notificationSystem = LAU.Utils.notificationSystem();
     this.watchChanges = notificationSystem.watchChanges;
+    this.unsubscribeToChanges = notificationSystem.unsubscribeToChanges;
     this.propagateChange = function(field) {
       notificationSystem.notifySubscribers();
     }
@@ -650,6 +654,7 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
     let notificationSystem = LAU.Utils.notificationSystem();
 
     this.watchChanges = notificationSystem.watchChanges;
+    this.unsubscribeToChanges = notificationSystem.unsubscribeToChanges;
     this.propagateChange = function(field) {
       // This function will be called whenever a field is updated
       notificationSystem.notifySubscribers();

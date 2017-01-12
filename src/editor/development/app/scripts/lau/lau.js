@@ -38,9 +38,16 @@ LAU.Utils = {
       }
     }
 
+    function unsubscribeToChanges(instanceId) {
+      if(_changeSubscribers.hasOwnProperty(instanceId)) {
+        delete _changeSubscribers[instanceId];
+      }
+    }
+
     return {
       watchChanges: watchChanges,
-      notifySubscribers: notifySubscribers
+      notifySubscribers: notifySubscribers,
+      unsubscribeToChanges: unsubscribeToChanges
     };
   }
 }

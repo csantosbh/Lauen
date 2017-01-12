@@ -365,19 +365,16 @@ angular.module('lauEditor')
     }
 
     function destroyWatchCallback(gameObj) {
-      for(let i in gameObj.transform.fields)
-        Object.unobserve(gameObj.transform.fields[i], observers_[gameObj.hierarchyId]['transform']);
+      for(let i in gameObj.transform.fields) {
+        gameObj.transform.unsubscribeToChanges($this.instanceId);
+      }
 
       for(let i = 0; i < gameObj.components.length; ++i) {
         let cId = gameObj.components[i].instanceId;
-        if(gameObj.components[i].hasOwnProperty('fields') && observers_[gameObj.hierarchyId].hasOwnProperty(cId)) {
+        if(gameObj.components[i].hasOwnProperty('fields') &&
+           observers_[gameObj.hierarchyId].hasOwnProperty(cId)) {
           let fields = gameObj.components[i].fields;
-          Object.unobserve(fields, observers_[gameObj.hierarchyId][cId]);
-          for(let f in fields) {
-            if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
-              Object.unobserve(fields[f], observers_[gameObj.hierarchyId][cId]);
-            }
-          }
+          gameObj.components[i].unsubscribeToChanges($this.instanceId);
         }
       }
     }
@@ -404,18 +401,11 @@ angular.module('lauEditor')
       }
 
       // Update watchers
-      observers_[hierarchyId][cId] = makeObserver(cId);
+      observers_[hierarchyId][cId] = makeObserver(hierarchyId, cId);
 
-      let fields = component.fields;
       // We have to observe the whole fields object to account for changes
       // in primitive types
-      //Object.observe(fields, observers_[hierarchyId][cId]);
-      for(let f in fields) {
-        if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
-          // And we have to deep watch objects/arrays
-          //Object.observe(fields[f], observers_[hierarchyId][cId]);
-        }
-      }
+      component.watchChanges($this.instanceId, observers_[hierarchyId][cId]);
     };
 
     this.componentBeingRemoved = function(hierarchyId, component) {
@@ -428,13 +418,7 @@ angular.module('lauEditor')
         gameObjs[i].removeComponent(comp.instanceId);
       }
 
-      let fields = component.fields;
-      Object.unobserve(fields, observers_[hierarchyId][cId]);
-      for(let f in fields) {
-        if(fields.hasOwnProperty(f) && typeof(fields[f]) == 'object') {
-          Object.unobserve(fields[f], observers_[hierarchyId][cId]);
-        }
-      }
+      component.unsubscribeToChanges($this.instanceId);
       delete observers_[hierarchyId][cId];
     };
 
@@ -491,7 +475,7 @@ angular.module('lauEditor')
   ///
   var _gameObjIds = new Set();
   function randomInteger() {
-    return Math.pow(2,32)*Math.random();
+    return parseInt(Math.pow(2,32)*Math.random());
   }
 
   function _allocGameObjectId() {
@@ -527,6 +511,7 @@ angular.module('lauEditor')
 
     let notificationSystem = LAU.Utils.notificationSystem();
     this.watchChanges = notificationSystem.watchChanges;
+    this.unsubscribeToChanges = notificationSystem.unsubscribeToChanges;
 
     // TODO send to deepcopy down below...
     this.propagatePositionChange = function() {

@@ -21,10 +21,12 @@ angular.module('lauEditor')
           if(dropScope.gameObject != undefined)
             parentObj = dropScope.gameObject;
 
-          // Handle undo/redo
-          scope.gameObjectHierarchy.historyHandlerCallback(draggedGameObj, parentObj);
+          if(draggedGameObj.instanceId != parentObj.instanceId) {
+            // Handle undo/redo
+            scope.gameObjectHierarchy.historyHandlerCallback(draggedGameObj, parentObj);
 
-          $gom.moveGameObjectTo(draggedGameObj, parentObj);
+            $gom.moveGameObjectTo(draggedGameObj, parentObj);
+          }
         });
 
         scope.dragid = 'dragid_game_obj_hierarchy';
