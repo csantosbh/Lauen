@@ -19,7 +19,6 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
   }
 
   function createMesh(modelPath, callback) {
-    //var modelGeometry = new THREE.BoxGeometry( 100, 100, 100 ); // TODO load the actual model
     let loader = new THREE.JSONLoader();
     loader.load('http://localhost:9002/'+modelPath,
       function onLoad(geometry, materials) {
@@ -28,7 +27,8 @@ angular.module('lauEditor').service('editCanvasManager', ['gameObjectManager', '
         callback(obj);
     });
 
-    // TODO after that, cache models
+    // TODO modify THREE.js to return the XMLHttpRequest object so I can
+    // cancel() the request if I change the model while still loading a model
   }
 
   function createAxesHandle() {

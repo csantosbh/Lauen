@@ -7,7 +7,7 @@
  * # lauComponents
  * Service in the lauEditor.
  */
-angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'editorStateManager', 'historyManager', 'gameObjectManager', 'dragdropManager', function ($editCanvas, $esm, $hm, $gom, $dm) {
+angular.module('lauEditor').service('lauComponents', ['$timeout', 'editCanvasManager', 'editorStateManager', 'historyManager', 'gameObjectManager', 'dragdropManager', function ($timeout, $editCanvas, $esm, $hm, $gom, $dm) {
   // Return default initial value for each field type
 
   ///
@@ -163,17 +163,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._before;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._after;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             }
           });
 
@@ -234,30 +234,59 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       // Undo/redo support
       this._editorCommitCallback = function(field) {
         return function(oldValue, newValue) {
+          function restoreSkinnedMeshRenderer(gameObject, skinnedMeshRendererDependent) {
+            let id = skinnedMeshRendererDependent.id;
+            let animationValue = skinnedMeshRendererDependent.before;
+
+            // Restore mesh renderer, if present
+            let skinnedMeshRenderer = gameObject.getComponentByInstanceId(id);
+            $timeout(function() {
+              skinnedMeshRenderer.fields.animation = animationValue;
+            });
+          }
+
+          let skinnedMeshRenderers = $this.parent.getComponentsByType('skinned_mesh_renderer');
+          let skinnedMeshRenderer = null;
+          if(skinnedMeshRenderers.length != 0) {
+            skinnedMeshRenderer = skinnedMeshRenderers[0];
+          }
+
           $hm.pushCommand({
             _before: oldValue,
             _after: newValue,
             _gameObj: $this.parent.instanceId,
             _component: $this.instanceId,
+            _dependents: {
+              skinnedMeshRenderer: {
+                id: skinnedMeshRenderer == null ? null : skinnedMeshRenderer.instanceId,
+                before: skinnedMeshRenderer == null ? null : skinnedMeshRenderer.fields.animation
+              }
+            },
             undo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
-              let $hm_this = this;
 
-              comp.fields[field] = $hm_this._before;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.fields[field] = this._before;
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
+
+              if(this._dependents.skinnedMeshRenderer.id != null) {
+                /*
+                 * Restore the configuration of the SkinnedMeshRendererComponent
+                 */
+                restoreSkinnedMeshRenderer(gameObject,
+                                           this._dependents.skinnedMeshRenderer);
+              }
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
-              let $hm_this = this;
 
-              comp.fields[field] = $hm_this._after;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.fields[field] = this._after;
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             }
           });
 
@@ -293,13 +322,22 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         reloadMesh = function() {
           $editCanvas.createMesh($this.fields.mesh, function(newMesh) {
             // Update mesh model
+            if($this.meshGeometry != null) {
+              $this.removeCurrentMesh();
+            }
             $this.meshGeometry = newMesh;
 
-            // Draw the mesh, if there's a mesh renderer
+            // Look for mesh renderer and update its fields
             var meshRenderer = $this.parent.getComponentsByType('mesh_renderer');
-            if(meshRenderer.length == 0)
+            if(meshRenderer.length == 0) {
               meshRenderer = $this.parent.getComponentsByType('skinned_mesh_renderer');
 
+              if(meshRenderer.length != 0) {
+                $timeout(function() { /* Force angular to update the animation list */ });
+              }
+            }
+
+            // Draw the mesh, if there's a mesh renderer
             if(meshRenderer.length != 0) {
               meshRenderer = meshRenderer[0];
               meshRenderer.updateModels();
@@ -317,10 +355,10 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       $this.unsubscribeToChanges = notificationSystem.unsubscribeToChanges;
 
       $this.propagateMeshChange = function() {
-        if($this.fields.mesh != null) {
-          // Remove old mesh
-          $this.removeCurrentMesh();
+        // Remove old mesh
+        $this.removeCurrentMesh();
 
+        if($this.fields.mesh != null) {
           if(reloadMesh) {
             reloadMesh();
           }
@@ -365,8 +403,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       if($esm.isEditMode()) {
         // Remove this mesh from the hierarchy that groups everything from this
         // game object
-        if(!this.parent.isPrefab)
+        if(!this.parent.isPrefab && this.meshGeometry) {
           this.parent.transform.hierarchyGroup.remove(this.meshGeometry);
+        }
       }
     },
     destroy: function() {
@@ -413,8 +452,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         var transform = this.parent.transform;
         var meshComponents = this.parent.getComponentsByType('mesh');
         for(var i = 0; i < meshComponents.length; ++i) {
-          if(meshComponents[i].meshGeometry != null)
+          if(meshComponents[i].meshGeometry != null) {
             transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
+          }
         }
       }
     }
@@ -486,17 +526,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._before;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._after;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             }
           });
 
@@ -530,13 +570,15 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
       if(mesh.length > 0) {
         mesh = mesh[0];
         let animNames = [];
-        if(mesh.meshGeometry.geometry.animations) {
+        if(this.parent.isPrefab) {
+          // TODO deal with the case in which this is a prefab
+        } else if(mesh.meshGeometry.geometry.animations) {
           let animList = mesh.meshGeometry.geometry.animations;
           for(let i = 0; i < animList.length; ++i) {
             animNames.push(animList[i].name);
           }
         }
-        else {
+        else if(mesh.meshGeometry.geometry.animation) {
           animNames.push(mesh.meshGeometry.geometry.animation.name);
         }
 
@@ -587,8 +629,9 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
         var transform = this.parent.transform;
         var meshComponents = this.parent.getComponentsByType('mesh');
         for(var i = 0; i < meshComponents.length; ++i) {
-          if(meshComponents[i].meshGeometry != null)
+          if(meshComponents[i].meshGeometry != null) {
             transform.hierarchyGroup.add(meshComponents[i].meshGeometry);
+          }
         }
       }
     },
@@ -606,17 +649,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._before;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               comp.fields[field] = this._after;
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             }
           });
         }
@@ -678,17 +721,17 @@ angular.module('lauEditor').service('lauComponents', ['editCanvasManager', 'edit
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               LAU.Utils.deepCopy(this._before, comp.fields[field]);
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             },
             redo: function() {
               var gameObject = $gom.getGameObject(this._gameObj);
               let comp = gameObject.getComponentByInstanceId(this._component);
               LAU.Utils.deepCopy(this._after, comp.fields[field]);
-              $this.checkPrefabFieldSynchronization(field);
+              comp.checkPrefabFieldSynchronization(field);
 
-              $this.propagateChange(field);
+              comp.propagateChange(field);
             }
           });
 
