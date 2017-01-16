@@ -24,6 +24,14 @@ public:
     vec2& operator/=(float a);
     vec2 operator/(float a);
 
+    float& operator[](int i) {
+      return data[i];
+    }
+
+    const float& operator[](int i) const {
+      return data[i];
+    }
+
     union {
         float data[2];
         struct {
@@ -54,6 +62,14 @@ public:
 
     vec3& operator/=(float a);
     vec3 operator/(float a);
+
+    float& operator[](int i) {
+      return data[i];
+    }
+
+    const float& operator[](int i) const {
+      return data[i];
+    }
 
     union {
         float data[3];
@@ -86,6 +102,14 @@ public:
 
     vec4& operator/=(float a);
     vec4 operator/(float a);
+
+    float& operator[](int i) {
+      return data[i];
+    }
+
+    const float& operator[](int i) const {
+      return data[i];
+    }
 
     union {
         float data[4];

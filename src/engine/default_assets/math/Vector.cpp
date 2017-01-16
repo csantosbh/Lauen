@@ -7,18 +7,17 @@ namespace lau {
 
 ////
 // Vector2
-vec2::vec2(const vec2& v) {
-    x=v.x;
-    y=v.y;
+vec2::vec2(const vec2& v) : x(v.x),
+                            y(v.y) {
 }
 
-vec2::vec2(float a) {
-    x = y = a;
+vec2::vec2(float a) : x(a),
+                      y(a) {
 }
 
 vec2& vec2::operator=(const vec2& v) {
-    x=v.x;
-    y=v.y;
+    x = v.x;
+    y = v.y;
     return *this;
 }
 
@@ -44,8 +43,8 @@ vec2& vec2::operator+=(const vec2& v) {
 }
 
 vec2& vec2::operator+=(float a) {
-    x+=a;
-    y+=a;
+    x += a;
+    y += a;
     return *this;
 }
 
@@ -90,20 +89,20 @@ vec2 vec2::operator/(float a) {
 
 ////
 // Vector3
-vec3::vec3(const vec3& v) {
-    x=v.x;
-    y=v.y;
-    z=v.z;
+vec3::vec3(const vec3& v) : x(v.x),
+                            y(v.y),
+                            z(v.z) {
 }
 
-vec3::vec3(float a) {
-    x = y = z = a;
+vec3::vec3(float a) : x(a),
+                      y(a),
+                      z(a) {
 }
 
 vec3& vec3::operator=(const vec3& v) {
-    x=v.x;
-    y=v.y;
-    z=v.z;
+    x = v.x;
+    y = v.y;
+    z = v.z;
     return *this;
 }
 
@@ -129,9 +128,9 @@ vec3& vec3::operator+=(const vec3& v) {
 }
 
 vec3& vec3::operator+=(float a) {
-    x+=a;
-    y+=a;
-    z+=a;
+    x += a;
+    y += a;
+    z += a;
     return *this;
 }
 
@@ -177,22 +176,23 @@ vec3 vec3::operator/(float a) {
 
 ////
 // Vector4
-vec4::vec4(const vec4& v) {
-    x=v.x;
-    y=v.y;
-    z=v.z;
-    w=v.w;
+vec4::vec4(const vec4& v) : x(v.x),
+                            y(v.y),
+                            z(v.z),
+                            w(v.w) {
 }
 
-vec4::vec4(float a) {
-    x = y = z = w = a;
+vec4::vec4(float a) : x(a),
+                      y(a),
+                      z(a),
+                      w(a) {
 }
 
 vec4& vec4::operator=(const vec4& v) {
-    x=v.x;
-    y=v.y;
-    z=v.z;
-    w=v.w;
+    x = v.x;
+    y = v.y;
+    z = v.z;
+    w = v.w;
     return *this;
 }
 
@@ -218,10 +218,10 @@ vec4& vec4::operator+=(const vec4& v) {
 }
 
 vec4& vec4::operator+=(float a) {
-    x+=a;
-    y+=a;
-    z+=a;
-    w+=a;
+    x += a;
+    y += a;
+    z += a;
+    w += a;
     return *this;
 }
 

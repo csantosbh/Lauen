@@ -1,10 +1,10 @@
 #include "Factories.hpp"
 #include "Light.hpp"
+#include "math/Vector.hpp"
 
 using namespace std;
 
 using namespace rapidjson;
-using namespace Eigen;
 
 namespace lau {
 
@@ -34,9 +34,9 @@ const vector<float> Light::allLightPositions() {
         auto& lightTransformObj = light->gameObject->transform;
         auto light2world = lightTransformObj.getObject2WorldMatrix();
         auto lightPosition = light2world *
-            Vector4f(lightTransformObj.position[0],
-                    lightTransformObj.position[0],
-                    lightTransformObj.position[0], 1.0f);
+            /*vec4*/Eigen::Vector4f(lightTransformObj.position[0],
+                 lightTransformObj.position[0],
+                 lightTransformObj.position[0], 1.0f);
         for(int i = 0; i < 3; ++i) {
             result.push_back(lightPosition[i]);
         }
