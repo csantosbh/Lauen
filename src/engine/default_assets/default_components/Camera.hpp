@@ -8,6 +8,8 @@
 #include "Component.hpp"
 #include "../utils/Callback.hpp"
 
+#include "math/Matrix.hpp"
+
 namespace lau {
 
 class Camera : public Component {
@@ -18,8 +20,8 @@ public:
 
     void update(float dt);
 
-    Eigen::Matrix4f projection;
-    Eigen::Matrix4f world2camera;
+    math::mat4 projection;
+    math::mat4 world2camera;
 
     static const std::set<Camera*, bool(*)(const Camera*,const Camera*)>& allCameras() {
         return cameras_;

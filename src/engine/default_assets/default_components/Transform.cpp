@@ -2,12 +2,16 @@
 #include "Transform.hpp"
 #include "LauCommon.h"
 
-using namespace Eigen;
+using namespace lau::math;
 
 namespace lau {
 
 Transform::Transform(const rapidjson::Value& serializedTransform) :
-    rotation(Quaternionf::Identity()),
+    object2WorldMatrix_({0,0,0,0,
+                         0,0,0,0,
+                         0,0,0,0,
+                         0,0,0,1}),
+    rotation(quaternion::identity()),
     affineMatrixUpToDate_(false) {
     const rapidjson::Value& fields = serializedTransform["fields"];
     const auto& pos = fields["position"];
@@ -21,24 +25,17 @@ Transform::Transform(const rapidjson::Value& serializedTransform) :
         this->scale[i] = scale[i].GetDouble();
     }
 
-    rotation = Quaternionf(
-            AngleAxisf(eulerAngles[0], Vector3f::UnitX()) *
-            AngleAxisf(eulerAngles[1], Vector3f::UnitY()) *
-            AngleAxisf(eulerAngles[2], Vector3f::UnitZ())
-            );
-
-    object2WorldMatrix_ << 0,0,0,0,
-                              0,0,0,0,
-                              0,0,0,0,
-                              0,0,0,1;
+    rotation = quaternion(eulerAngles[2], {0,0,1}) *
+               quaternion(eulerAngles[1], {0,1,0}) *
+               quaternion(eulerAngles[0], {1,0,0});
 
 #ifdef PREVIEW_MODE
     serializeState();
 #endif
 }
 
-const Matrix3f Transform::getRotationMatrix() {
-    return this->rotation.toRotationMatrix();
+mat3 Transform::getRotationMatrix() const {
+    return this->rotation.matrix();
 }
 
 void Transform::update(float dt) {
@@ -47,11 +44,11 @@ void Transform::update(float dt) {
 #endif
 }
 
-const Matrix4f& Transform::getObject2WorldMatrix() {
+const mat4& Transform::getObject2WorldMatrix() {
     return object2WorldMatrix_;
 }
 
-const Matrix4f& Transform::getObject2WorldTranspOfInvMatrix() {
+const mat4& Transform::getObject2WorldTranspOfInvMatrix() {
     return object2WorldTranspOfInvMatrix_;
 }
 
@@ -64,7 +61,7 @@ void Transform::updateObject2World(const mat4& parent2world, const mat4& parent2
 
 	////
     // Update the object2world^-1^t matrix
-	Matrix4f obj2parentTranspOfInvMatrix_;
+	mat4 obj2parentTranspOfInvMatrix_;
     createTranspOfInvMat4FromTransforms(position, rotation, scale, obj2parentTranspOfInvMatrix_);
 
 	// Now apply the parent transform
@@ -82,7 +79,7 @@ void Transform::updateObject2World() {
 void Transform::createMat4FromTransforms(const vec3& position, const quaternion& rotation, const vec3& scale, mat4& output) {
     output.copyBlock(rotation.matrix(), 0, 0);
     output.copyBlock(position, 0, 3);
-    float* ptr = output.data();
+    float* ptr = output.data;
 
     // Multiply by scale. This is equivalent to performing Affine = R*S.
     ptr[0] *= scale[0]; ptr[4] *= scale[1]; ptr[8]  *= scale[2];
@@ -93,10 +90,10 @@ void Transform::createMat4FromTransforms(const vec3& position, const quaternion&
 }
 
 void Transform::createInvMat4FromTransforms(const vec3& position, const quaternion& rotation, const vec3& scale, mat4& output) {
-    output.block<3,3>(0,0) = rotation.matrix().transpose();
-    output.block<3,1>(0,3) = output.block<3,3>(0,0) * -position;
+    output.copyBlock(rotation.matrix().transpose(), 0, 0);
+    output.copyBlock(output * -position.homogeneous(), 3);
 
-    float* ptr = output.data();
+    float* ptr = output.data;
 
     // Multiply by scale^-1. This is equivalent to performing Affine = S^-1*R^-1.
     const float inv_scale[] = {1.0f/scale[0], 1.0f/scale[1], 1.0f/scale[2]};
@@ -107,7 +104,7 @@ void Transform::createInvMat4FromTransforms(const vec3& position, const quaterni
     ptr[15] = 1.0f;
 }
 
-void Transform::createTranspOfInvMat4FromTransforms(const Eigen::Vector3f& position, const Eigen::Quaternionf& rotation, const Eigen::Vector3f scale, Eigen::Matrix4f& output) {
+void Transform::createTranspOfInvMat4FromTransforms(const vec3& position, const quaternion& rotation, const vec3 scale, mat4& output) {
     createInvMat4FromTransforms(position, rotation, scale, output);
     output.transposeInPlace();
 }
@@ -115,7 +112,7 @@ void Transform::createTranspOfInvMat4FromTransforms(const Eigen::Vector3f& posit
 #ifdef PREVIEW_MODE
 void Transform::serializeState() {
 	// TODO figure out how the eulerangles are being returned (in which order?), and make sure it is consistent with the order in the Editor
-	Vector3f eulerAngles = this->rotation.toRotationMatrix().eulerAngles(0, 1, 2);
+	vec3 eulerAngles = this->rotation.eulerAngles(0, 1, 2);
 
 	pp::VarArray pos;
 	pp::VarArray rot;

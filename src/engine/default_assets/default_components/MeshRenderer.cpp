@@ -10,8 +10,11 @@
 
 #include "Light.hpp"
 
+#include "math/Matrix.hpp"
+#include "math/Vector.hpp"
+
 using namespace std;
-using namespace Eigen;
+using namespace lau::math;
 
 namespace lau {
 
@@ -53,12 +56,12 @@ void MeshRenderer::draw(float alpha) {
     auto camera = Camera::current;
     vbo.bindForDrawing(shader);
     // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
-    shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data());
-    shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data());
-    const Matrix4f& object2world = transform.getObject2WorldMatrix();
-    shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data());
-    const Matrix4f& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
-    shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data());
+    shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data);
+    shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data);
+    const mat4& object2world = transform.getObject2WorldMatrix();
+    shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data);
+    const mat4& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
+    shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data);
 
     // Lights
     auto& lights = Light::allLights();

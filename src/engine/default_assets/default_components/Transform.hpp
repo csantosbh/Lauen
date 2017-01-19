@@ -21,7 +21,7 @@ public:
 
     void update(float dt);
 
-    const math::mat3 getRotationMatrix() const;
+    math::mat3 getRotationMatrix() const;
     const math::mat4& getObject2WorldMatrix();
     const math::mat4& getObject2WorldTranspOfInvMatrix();
 

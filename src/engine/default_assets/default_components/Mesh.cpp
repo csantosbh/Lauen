@@ -7,13 +7,15 @@
 #include "utils/ThreadPool.hpp"
 #include "Transform.hpp"
 
+#include "math/Matrix.hpp"
+
 #ifdef JAVASCRIPT
 #include <emscripten.h>
 #endif
 
 using namespace std;
 using namespace rapidjson;
-using namespace Eigen;
+using namespace lau::math;
 
 namespace lau {
 
@@ -116,9 +118,9 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
             // Translation
             if(keyItr->HasMember("pos")) {
                 assert((*keyItr)["pos"].Size()==3);
-                key.position = Vector3f((*keyItr)["pos"][0].GetDouble(),
-                        (*keyItr)["pos"][1].GetDouble(),
-                        (*keyItr)["pos"][2].GetDouble());
+                key.position = vec3((*keyItr)["pos"][0].GetDouble(),
+                                    (*keyItr)["pos"][1].GetDouble(),
+                                    (*keyItr)["pos"][2].GetDouble());
             } else {
                 key.position = boneKeyframes.back().position;
             }
@@ -126,10 +128,10 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
             // Rotation
             if(keyItr->HasMember("rot")) {
                 assert((*keyItr)["rot"].Size()==4);
-                key.rotation = Quaternionf((*keyItr)["rot"][3].GetDouble(),
-                        (*keyItr)["rot"][0].GetDouble(),
-                        (*keyItr)["rot"][1].GetDouble(),
-                        (*keyItr)["rot"][2].GetDouble());
+                key.rotation = quaternion((*keyItr)["rot"][3].GetDouble(),
+                                          (*keyItr)["rot"][0].GetDouble(),
+                                          (*keyItr)["rot"][1].GetDouble(),
+                                          (*keyItr)["rot"][2].GetDouble());
             } else {
                 assert(!keyItr->HasMember("rotq"));
                 key.rotation = boneKeyframes.back().rotation;
@@ -138,9 +140,9 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
             // Scale
             if(keyItr->HasMember("scl")) {
                 assert((*keyItr)["scl"].Size()==3);
-                key.scale = Vector3f((*keyItr)["scl"][0].GetDouble(),
-                        (*keyItr)["scl"][1].GetDouble(),
-                        (*keyItr)["scl"][2].GetDouble());
+                key.scale = vec3((*keyItr)["scl"][0].GetDouble(),
+                                 (*keyItr)["scl"][1].GetDouble(),
+                                 (*keyItr)["scl"][2].GetDouble());
             } else {
                 key.scale = boneKeyframes.back().scale;
             }
@@ -249,37 +251,37 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
                 // Parent
                 boneParents_.push_back((*itr)["parent"].GetInt());
                 // Translation
-                Vector3f t;
+                vec3 t;
                 if(itr->HasMember("pos")) {
                     assert((*itr)["pos"].Size()==3);
-                    t = Vector3f((*itr)["pos"][0].GetDouble(),
-                            (*itr)["pos"][1].GetDouble(),
-                            (*itr)["pos"][2].GetDouble());
+                    t = vec3((*itr)["pos"][0].GetDouble(),
+                             (*itr)["pos"][1].GetDouble(),
+                             (*itr)["pos"][2].GetDouble());
                 } else {
-                    t = Vector3f::Zero();
+                    t = vec3(0);
                 }
 
                 // Rotation
-                Quaternionf r;
+                quaternion r;
                 if(itr->HasMember("rotq")) {
                     assert((*itr)["rotq"].Size()==4);
-                    r = Quaternionf((*itr)["rotq"][3].GetDouble(),
-                            (*itr)["rotq"][0].GetDouble(),
-                            (*itr)["rotq"][1].GetDouble(),
-                            (*itr)["rotq"][2].GetDouble());
+                    r = quaternion((*itr)["rotq"][3].GetDouble(),
+                                   (*itr)["rotq"][0].GetDouble(),
+                                   (*itr)["rotq"][1].GetDouble(),
+                                   (*itr)["rotq"][2].GetDouble());
                 } else {
-                    r = Quaternionf::Identity();
+                    r = quaternion::identity();
                 }
 
                 // Scale
-                Vector3f s;
+                vec3 s;
                 if(itr->HasMember("scl")) {
                     assert((*itr)["scl"].Size()==3);
-                    s = Vector3f((*itr)["scl"][0].GetDouble(),
-                            (*itr)["scl"][1].GetDouble(),
-                            (*itr)["scl"][2].GetDouble());
+                    s = vec3((*itr)["scl"][0].GetDouble(),
+                             (*itr)["scl"][1].GetDouble(),
+                             (*itr)["scl"][2].GetDouble());
                 } else {
-                    s = Vector3f::Ones();
+                    s = vec3(1);
                 }
 
                 // Bone pose Affine matrix
@@ -316,7 +318,8 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
         uint8_t facesFormat;
 
         int currentIndex = 0;
-        for(int i = 1; i < serializedFaces.Size(); i+= faceStep) {
+        const int sentinel = static_cast<int>(serializedFaces.Size());
+        for(int i = 1; i < sentinel; i+= faceStep) {
             facesFormat = static_cast<uint8_t>(serializedFaces[i-1].GetInt());
 
             // Reassemble mesh into an internal, VBO friendly format
@@ -377,16 +380,16 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
             } else {
                 // Compute normals from face vertices
                 int n = vertices.size()/DIMS-3;
-                Vector3f p0(vertices[n*DIMS],
+                vec3 p0(vertices[n*DIMS],
                         vertices[n*DIMS+1],
                         vertices[n*DIMS+2]);
-                Vector3f p1(vertices[(n+1)*DIMS],
+                vec3 p1(vertices[(n+1)*DIMS],
                         vertices[(n+1)*DIMS+1],
                         vertices[(n+1)*DIMS+2]);
-                Vector3f p2(vertices[(n+2)*DIMS],
+                vec3 p2(vertices[(n+2)*DIMS],
                         vertices[(n+2)*DIMS+1],
                         vertices[(n+2)*DIMS+2]);
-                Vector3f normal = (p1-p0).cross(p2-p0).normalized();
+                vec3 normal = (p1-p0).cross(p2-p0).normalized();
                 for(int n = 0; n < primitiveSize; ++n) {
                     normals.push_back(normal[0]);
                     normals.push_back(normal[1]);

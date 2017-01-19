@@ -13,6 +13,7 @@
 
 #include "math/Vector.hpp"
 #include "math/Matrix.hpp"
+#include "math/Quaternion.hpp"
 
 namespace lau {
 
@@ -21,7 +22,7 @@ public:
     struct Keyframe {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         math::vec3 position;
-        Eigen::Quaternionf rotation;
+        math::quaternion rotation;
         math::vec3 scale;
         float time;
     };

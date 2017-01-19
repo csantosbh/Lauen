@@ -1,4 +1,5 @@
 #pragma once
+#include <initializer_list>
 #include "math/Vector.hpp"
 
 namespace lau {
@@ -84,6 +85,7 @@ public:
 
     mat4& copyBlock(const mat3&, int row, int col);
     mat4& copyBlock(const vec3&, int row, int col);
+    mat4& copyBlock(const vec4&, int col);
 
     // Elementwise multiplication
     mat4 multiply(const mat4& m) const;

@@ -13,9 +13,10 @@
 
 #include "math/Matrix.hpp"
 #include "math/Vector.hpp"
+#include "math/Quaternion.hpp"
 
 using namespace std;
-using namespace Eigen;
+using namespace lau::math;
 
 namespace lau {
 
@@ -63,9 +64,10 @@ void SkinnedMeshRenderer::update(float dt) {
         const auto& currAnim = anims.at(currentAnimation);
         animationTime = fmod(animationTime+dt, currAnim.length);
 
-        for(int b = 0; b < bonePoses.size(); ++b) {
+        int sentinel = static_cast<int>(bonePoses.size());
+        for(int b = 0; b < sentinel; ++b) {
             const vector<Animation::Keyframe>& kfs = currAnim.boneKeyframes[b];
-            math::mat4 boneAccum = math::map<math::mat4>(accumBones[b].fields);
+            mat4 boneAccum = math::map<mat4>(accumBones[b].fields);
             int kfIdx = 0;
 
             while(kfs[kfIdx+1].time<animationTime) {
@@ -76,21 +78,21 @@ void SkinnedMeshRenderer::update(float dt) {
             const Animation::Keyframe& nextKF = kfs[kfIdx+1];
             // Bone pose Affine matrix
             float t = (animationTime-currKF.time)/(nextKF.time-currKF.time);
-            math::mat4 M;
-            math::vec3 position = currKF.position*(1.0f-t) + nextKF.position*t;
-            Quaternionf rotation = currKF.rotation.slerp(t, nextKF.rotation);
-            math::vec3 scale = currKF.scale*(1.0f-t) + nextKF.scale*t;
+            mat4 M;
+            vec3 position = currKF.position*(1.0f-t) + nextKF.position*t;
+            quaternion rotation = currKF.rotation.slerp(t, nextKF.rotation);
+            vec3 scale = currKF.scale*(1.0f-t) + nextKF.scale*t;
             Transform::createMat4FromTransforms(position, rotation, scale, M);
 
             int boneParent = mesh->getBoneParents()[b];
             assert(boneParent < b);
             if(boneParent >= 0)
-                boneAccum = math::map<math::mat4>(accumBones[boneParent].fields)*M;
+                boneAccum = math::map<mat4>(accumBones[boneParent].fields)*M;
             else
                 boneAccum = M;
 
 
-            math::mat4 boneTransform = math::map<math::mat4>(bones[b].fields);
+            mat4 boneTransform = math::map<mat4>(bones[b].fields);
             boneTransform = boneAccum*bonePoses[b];
         }
     }
@@ -107,12 +109,12 @@ void SkinnedMeshRenderer::draw(float alpha) {
 
     vbo.bindForDrawing(shader);
     // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
-    shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data());
-    shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data());
+    shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data);
+    shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data);
     const mat4& object2world = transform.getObject2WorldMatrix();
-    shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data());
+    shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data);
     const mat4& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
-    shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data());
+    shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data);
 
     // Lights
     auto& lights = Light::allLights();

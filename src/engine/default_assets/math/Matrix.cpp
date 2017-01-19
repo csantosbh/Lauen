@@ -1,7 +1,9 @@
+#include <algorithm>
 #include <Eigen/Eigen>
 #include "math/Matrix.hpp"
 
 using namespace Eigen;
+using namespace std;
 
 namespace lau {
 
@@ -122,16 +124,16 @@ mat4& mat4::operator*=(float a) {
 vec4 mat4::operator*(const vec4& v) const {
     vec4 result;
 
-    Map<Matrix4f> m(data);
+    Map<const Matrix4f> m(this->data);
     Map<Vector4f> a(result.data);
-    Map<Vector4f> b(v.data);
+    Map<const Vector4f> b(v.data);
 
     a = m*b;
 
     return result;
 }
 
-mat4& mat4::copyBlock(const mat3&, int row, int col) {
+mat4& mat4::copyBlock(const mat3& m, int row, int col) {
     assert(row <= 1 && col <= 1);
     memcpy(&data[(row + 0)*4 + col], &m.data[0], 3*sizeof(float));
     memcpy(&data[(row + 1)*4 + col], &m.data[3], 3*sizeof(float));
@@ -140,12 +142,23 @@ mat4& mat4::copyBlock(const mat3&, int row, int col) {
     return *this;
 }
 
-mat4& mat4::copyBlock(const vec3&, int row, int col) {
+mat4& mat4::copyBlock(const vec3& v, int row, int col) {
     assert(row <= 1 && col <= 3);
 
-    data[(row + 0)*4 + col] = m.data[0];
-    data[(row + 1)*4 + col] = m.data[1];
-    data[(row + 2)*4 + col] = m.data[2];
+    data[(row + 0)*4 + col] = v.data[0];
+    data[(row + 1)*4 + col] = v.data[1];
+    data[(row + 2)*4 + col] = v.data[2];
+
+    return *this;
+}
+
+mat4& mat4::copyBlock(const vec4& v, int col) {
+    assert(col <= 3);
+
+    data[0*4 + col] = v.data[0];
+    data[1*4 + col] = v.data[1];
+    data[2*4 + col] = v.data[2];
+    data[2*4 + col] = v.data[3];
 
     return *this;
 }

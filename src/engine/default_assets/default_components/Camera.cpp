@@ -4,28 +4,30 @@
 #include "Camera.hpp"
 #include "LauCommon.h"
 
+#include "math/Vector.hpp"
+
 using namespace std;
 
 using namespace rapidjson;
-using namespace Eigen;
+using namespace lau::math;
 
 namespace lau {
 
 std::set<Camera*, bool(*)(const Camera*,const Camera*)> Camera::cameras_ STATIC_INITIALIZER_GROUP_A (CameraPriorityComparison);
 const Camera* Camera::current = nullptr;
 
-Camera::Camera(const rapidjson::Value& fields) : totalT_(0) {
+Camera::Camera(const rapidjson::Value& fields) :
+    world2camera {
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 0,
+        0, 0, 0, 1.f},
+    totalT_(0) {
     nearPlane_ = static_cast<float>(fields["near"].GetDouble());
     farPlane_ = static_cast<float>(fields["far"].GetDouble());
     nearPlaneWidth_ = static_cast<float>(fields["width"].GetDouble());
 
     resetAspect(); // This will also recompute the projection matrix
-
-    world2camera <<
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 0,
-        0, 0, 0, 1.f;
 
     priority_ = static_cast<float>(fields["priority"].GetDouble());
 
@@ -43,9 +45,9 @@ Camera::~Camera() {
 }
 
 void Camera::update(float dt) {
-    world2camera.setBlock(gameObject->transform.getRotationMatrix().transpose(), 0, 0);
-    vec3 t = world2camera.block<3,3>(0,0)*-gameObject->transform.position;
-    world2camera.block<3,1>(0,3) = t;
+    world2camera.copyBlock(gameObject->transform.getRotationMatrix().transpose(), 0, 0);
+    vec4 t = world2camera * -gameObject->transform.position.homogeneous();
+    world2camera.copyBlock(t, 3);
 
     totalT_ += dt;
 }
@@ -69,11 +71,11 @@ bool Camera::CameraPriorityComparison(const Camera* a, const Camera* b) {
 
 void Camera::recomputeProjectionMatrix() {
     float t = nearPlaneWidth_/aspect_;
-    projection <<
+    projection = {
         2.0f*nearPlane_/nearPlaneWidth_, 0.0f, 0.0f, 0.0f,
         0.0f, 2.0f*nearPlane_/t, 0.0f, 0.0f,
         0.0f, 0.0f, -(farPlane_+nearPlane_)/(farPlane_-nearPlane_), -2.0f*farPlane_*nearPlane_/(farPlane_-nearPlane_),
-        0.0f, 0.0f, -1.0f, 0.0f;
+        0.0f, 0.0f, -1.0f, 0.0f};
 }
 
 void Camera::setPriority(float value) {
