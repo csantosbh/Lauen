@@ -274,6 +274,7 @@ class ObjectBuilderThread(threading.Thread):
             # Only build the object file if it is older than any of its dependencies
             if Project.isFileOlderThanDependency(outputFilePath, sourceFile):
                 Utils.Console.step('Building '+outputFilePath)
+                print cxx_compiler[platform] + ' -c ' + Project.getAbsProjFilePath(sourceFile) +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform]
                 compilationMessage = subprocess.check_output(cxx_compiler[platform] + ' -c ' + Project.getAbsProjFilePath(sourceFile) +' -o '+outputFilePath +' '+ platform_preprocessors[platform] + ' ' + compilationFlags['cxx_flags'][platform], shell=True, stderr=subprocess.STDOUT)
                 if returncode == 0:
                     Utils.Console.ok('Built '+outputFilePath)

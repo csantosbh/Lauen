@@ -55,8 +55,8 @@ const Matrix4f& Transform::getObject2WorldTranspOfInvMatrix() {
     return object2WorldTranspOfInvMatrix_;
 }
 
-void Transform::updateObject2World(const Matrix4f& parent2world, const Eigen::Matrix4f parent2worldTranspOfInv) {
-	Matrix4f object2parent;
+void Transform::updateObject2World(const mat4& parent2world, const mat4& parent2worldTranspOfInv) {
+	mat4 object2parent;
     createMat4FromTransforms(position, rotation, scale, object2parent);
 
 	// Now transform from obj2parent to obj2world
@@ -79,9 +79,9 @@ void Transform::updateObject2World() {
     createTranspOfInvMat4FromTransforms(position, rotation, scale, object2WorldTranspOfInvMatrix_);
 }
 
-void Transform::createMat4FromTransforms(const Eigen::Vector3f& position, const Eigen::Quaternionf& rotation, const Eigen::Vector3f scale, Eigen::Matrix4f& output) {
-    output.block<3,3>(0,0) = rotation.matrix();
-    output.block<3,1>(0,3) = position;
+void Transform::createMat4FromTransforms(const vec3& position, const quaternion& rotation, const vec3& scale, mat4& output) {
+    output.copyBlock(rotation.matrix(), 0, 0);
+    output.copyBlock(position, 0, 3);
     float* ptr = output.data();
 
     // Multiply by scale. This is equivalent to performing Affine = R*S.
@@ -92,7 +92,7 @@ void Transform::createMat4FromTransforms(const Eigen::Vector3f& position, const 
     ptr[15] = 1.0f;
 }
 
-void Transform::createInvMat4FromTransforms(const Eigen::Vector3f& position, const Eigen::Quaternionf& rotation, const Eigen::Vector3f& scale, Eigen::Matrix4f& output) {
+void Transform::createInvMat4FromTransforms(const vec3& position, const quaternion& rotation, const vec3& scale, mat4& output) {
     output.block<3,3>(0,0) = rotation.matrix().transpose();
     output.block<3,1>(0,3) = output.block<3,3>(0,0) * -position;
 

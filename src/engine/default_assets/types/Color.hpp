@@ -14,7 +14,7 @@ public:
 
     void setRgba32U(uint32_t rgba);
     uint32_t getRgba32U() const;
-    vec4& getRgbaV4f() {
+    math::vec4& getRgbaV4f() {
         return color_;
     }
     float& r() {
@@ -37,7 +37,7 @@ public:
     static const Color black;
 
 private:
-    vec4 color_;
+    math::vec4 color_;
 };
 
 } // namespace lau

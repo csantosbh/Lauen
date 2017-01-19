@@ -11,6 +11,9 @@
 
 #include "Light.hpp"
 
+#include "math/Matrix.hpp"
+#include "math/Vector.hpp"
+
 using namespace std;
 using namespace Eigen;
 
@@ -62,7 +65,7 @@ void SkinnedMeshRenderer::update(float dt) {
 
         for(int b = 0; b < bonePoses.size(); ++b) {
             const vector<Animation::Keyframe>& kfs = currAnim.boneKeyframes[b];
-            Map<Matrix4f> boneAccum(accumBones[b].fields);
+            math::mat4 boneAccum = math::map<math::mat4>(accumBones[b].fields);
             int kfIdx = 0;
 
             while(kfs[kfIdx+1].time<animationTime) {
@@ -73,21 +76,21 @@ void SkinnedMeshRenderer::update(float dt) {
             const Animation::Keyframe& nextKF = kfs[kfIdx+1];
             // Bone pose Affine matrix
             float t = (animationTime-currKF.time)/(nextKF.time-currKF.time);
-            Matrix4f M;
-            Vector3f position = currKF.position*(1.0f-t) + nextKF.position*t;
+            math::mat4 M;
+            math::vec3 position = currKF.position*(1.0f-t) + nextKF.position*t;
             Quaternionf rotation = currKF.rotation.slerp(t, nextKF.rotation);
-            Vector3f scale = currKF.scale*(1.0f-t) + nextKF.scale*t;
+            math::vec3 scale = currKF.scale*(1.0f-t) + nextKF.scale*t;
             Transform::createMat4FromTransforms(position, rotation, scale, M);
 
             int boneParent = mesh->getBoneParents()[b];
             assert(boneParent < b);
             if(boneParent >= 0)
-                boneAccum = Map<Matrix4f>(accumBones[boneParent].fields)*M;
+                boneAccum = math::map<math::mat4>(accumBones[boneParent].fields)*M;
             else
                 boneAccum = M;
 
 
-            Map<Matrix4f> boneTransform(bones[b].fields);
+            math::mat4 boneTransform = math::map<math::mat4>(bones[b].fields);
             boneTransform = boneAccum*bonePoses[b];
         }
     }
@@ -106,9 +109,9 @@ void SkinnedMeshRenderer::draw(float alpha) {
     // TODO check out with which frequency I need to update uniforms -- are they replaced? are they stored in a local memory obj? whats their lifetime?
     shader.uniformMatrix4fv(shader.projectionUniformLocation, 1, camera->projection.data());
     shader.uniformMatrix4fv(shader.world2cameraUniformLocation, 1, camera->world2camera.data());
-    const Matrix4f& object2world = transform.getObject2WorldMatrix();
+    const mat4& object2world = transform.getObject2WorldMatrix();
     shader.uniformMatrix4fv(shader.object2worldUniformLocation, 1, object2world.data());
-    const Matrix4f& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
+    const mat4& object2world_it = transform.getObject2WorldTranspOfInvMatrix();
     shader.uniformMatrix4fv(shader.object2worldITUniformLocation, 1, object2world_it.data());
 
     // Lights

@@ -2,6 +2,8 @@
 
 namespace lau {
 
+namespace math {
+
 class vec2 {
 public:
     vec2() {}
@@ -121,5 +123,7 @@ public:
         };
     };
 };
+
+} // namespace math
 
 } // namespace lau

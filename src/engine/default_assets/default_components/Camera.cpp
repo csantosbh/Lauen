@@ -43,8 +43,8 @@ Camera::~Camera() {
 }
 
 void Camera::update(float dt) {
-    world2camera.block<3,3>(0,0) = gameObject->transform.getRotationMatrix().transpose();
-    Vector3f t = world2camera.block<3,3>(0,0)*-gameObject->transform.position;
+    world2camera.setBlock(gameObject->transform.getRotationMatrix().transpose(), 0, 0);
+    vec3 t = world2camera.block<3,3>(0,0)*-gameObject->transform.position;
     world2camera.block<3,1>(0,3) = t;
 
     totalT_ += dt;

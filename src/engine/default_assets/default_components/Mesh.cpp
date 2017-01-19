@@ -53,7 +53,7 @@ const std::vector<int>& Mesh::getBoneParents() const {
     return boneParents_;
 }
 
-const std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>& Mesh::getBonePoses() const {
+const std::vector<mat4, Eigen::aligned_allocator<mat4>>& Mesh::getBonePoses() const {
     return bonePoses_;
 }
 
@@ -283,7 +283,7 @@ void Mesh::onLoadJsonMesh(deque<pair<bool, vector<uint8_t>>>& meshFile, string f
                 }
 
                 // Bone pose Affine matrix
-                Matrix4f M;
+                mat4 M;
                 Transform::createInvMat4FromTransforms(t, r, s, M);
 
                 if(boneParents_.back() >= 0)

@@ -5,6 +5,8 @@ using namespace Eigen;
 
 namespace lau {
 
+namespace math {
+
 ////
 // Vector2
 vec2::vec2(const vec2& v) : x(v.x),
@@ -264,6 +266,8 @@ vec4 vec4::operator/(float a) {
     Map<Vector4f> r(res.data);
     r /= a;
     return res;
+}
+
 }
 
 } // namespace lau

@@ -6,11 +6,13 @@
 #include <map>
 
 #include <rapidjson/document.h>
-#include <Eigen/Eigen>
 
 #include "LauCommon.h"
 #include "Component.hpp"
 #include "utils/Callback.hpp"
+
+#include "math/Vector.hpp"
+#include "math/Matrix.hpp"
 
 namespace lau {
 
@@ -18,9 +20,9 @@ class Animation {
 public:
     struct Keyframe {
         EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-        Eigen::Vector3f position;
+        math::vec3 position;
         Eigen::Quaternionf rotation;
-        Eigen::Vector3f scale;
+        math::vec3 scale;
         float time;
     };
 
@@ -43,7 +45,7 @@ public:
 
     const std::map<std::string, Animation>& getAnimations() const;
     const std::vector<int>& getBoneParents() const;
-    const std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>>& getBonePoses() const;
+    const std::vector<math::mat4, Eigen::aligned_allocator<math::mat4>>& getBonePoses() const;
 
     std::vector<float> vertices;
     std::vector<float> normals;
@@ -57,7 +59,7 @@ private:
     // Animation related data
     std::vector<int> boneParents_;
     bool isLoaded_;
-    std::vector<Eigen::Matrix4f, Eigen::aligned_allocator<Eigen::Matrix4f>> bonePoses_;
+    std::vector<math::mat4, Eigen::aligned_allocator<math::mat4>> bonePoses_;
     std::map<std::string, Animation> animations_;
 
     void onLoadJsonMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);
