@@ -122,6 +122,7 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
                                     (*keyItr)["pos"][1].GetDouble(),
                                     (*keyItr)["pos"][2].GetDouble());
             } else {
+                assert(boneKeyframes.size() > 0);
                 key.position = boneKeyframes.back().position;
             }
 
@@ -134,6 +135,7 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
                                           (*keyItr)["rot"][2].GetDouble());
             } else {
                 assert(!keyItr->HasMember("rotq"));
+                assert(boneKeyframes.size() > 0);
                 key.rotation = boneKeyframes.back().rotation;
             }
 
@@ -144,6 +146,7 @@ void Mesh::grabAnimation(const rapidjson::Value& serializedAnim) {
                                  (*keyItr)["scl"][1].GetDouble(),
                                  (*keyItr)["scl"][2].GetDouble());
             } else {
+                assert(boneKeyframes.size() > 0);
                 key.scale = boneKeyframes.back().scale;
             }
 

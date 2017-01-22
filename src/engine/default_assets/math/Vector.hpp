@@ -36,15 +36,15 @@ public:
     vec2 multiply(const vec2& v) const;
     float dot(const vec2& v) const;
 
-    vec2 cross(const vec2&) const;
-
     vec2& operator/=(float a);
     vec2 operator/(float a) const;
 
-    const vec3& homogeneous() const;
+    // TODO rename to homogeneousInPlace
+    const vec3& homogeneous();
+    vec3 homogeneous() const;
 
-    vec2& normalized();
-    vec2 normalize() const;
+    vec2 normalized() const;
+    vec2& normalize();
 
     float& operator[](int i) {
       return data[i];
@@ -96,10 +96,11 @@ public:
     vec3& operator/=(float a);
     vec3 operator/(float a) const;
 
-    const vec4& homogeneous() const;
+    const vec4& homogeneous();
+    vec4 homogeneous() const;
 
-    vec3& normalized();
-    vec3 normalize() const;
+    vec3 normalized() const;
+    vec3& normalize();
 
     float& operator[](int i) {
       return data[i];
@@ -147,13 +148,14 @@ public:
     vec4 multiply(const vec4& v) const;
     float dot(const vec4& v) const;
 
-    vec4 cross(const vec4&) const;
-
-    vec4& normalized();
-    vec4 normalize() const;
+    vec4 normalized() const;
+    vec4& normalize();
 
     vec4& operator/=(float a);
     vec4 operator/(float a) const;
+
+    const vec3& head();
+    vec3 head() const;
 
     float& operator[](int i) {
       return data[i];
@@ -173,6 +175,10 @@ public:
         };
     };
 };
+
+vec2 operator*(float a, const vec2& v);
+vec3 operator*(float a, const vec3& v);
+vec4 operator*(float a, const vec4& v);
 
 } // namespace math
 

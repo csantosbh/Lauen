@@ -9,6 +9,366 @@ namespace lau {
 
 namespace math {
 
+mat2::mat2(const mat2& m) {
+    memcpy(data, m.data, 2*2*sizeof(float));
+}
+
+mat2::mat2(const std::initializer_list<float>& m,
+           StorageOrder s) {
+    int i = 0;
+    for(const auto& element: m) {
+        data[i++] = element;
+    }
+}
+
+mat2::mat2(float a) {
+    for(int i = 2*2-1; i >= 0; --i) {
+        data[i] = a;
+    }
+}
+
+mat2& mat2::operator=(const mat2& m) {
+    memcpy(data, m.data, 2*2*sizeof(float));
+
+    return *this;
+}
+
+mat2& mat2::operator=(float a) {
+    for(int i = 2*2-1; i >= 0; --i) {
+        data[i] = a;
+    }
+
+    return *this;
+}
+
+mat2 mat2::eye(float a) {
+    mat2 m(0);
+    for(int i = 0; i < 2; ++i) {
+        m.data[i*2 + i] = a;
+    }
+
+    return m;
+}
+
+mat2 mat2::identity() {
+    mat2 m(0);
+    for(int i = 0; i < 2; ++i) {
+        m.data[i*2 + i] = 1;
+    }
+
+    return m;
+}
+
+mat2 mat2::operator+(const mat2& m) const {
+    mat2 result;
+
+    result += m;
+
+    return result;
+}
+
+mat2 mat2::operator+(float a) const {
+    mat2 result(*this);
+    result += a;
+
+    return result;
+}
+
+mat2& mat2::operator+=(const mat2& m) {
+    Map<Matrix2f> a(this->data);
+    Map<const Matrix2f> b(m.data);
+
+    a += b;
+
+    return *this;
+}
+
+mat2& mat2::operator+=(float a) {
+    for(int i = 2*2-1; i >= 0; --i) {
+        this->data[i] += a;
+    }
+    return *this;
+}
+
+mat2 mat2::operator*(const mat2& m) const {
+    mat2 result;
+
+    result *= m;
+
+    return result;
+}
+
+mat2 mat2::operator*(float a) const {
+    mat2 result(*this);
+    result *= a;
+
+    return result;
+}
+
+mat2& mat2::operator*=(const mat2& m) {
+    Map<Matrix2f> a(this->data);
+    Map<const Matrix2f> b(m.data);
+
+    a *= b;
+
+    return *this;
+}
+
+mat2& mat2::operator*=(float a) {
+    for(int i = 2*2-1; i >= 0; --i) {
+        this->data[i] *= a;
+    }
+    return *this;
+}
+
+vec2 mat2::operator*(const vec2& v) const {
+    vec2 result;
+
+    Map<const Matrix2f> m(this->data);
+    Map<Vector2f> a(result.data);
+    Map<const Vector2f> b(v.data);
+
+    a = m*b;
+
+    return result;
+}
+
+mat2 mat2::multiply(const mat2& m) const {
+    mat2 result(*this);
+
+    result.multiplyInPlace(m);
+
+    return result;
+}
+
+mat2& mat2::multiplyInPlace(const mat2& m) {
+    Map<Array22f> a(this->data);
+    Map<const Array22f> b(m.data);
+
+    a *= b;
+
+    return *this;
+}
+
+mat2 mat2::transpose() const {
+    mat2 result(*this);
+    result.transposeInPlace();
+
+    return result;
+}
+
+mat2& mat2::transposeInPlace() {
+    swap(data[0*3 + 1], data[1*3 + 0]);
+    swap(data[1*3 + 0], data[0*3 + 1]);
+
+    return *this;
+}
+
+mat2 mat2::inv() const {
+    mat2 result;
+
+    Map<const Matrix2f> a(this->data);
+    Map<Matrix2f> b(result.data);
+
+    b = a.inverse();
+
+    return result;
+}
+
+mat3::mat3(const mat3& m) {
+    memcpy(data, m.data, 3*3*sizeof(float));
+}
+
+mat3::mat3(const std::initializer_list<float>& m,
+           StorageOrder s) {
+    int i = 0;
+    for(const auto& element: m) {
+        data[i++] = element;
+    }
+}
+
+mat3::mat3(float a) {
+    for(int i = 3*3-1; i >= 0; --i) {
+        data[i] = a;
+    }
+}
+
+mat3& mat3::operator=(const mat3& m) {
+    memcpy(data, m.data, 3*3*sizeof(float));
+
+    return *this;
+}
+
+mat3& mat3::operator=(float a) {
+    for(int i = 3*3-1; i >= 0; --i) {
+        data[i] = a;
+    }
+
+    return *this;
+}
+
+mat3 mat3::eye(float a) {
+    mat3 m(0);
+    for(int i = 0; i < 3; ++i) {
+        m.data[i*3 + i] = a;
+    }
+
+    return m;
+}
+
+mat3 mat3::identity() {
+    mat3 m(0);
+    for(int i = 0; i < 3; ++i) {
+        m.data[i*3 + i] = 1;
+    }
+
+    return m;
+}
+
+mat3 mat3::operator+(const mat3& m) const {
+    mat3 result;
+
+    result += m;
+
+    return result;
+}
+
+mat3 mat3::operator+(float a) const {
+    mat3 result(*this);
+    result += a;
+
+    return result;
+}
+
+mat3& mat3::operator+=(const mat3& m) {
+    Map<Matrix3f> a(this->data);
+    Map<const Matrix3f> b(m.data);
+
+    a += b;
+
+    return *this;
+}
+
+mat3& mat3::operator+=(float a) {
+    for(int i = 3*3-1; i >= 0; --i) {
+        this->data[i] += a;
+    }
+    return *this;
+}
+
+mat3 mat3::operator*(const mat3& m) const {
+    mat3 result;
+
+    result *= m;
+
+    return result;
+}
+
+mat3 mat3::operator*(float a) const {
+    mat3 result(*this);
+    result *= a;
+
+    return result;
+}
+
+mat3& mat3::operator*=(const mat3& m) {
+    Map<Matrix3f> a(this->data);
+    Map<const Matrix3f> b(m.data);
+
+    a *= b;
+
+    return *this;
+}
+
+mat3& mat3::operator*=(float a) {
+    for(int i = 3*3-1; i >= 0; --i) {
+        this->data[i] *= a;
+    }
+    return *this;
+}
+
+vec3 mat3::operator*(const vec3& v) const {
+    vec3 result;
+
+    Map<const Matrix3f> m(this->data);
+    Map<Vector3f> a(result.data);
+    Map<const Vector3f> b(v.data);
+
+    a = m*b;
+
+    return result;
+}
+
+mat3& mat3::copyBlock(const mat2& m, int row, int col) {
+    assert(row <= 1 && col <= 1);
+    memcpy(&data[(row + 0)*3 + col], &m.data[0], 2*sizeof(float));
+    memcpy(&data[(row + 1)*3 + col], &m.data[2], 2*sizeof(float));
+
+    return *this;
+}
+
+mat3& mat3::copyBlock(const vec2& v, int row, int col) {
+    assert(row <= 1 && col <= 2);
+
+    data[(row + 0)*3 + col] = v.data[0];
+    data[(row + 1)*3 + col] = v.data[1];
+
+    return *this;
+}
+
+mat3& mat3::copyBlock(const vec3& v, int col) {
+    assert(col <= 2);
+
+    data[0*3 + col] = v.data[0];
+    data[1*3 + col] = v.data[1];
+    data[2*3 + col] = v.data[2];
+
+    return *this;
+}
+
+mat3 mat3::multiply(const mat3& m) const {
+    mat3 result(*this);
+
+    result.multiplyInPlace(m);
+
+    return result;
+}
+
+mat3& mat3::multiplyInPlace(const mat3& m) {
+    Map<Array33f> a(this->data);
+    Map<const Array33f> b(m.data);
+
+    a *= b;
+
+    return *this;
+}
+
+mat3 mat3::transpose() const {
+    mat3 result(*this);
+    result.transposeInPlace();
+
+    return result;
+}
+
+mat3& mat3::transposeInPlace() {
+    swap(data[0*3 + 1], data[1*3 + 0]); swap(data[0*3 + 2], data[2*3 + 0]);
+    swap(data[1*3 + 0], data[0*3 + 1]); swap(data[1*3 + 2], data[2*3 + 1]);
+    swap(data[2*3 + 0], data[0*3 + 2]); swap(data[2*3 + 1], data[1*3 + 2]);
+
+    return *this;
+}
+
+mat3 mat3::inv() const {
+    mat3 result;
+
+    Map<const Matrix3f> a(this->data);
+    Map<Matrix3f> b(result.data);
+
+    b = a.inverse();
+
+    return result;
+}
+
 mat4::mat4(const mat4& m) {
     memcpy(data, m.data, 4*4*sizeof(float));
 }
@@ -166,14 +526,14 @@ mat4& mat4::copyBlock(const vec4& v, int col) {
 mat4 mat4::multiply(const mat4& m) const {
     mat4 result(*this);
 
-    result *= m;
+    result.multiplyInPlace(m);
 
     return result;
 }
 
 mat4& mat4::multiplyInPlace(const mat4& m) {
-    Map<Array4f> a(this->data);
-    Map<const Array4f> b(m.data);
+    Map<Array44f> a(this->data);
+    Map<const Array44f> b(m.data);
 
     a *= b;
 

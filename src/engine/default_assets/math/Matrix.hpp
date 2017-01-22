@@ -6,12 +6,52 @@ namespace lau {
 
 namespace math {
 
-template<typename T>
-T& map(void* ptr) {
-    return *(T*)ptr;
-}
-
 enum class StorageOrder {RowMajor, ColumnMajor};
+
+class mat2 {
+public:
+
+    mat2() {}
+    mat2(const mat2& m);
+    mat2(const std::initializer_list<float>& m,
+         StorageOrder s = StorageOrder::RowMajor); // TODO make it the same as Eigen
+    mat2(float a);
+    mat2& operator=(const mat2& m);
+    mat2& operator=(float a);
+
+    static mat2 eye(float a);
+    static mat2 identity();
+
+    mat2 operator+(const mat2& m) const;
+    mat2 operator+(float a) const;
+    mat2& operator+=(const mat2& m);
+    mat2& operator+=(float a);
+
+    mat2 operator*(const mat2& m) const;
+    mat2 operator*(float a) const;
+    mat2& operator*=(const mat2& m);
+    mat2& operator*=(float a);
+
+    vec2 operator*(const vec2&) const;
+
+    // Elementwise multiplication
+    mat2 multiply(const mat2& m) const;
+    mat2& multiplyInPlace(const mat2& m);
+
+    mat2 transpose() const;
+    mat2& transposeInPlace();
+
+    mat2 inv() const;
+
+    mat2 operator()(int row, int col) {
+      return data[2*row+col];
+    }
+
+    union {
+        vec2 rows[2];
+        float data[2*2];
+    };
+};
 
 class mat3 {
 public:
@@ -23,7 +63,9 @@ public:
     mat3(float a);
     mat3& operator=(const mat3& m);
     mat3& operator=(float a);
+
     static mat3 eye(float a);
+    static mat3 identity();
 
     mat3 operator+(const mat3& m) const;
     mat3 operator+(float a) const;
@@ -35,14 +77,17 @@ public:
     mat3& operator*=(const mat3& m);
     mat3& operator*=(float a);
 
-    mat3& copyBlock(const mat3&, int row, int col);
-    mat3& copyBlock(const vec3&, int row, int col);
+    vec3 operator*(const vec3&) const;
+
+    mat3& copyBlock(const mat2&, int row, int col);
+    mat3& copyBlock(const vec2&, int row, int col);
+    mat3& copyBlock(const vec3&, int col);
 
     // Elementwise multiplication
     mat3 multiply(const mat3& m) const;
     mat3& multiplyInPlace(const mat3& m);
 
-    mat3 transpose();
+    mat3 transpose() const;
     mat3& transposeInPlace();
 
     mat3 inv() const;

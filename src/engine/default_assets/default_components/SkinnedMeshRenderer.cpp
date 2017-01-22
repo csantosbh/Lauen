@@ -14,6 +14,7 @@
 #include "math/Matrix.hpp"
 #include "math/Vector.hpp"
 #include "math/Quaternion.hpp"
+#include "math/Math.hpp"
 
 using namespace std;
 using namespace lau::math;
@@ -71,6 +72,7 @@ void SkinnedMeshRenderer::update(float dt) {
             int kfIdx = 0;
 
             while(kfs[kfIdx+1].time<animationTime) {
+                assert((kfIdx+1) < kfs.size());
                 assert(kfs[kfIdx+1].time>kfs[kfIdx].time);
                 kfIdx++;
             }
