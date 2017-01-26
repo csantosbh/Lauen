@@ -1,6 +1,6 @@
 #pragma once
 
-#include <initializer_list>
+#include <array>
 
 namespace lau {
 
@@ -14,7 +14,7 @@ public:
     vec2() {}
     vec2(const vec2& v);
     vec2(float x, float y);
-    vec2(const std::initializer_list<float>& array);
+    vec2(const std::array<float, 2> &array);
     vec2(float a);
     vec2& operator=(const vec2& v);
     vec2& operator=(float a);
@@ -36,6 +36,8 @@ public:
     vec2 multiply(const vec2& v) const;
     float dot(const vec2& v) const;
 
+    float norm() const;
+
     vec2& operator/=(float a);
     vec2 operator/(float a) const;
 
@@ -54,14 +56,21 @@ public:
       return data[i];
     }
 
-    union {
-        float data[3];
-        struct {
-            float x;
-            float y;
-            float _h; // Homogeneous coordinate
-        };
-    };
+    float data[3]; // Third element is the homogeneous coordinate
+
+    float& x() {
+        return data[0];
+    }
+    float& y() {
+        return data[1];
+    }
+
+    const float& x() const {
+        return data[0];
+    }
+    const float& y() const {
+        return data[1];
+    }
 };
 
 class vec3 {
@@ -69,7 +78,7 @@ public:
     vec3() {}
     vec3(const vec3& v);
     vec3(float x, float y, float z);
-    vec3(const std::initializer_list<float>& array);
+    vec3(const std::array<float, 3>& array);
     vec3(float a);
     vec3& operator=(const vec3& v);
     vec3& operator=(float a);
@@ -102,6 +111,8 @@ public:
     vec3 normalized() const;
     vec3& normalize();
 
+    float norm() const;
+
     float& operator[](int i) {
       return data[i];
     }
@@ -110,15 +121,26 @@ public:
       return data[i];
     }
 
-    union {
-        float data[4];
-        struct {
-            float x;
-            float y;
-            float z;
-            float _h; // Homogeneous coordinate
-        };
-    };
+    float data[4]; // Fourth coordinate is the homogeneous coordinate
+    float& x() {
+      return data[0];
+    }
+    float& y() {
+      return data[1];
+    }
+    float& z() {
+      return data[2];
+    }
+
+    const float& x() const {
+        return data[0];
+    }
+    const float& y() const {
+        return data[1];
+    }
+    const float& z() const {
+        return data[2];
+    }
 };
 
 class vec4 {
@@ -126,7 +148,7 @@ public:
     vec4() { }
     vec4(const vec4& v);
     vec4(float x, float y, float z, float w);
-    vec4(const std::initializer_list<float>& array);
+    vec4(const std::array<float, 4>& array);
     vec4(float a);
     vec4& operator=(const vec4& v);
     vec4& operator=(float a);
@@ -151,6 +173,8 @@ public:
     vec4 normalized() const;
     vec4& normalize();
 
+    float norm() const;
+
     vec4& operator/=(float a);
     vec4 operator/(float a) const;
 
@@ -165,15 +189,32 @@ public:
       return data[i];
     }
 
-    union {
-        float data[4];
-        struct {
-            float x;
-            float y;
-            float z;
-            float w;
-        };
-    };
+    float data[4];
+    float& x() {
+        return data[0];
+    }
+    float& y() {
+      return data[1];
+    }
+    float& z() {
+      return data[2];
+    }
+    float& w() {
+      return data[3];
+    }
+
+    const float& x() const {
+        return data[0];
+    }
+    const float& y() const {
+        return data[1];
+    }
+    const float& z() const {
+        return data[2];
+    }
+    const float& w() const {
+        return data[3];
+    }
 };
 
 vec2 operator*(float a, const vec2& v);

@@ -1,5 +1,6 @@
 #pragma once
-#include <initializer_list>
+#include <array>
+#include <ostream>
 #include "math/Vector.hpp"
 
 namespace lau {
@@ -13,8 +14,8 @@ public:
 
     mat2() {}
     mat2(const mat2& m);
-    mat2(const std::initializer_list<float>& m,
-         StorageOrder s = StorageOrder::RowMajor); // TODO make it the same as Eigen
+    mat2(const std::array<float, 4>& m,
+         StorageOrder inputRepresentation = StorageOrder::RowMajor);
     mat2(float a);
     mat2& operator=(const mat2& m);
     mat2& operator=(float a);
@@ -43,14 +44,15 @@ public:
 
     mat2 inv() const;
 
-    mat2 operator()(int row, int col) {
+    float& operator()(int row, int col) {
       return data[2*row+col];
     }
 
-    union {
-        vec2 rows[2];
-        float data[2*2];
-    };
+    float operator()(int row, int col) const {
+      return data[2*row+col];
+    }
+
+    float data[2*2];
 };
 
 class mat3 {
@@ -58,8 +60,8 @@ public:
 
     mat3() {}
     mat3(const mat3& m);
-    mat3(const std::initializer_list<float>& m,
-         StorageOrder s = StorageOrder::RowMajor); // TODO make it the same as Eigen
+    mat3(const std::array<float, 9>& m,
+         StorageOrder inputRepresentation = StorageOrder::RowMajor);
     mat3(float a);
     mat3& operator=(const mat3& m);
     mat3& operator=(float a);
@@ -92,14 +94,15 @@ public:
 
     mat3 inv() const;
 
-    mat3 operator()(int row, int col) {
+    float& operator()(int row, int col) {
       return data[3*row+col];
     }
 
-    union {
-        vec3 rows[3];
-        float data[3*3];
-    };
+    float operator()(int row, int col) const {
+      return data[3*row+col];
+    }
+
+    float data[3*3];
 };
 
 class mat4 {
@@ -107,8 +110,8 @@ public:
 
     mat4() {}
     mat4(const mat4& m);
-    mat4(const std::initializer_list<float>& m,
-         StorageOrder s = StorageOrder::RowMajor); // TODO make it the same as Eigen
+    mat4(const std::array<float, 16>& m,
+         StorageOrder inputRepresentation = StorageOrder::RowMajor);
     mat4(float a);
     mat4& operator=(const mat4& m);
     mat4& operator=(float a);
@@ -141,15 +144,19 @@ public:
 
     mat4 inv() const;
 
-    mat4 operator()(int row, int col) {
+    float& operator()(int row, int col) {
       return data[4*row+col];
     }
 
-    union {
-        vec4 rows[4];
-        float data[4*4];
-    };
+    float operator()(int row, int col) const {
+      return data[4*row+col];
+    }
+
+    float data[4*4];
 };
+
+std::ostream& operator<<(std::ostream& out, const mat3& m);
+std::ostream& operator<<(std::ostream& out, const mat4& m);
 
 } // namespace math
 

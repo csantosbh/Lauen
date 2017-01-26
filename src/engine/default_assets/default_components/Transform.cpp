@@ -7,11 +7,11 @@ using namespace lau::math;
 namespace lau {
 
 Transform::Transform(const rapidjson::Value& serializedTransform) :
+    rotation(quaternion::identity()),
     object2WorldMatrix_({0,0,0,0,
                          0,0,0,0,
                          0,0,0,0,
                          0,0,0,1}),
-    rotation(quaternion::identity()),
     affineMatrixUpToDate_(false) {
     const rapidjson::Value& fields = serializedTransform["fields"];
     const auto& pos = fields["position"];
@@ -38,7 +38,7 @@ mat3 Transform::getRotationMatrix() const {
     return this->rotation.matrix();
 }
 
-void Transform::update(float dt) {
+void Transform::update(float) {
 #ifdef PREVIEW_MODE
     serializeState();
 #endif

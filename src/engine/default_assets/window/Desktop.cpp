@@ -9,7 +9,7 @@ std::ostream& lerr = std::cerr;
 
 Game* Desktop::static_game = nullptr; // GLFW static callbacks need a pointer to this
 
-void Desktop::windowResizeCallback(GLFWwindow* window, int w, int h) {
+void Desktop::windowResizeCallback(GLFWwindow*, int w, int h) {
     // TODO maybe use glfwGetFramebufferSize? window size is not the correct way to go; check out http://www.glfw.org/docs/latest/window.html
     static_game->resize(w, h);
 }
@@ -84,7 +84,7 @@ Desktop::~Desktop() {
     glfwTerminate();
 }
 
-void Desktop::windowErrorCallback(int error, const char* description) {
+void Desktop::windowErrorCallback(int, const char* description) {
     lerr << "[error] GLFW error: " << description << endl;
 }
 

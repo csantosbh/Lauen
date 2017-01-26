@@ -12,7 +12,12 @@ std::vector<std::shared_ptr<GameObject>> GameObject::gameObjects_;
 
 extern int generateInstanceId();
 
-GameObject::GameObject(const rapidjson::Value& serializedObject, const GameObject* parent) :
+GameObject::GameObject(const rapidjson::Value& serializedObject,
+#ifdef PREVIEW_MODE
+                       const GameObject* parent) :
+#else
+                       const GameObject*) :
+#endif
     transform(serializedObject["transform"])
 #ifdef PREVIEW_MODE
 	, gameObjectId(generateInstanceId()), gameObjectName(serializedObject["name"].GetString())
@@ -201,7 +206,8 @@ void GameObject::handleRequestedDestroyedComponents() {
 }
 
 int GameObject::getComponentByInstanceId(int id) {
-    for(int i = 0; i < updateableComponents_.size(); ++i)
+    int sentinel = static_cast<int>(updateableComponents_.size());
+    for(int i = 0; i < sentinel; ++i)
         if(updateableComponents_[i]->getId() == id)
             return i;
     return -1;

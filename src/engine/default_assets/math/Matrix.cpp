@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <Eigen/Eigen>
 #include "math/Matrix.hpp"
+#include<iostream>
 
 using namespace Eigen;
 using namespace std;
@@ -13,11 +14,18 @@ mat2::mat2(const mat2& m) {
     memcpy(data, m.data, 2*2*sizeof(float));
 }
 
-mat2::mat2(const std::initializer_list<float>& m,
-           StorageOrder s) {
-    int i = 0;
-    for(const auto& element: m) {
-        data[i++] = element;
+mat2::mat2(const std::array<float, 4>& m,
+           StorageOrder inputRepresentation) {
+    if(inputRepresentation == StorageOrder::ColumnMajor) {
+        for(int j = 0; j < 2; ++j) {
+            for(int i = 0; i < 2; ++i) {
+                data[j*2+i] = m[i*2+j];
+            }
+        }
+    } else {
+        for(int i = 0; i < 4; ++i) {
+            data[i] = m[i];
+        }
     }
 }
 
@@ -60,7 +68,7 @@ mat2 mat2::identity() {
 }
 
 mat2 mat2::operator+(const mat2& m) const {
-    mat2 result;
+    mat2 result(*this);
 
     result += m;
 
@@ -91,7 +99,7 @@ mat2& mat2::operator+=(float a) {
 }
 
 mat2 mat2::operator*(const mat2& m) const {
-    mat2 result;
+    mat2 result(*this);
 
     result *= m;
 
@@ -165,7 +173,7 @@ mat2& mat2::transposeInPlace() {
 }
 
 mat2 mat2::inv() const {
-    mat2 result;
+    mat2 result(*this);
 
     Map<const Matrix2f> a(this->data);
     Map<Matrix2f> b(result.data);
@@ -179,11 +187,18 @@ mat3::mat3(const mat3& m) {
     memcpy(data, m.data, 3*3*sizeof(float));
 }
 
-mat3::mat3(const std::initializer_list<float>& m,
-           StorageOrder s) {
-    int i = 0;
-    for(const auto& element: m) {
-        data[i++] = element;
+mat3::mat3(const array<float, 9>& m,
+           StorageOrder inputRepresentation) {
+    if(inputRepresentation == StorageOrder::ColumnMajor) {
+        for(int j = 0; j < 3; ++j) {
+            for(int i = 0; i < 3; ++i) {
+                data[j*3+i] = m[i*3+j];
+            }
+        }
+    } else {
+        for(int i = 0; i < 9; ++i) {
+            data[i] = m[i];
+        }
     }
 }
 
@@ -226,7 +241,7 @@ mat3 mat3::identity() {
 }
 
 mat3 mat3::operator+(const mat3& m) const {
-    mat3 result;
+    mat3 result(*this);
 
     result += m;
 
@@ -257,7 +272,7 @@ mat3& mat3::operator+=(float a) {
 }
 
 mat3 mat3::operator*(const mat3& m) const {
-    mat3 result;
+    mat3 result(*this);
 
     result *= m;
 
@@ -359,7 +374,7 @@ mat3& mat3::transposeInPlace() {
 }
 
 mat3 mat3::inv() const {
-    mat3 result;
+    mat3 result(*this);
 
     Map<const Matrix3f> a(this->data);
     Map<Matrix3f> b(result.data);
@@ -373,11 +388,18 @@ mat4::mat4(const mat4& m) {
     memcpy(data, m.data, 4*4*sizeof(float));
 }
 
-mat4::mat4(const std::initializer_list<float>& m,
-           StorageOrder s) {
-    int i = 0;
-    for(const auto& element: m) {
-        data[i++] = element;
+mat4::mat4(const array<float, 16> &m,
+           StorageOrder inputRepresentation) {
+    if(inputRepresentation == StorageOrder::ColumnMajor) {
+        for(int j = 0; j < 4; ++j) {
+            for(int i = 0; i < 4; ++i) {
+                data[j*4+i] = m[i*4+j];
+            }
+        }
+    } else {
+        for(int i = 0; i < 16; ++i) {
+            data[i] = m[i];
+        }
     }
 }
 
@@ -420,7 +442,7 @@ mat4 mat4::identity() {
 }
 
 mat4 mat4::operator+(const mat4& m) const {
-    mat4 result;
+    mat4 result(*this);
 
     result += m;
 
@@ -451,7 +473,7 @@ mat4& mat4::operator+=(float a) {
 }
 
 mat4 mat4::operator*(const mat4& m) const {
-    mat4 result;
+    mat4 result(*this);
 
     result *= m;
 
@@ -557,7 +579,7 @@ mat4& mat4::transposeInPlace() {
 }
 
 mat4 mat4::inv() const {
-    mat4 result;
+    mat4 result(*this);
 
     Map<const Matrix4f> a(this->data);
     Map<Matrix4f> b(result.data);
@@ -565,6 +587,26 @@ mat4 mat4::inv() const {
     b = a.inverse();
 
     return result;
+}
+
+ostream &operator<<(ostream &out, const mat3 &m) {
+    for(int j = 0; j < 3; ++j) {
+        for(int i = 0; i < 3; ++i) {
+            out << m.data[j*3 + i] << " ";
+        }
+        out << endl;
+    }
+    return out;
+}
+
+ostream &operator<<(ostream &out, const mat4 &m) {
+    for(int j = 0; j < 4; ++j) {
+        for(int i = 0; i < 4; ++i) {
+            out << m.data[j*4 + i] << " ";
+        }
+        out << endl;
+    }
+    return out;
 }
 
 } // namespace math

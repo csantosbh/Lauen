@@ -23,7 +23,6 @@ shared_ptr<Component> Factories::componentFactory(shared_ptr<GameObject>& gameOb
 	rapidjson::StringBuffer buffer;
 	rapidjson::PrettyWriter<rapidjson::StringBuffer> writer(buffer);
 	serializedComponent.Accept(writer);
-	const char* str = buffer.GetString();
 	lerr << "Serialized component has no <id>: " << buffer.GetString() << endl;
 	return nullptr;
 }
@@ -33,7 +32,8 @@ shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& ser
 
     // Add components
     const rapidjson::Value& components = serializedObj["components"];
-    for(int c = 0; c < components.Size(); ++c) {
+    int sentinel = static_cast<int>(components.Size());
+    for(int c = 0; c < sentinel; ++c) {
         shared_ptr<Component> component = componentFactory(obj, components[c]);
 
         // TODO assert that component cant be null?
@@ -49,7 +49,8 @@ shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& ser
 
     // Add children objects
     const rapidjson::Value& children = serializedObj["children"];
-    for(int g = 0; g < children.Size(); ++g) {
+    sentinel = static_cast<int>(children.Size());
+    for(int g = 0; g < sentinel; ++g) {
         obj->addChild(assembleGameObject(children[g], obj.get()));
     }
 
@@ -57,12 +58,13 @@ shared_ptr<GameObject> Factories::assembleGameObject(const rapidjson::Value& ser
 }
 
 vector<shared_ptr<GameObject>> Factories::gameObjectFactory(const rapidjson::Document& objects) {
-	vector<shared_ptr<GameObject>> result;
-	for(int i = 0; i < objects.Size(); ++i) {
-		result.push_back(assembleGameObject(objects[i], nullptr));
-	}
+    vector<shared_ptr<GameObject>> result;
+    int sentinel = static_cast<int>(objects.Size());
+    for(int i = 0; i < sentinel; ++i) {
+        result.push_back(assembleGameObject(objects[i], nullptr));
+    }
 
-	return result;
+    return result;
 }
 
 } // namespace lau

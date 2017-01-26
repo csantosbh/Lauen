@@ -13,7 +13,7 @@ public:
         gameObject = gameObj;
     }
 
-    virtual void update(float dt) {}
+    virtual void update(float) {}
     virtual void start() {}
 	virtual ~Component() {}
 

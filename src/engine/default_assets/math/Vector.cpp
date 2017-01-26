@@ -2,6 +2,7 @@
 #include "math/Vector.hpp"
 
 using namespace Eigen;
+using namespace std;
 
 namespace lau {
 
@@ -9,34 +10,29 @@ namespace math {
 
 ////
 // Vector2
-vec2::vec2(const vec2& v) : x(v.x),
-                            y(v.y) {
+vec2::vec2(const vec2& v) : data{v.data[0], v.data[1]} {
 }
 
-vec2::vec2(float x, float y) : x(x),
-                               y(y) {
+vec2::vec2(float x, float y) : data{x, y} {
 }
 
-vec2::vec2(const std::initializer_list<float>& array) {
-    assert(array.size() == 2);
-    int j = 0;
-    for(const auto& i: array) {
-        data[j++] = i;
+vec2::vec2(const array<float, 2>& array) {
+    for(int i = 0; i < 2; ++i) {
+        data[i] = array[i];
     }
 }
 
-vec2::vec2(float a) : x(a),
-                      y(a) {
+vec2::vec2(float a) : data{a, a} {
 }
 
 vec2& vec2::operator=(const vec2& v) {
-    x = v.x;
-    y = v.y;
+    x() = v.x();
+    y() = v.y();
     return *this;
 }
 
 vec2& vec2::operator=(float a) {
-    x = y = a;
+    x() = y() = a;
     return *this;
 }
 
@@ -63,8 +59,8 @@ vec2 vec2::operator+(float a) const {
 }
 
 vec2& vec2::operator+=(float a) {
-    x += a;
-    y += a;
+    x() += a;
+    y() += a;
     return *this;
 }
 
@@ -91,13 +87,13 @@ vec2 vec2::operator-(float a) const {
 }
 
 vec2& vec2::operator-=(float a) {
-    x -= a;
-    y -= a;
+    x() -= a;
+    y() -= a;
     return *this;
 }
 
 vec2 vec2::operator-() const {
-    return vec2(-x, -y);
+    return vec2(-x(), -y());
 }
 
 vec2& vec2::operator*=(float a) {
@@ -120,8 +116,8 @@ vec2 operator*(float a, const vec2& v) {
 // Elementwise multiplication
 vec2 vec2::multiply(const vec2& v) const {
     vec2 res(*this);
-    res.x *= v.x;
-    res.y *= v.y;
+    res.x() *= v.x();
+    res.y() *= v.y();
     return res;
 }
 
@@ -129,6 +125,11 @@ float vec2::dot(const vec2& v) const {
     Map<const Vector2f> a(this->data);
     Map<const Vector2f> b(v.data);
     return a.dot(b);
+}
+
+float vec2::norm() const {
+    return sqrt(data[0]*data[0] +
+                data[1]*data[1]);
 }
 
 vec2 vec2::normalized() const {
@@ -157,50 +158,44 @@ vec2 vec2::operator/(float a) const {
 }
 
 const vec3& vec2::homogeneous() {
-    _h = 1.0;
+    data[2] = 1.0;
 
     return *reinterpret_cast<const vec3*>(this);
 }
 
 vec3 vec2::homogeneous() const {
-    return vec3(x,y,1);
+    return vec3(x(),y(),1);
 }
 
 
 ////
 // Vector3
-vec3::vec3(const vec3& v) : x(v.x),
-                            y(v.y),
-                            z(v.z) {
+vec3::vec3(const vec3& v) : data{v.data[0],
+                                 v.data[1],
+                                 v.data[2]} {
 }
 
-vec3::vec3(float x, float y, float z) : x(x),
-                                        y(y),
-                                        z(z) {
+vec3::vec3(float x, float y, float z) : data{x, y, z} {
 }
 
-vec3::vec3(const std::initializer_list<float>& array) {
-    assert(array.size() == 3);
-    int j = 0;
-    for(const auto& i: array) {
-        data[j++] = i;
+vec3::vec3(const std::array<float, 3> &array) {
+    for(int i = 0; i < 3; ++i) {
+        data[i] = array[i];
     }
 }
 
-vec3::vec3(float a) : x(a),
-                      y(a),
-                      z(a) {
+vec3::vec3(float a) : data{a, a, a} {
 }
 
 vec3& vec3::operator=(const vec3& v) {
-    x = v.x;
-    y = v.y;
-    z = v.z;
+    x() = v.x();
+    y() = v.y();
+    z() = v.z();
     return *this;
 }
 
 vec3& vec3::operator=(float a) {
-    x = y = z = a;
+    x() = y() = z() = a;
     return *this;
 }
 
@@ -227,9 +222,9 @@ vec3 vec3::operator+(float a) const {
 }
 
 vec3& vec3::operator+=(float a) {
-    x += a;
-    y += a;
-    z += a;
+    x() += a;
+    y() += a;
+    z() += a;
     return *this;
 }
 
@@ -256,14 +251,14 @@ vec3 vec3::operator-(float a) const {
 }
 
 vec3& vec3::operator-=(float a) {
-    x -= a;
-    y -= a;
-    z -= a;
+    x() -= a;
+    y() -= a;
+    z() -= a;
     return *this;
 }
 
 vec3 vec3::operator-() const {
-    return vec3(-x, -y, -z);
+    return vec3(-x(), -y(), -z());
 }
 
 vec3& vec3::operator*=(float a) {
@@ -286,9 +281,9 @@ vec3 operator*(float a, const vec3& v) {
 // Elementwise multiplication
 vec3 vec3::multiply(const vec3& v) const {
     vec3 res(*this);
-    res.x *= v.x;
-    res.y *= v.y;
-    res.z *= v.z;
+    res.x() *= v.x();
+    res.y() *= v.y();
+    res.z() *= v.z();
     return res;
 }
 
@@ -299,9 +294,9 @@ float vec3::dot(const vec3& v) const {
 }
 
 vec3 vec3::cross(const vec3& v) const {
-    vec3 result(y*v.z - z*v.y,
-                z*v.x - x*v.z,
-                x*v.y - y*v.z);
+    vec3 result(y()*v.z() - z()*v.y(),
+                z()*v.x() - x()*v.z(),
+                x()*v.y() - y()*v.z());
 
     return result;
 }
@@ -318,6 +313,12 @@ vec3& vec3::normalize() {
     return *this;
 }
 
+float vec3::norm() const {
+    return sqrt(data[0]*data[0] +
+                data[1]*data[1] +
+                data[2]*data[2]);
+}
+
 vec3& vec3::operator/=(float a) {
     Map<Vector3f> r(this->data);
     r /= a;
@@ -325,13 +326,13 @@ vec3& vec3::operator/=(float a) {
 }
 
 const vec4& vec3::homogeneous() {
-    _h = 1.0;
+    data[3] = 1.0;
 
     return *reinterpret_cast<const vec4*>(this);
 }
 
 vec4 vec3::homogeneous() const {
-    return vec4(x,y,z,1);
+    return vec4(x(),y(),z(),1);
 }
 
 vec3 vec3::operator/(float a) const {
@@ -343,42 +344,34 @@ vec3 vec3::operator/(float a) const {
 
 ////
 // Vector4
-vec4::vec4(const vec4& v) : x(v.x),
-                            y(v.y),
-                            z(v.z),
-                            w(v.w) {
+vec4::vec4(const vec4& v) : data{v.data[0],
+                                 v.data[1],
+                                 v.data[2],
+                                 v.data[3]} {
 }
 
-vec4::vec4(float x, float y, float z, float w) : x(x),
-                                                 y(y),
-                                                 z(z),
-                                                 w(w) {
+vec4::vec4(float x, float y, float z, float w) : data{x, y, z, w} {
 }
 
-vec4::vec4(const std::initializer_list<float>& array) {
-    assert(array.size() == 4);
-    int j = 0;
-    for(const auto& i: array) {
-        data[j++] = i;
+vec4::vec4(const std::array<float, 4> &array) {
+    for(int i = 0; i < 4; ++i) {
+        data[i] = array[i];
     }
 }
 
-vec4::vec4(float a) : x(a),
-                      y(a),
-                      z(a),
-                      w(a) {
+vec4::vec4(float a) : data{a, a, a, a} {
 }
 
 vec4& vec4::operator=(const vec4& v) {
-    x = v.x;
-    y = v.y;
-    z = v.z;
-    w = v.w;
+    x() = v.x();
+    y() = v.y();
+    z() = v.z();
+    w() = v.w();
     return *this;
 }
 
 vec4& vec4::operator=(float a) {
-    x = y = z = w = a;
+    x() = y() = z() = w() = a;
     return *this;
 }
 
@@ -405,10 +398,10 @@ vec4 vec4::operator+(float a) const {
 }
 
 vec4& vec4::operator+=(float a) {
-    x += a;
-    y += a;
-    z += a;
-    w += a;
+    x() += a;
+    y() += a;
+    z() += a;
+    w() += a;
     return *this;
 }
 
@@ -435,15 +428,15 @@ vec4 vec4::operator-(float a) const {
 }
 
 vec4& vec4::operator-=(float a) {
-    x -= a;
-    y -= a;
-    z -= a;
-    w -= a;
+    x() -= a;
+    y() -= a;
+    z() -= a;
+    w() -= a;
     return *this;
 }
 
 vec4 vec4::operator-() const {
-    return vec4(-x, -y, -z, -w);
+    return vec4(-x(), -y(), -z(), -w());
 }
 
 vec4& vec4::operator*=(float a) {
@@ -465,10 +458,10 @@ vec4 operator*(float a, const vec4& v) {
 
 vec4 vec4::multiply(const vec4& v) const {
     vec4 res(*this);
-    res.x *= v.x;
-    res.y *= v.y;
-    res.z *= v.z;
-    res.w *= v.w;
+    res.x() *= v.x();
+    res.y() *= v.y();
+    res.z() *= v.z();
+    res.w() *= v.w();
     return res;
 }
 
@@ -488,6 +481,13 @@ vec4& vec4::normalize() {
     Map<Vector4f> r(this->data);
     r.normalize();
     return *this;
+}
+
+float vec4::norm() const {
+    return sqrt(data[0]*data[0] +
+                data[1]*data[1] +
+                data[2]*data[2] +
+                data[3]*data[3]);
 }
 
 vec4& vec4::operator/=(float a) {

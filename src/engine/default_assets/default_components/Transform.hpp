@@ -10,14 +10,14 @@ namespace lau {
 
 using namespace std;
 class Transform {
-	friend class GameObject;
+    friend class GameObject;
 public:
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 
-	math::vec3 position;
+    math::vec3 position;
     math::quaternion rotation;
     math::vec3 scale;
-	Transform(const rapidjson::Value& fields);
+    Transform(const rapidjson::Value& fields);
 
     void update(float dt);
 
