@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "../window/Screen.hpp"
 #include "Factories.hpp"
 #include "GameObject.hpp"
@@ -45,9 +47,10 @@ Camera::~Camera() {
 }
 
 void Camera::update(float dt) {
-    world2camera.copyBlock(gameObject->transform.getRotationMatrix().transpose(), 0, 0);
-    vec4 t = world2camera * -gameObject->transform.position.homogeneous();
-    world2camera.copyBlock(t, 3);
+    const mat3 rotMat = gameObject->transform.getRotationMatrix().transpose();
+    world2camera.copyBlock(rotMat, 0, 0);
+    vec3 t = rotMat * -gameObject->transform.position;
+    world2camera.copyBlock(t, 0, 3);
 
     totalT_ += dt;
 }
@@ -142,7 +145,7 @@ void Camera::resetAspect() {
     recomputeProjectionMatrix();
 }
 
-void Camera::windowResizeListener(int w, int h) {
+void Camera::windowResizeListener(int, int) {
     if(!customAspectProvided_) {
         resetAspect();
     }

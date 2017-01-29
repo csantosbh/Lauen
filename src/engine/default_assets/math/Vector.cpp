@@ -157,12 +157,6 @@ vec2 vec2::operator/(float a) const {
     return res;
 }
 
-const vec3& vec2::homogeneous() {
-    data[2] = 1.0;
-
-    return *reinterpret_cast<const vec3*>(this);
-}
-
 vec3 vec2::homogeneous() const {
     return vec3(x(),y(),1);
 }
@@ -296,7 +290,7 @@ float vec3::dot(const vec3& v) const {
 vec3 vec3::cross(const vec3& v) const {
     vec3 result(y()*v.z() - z()*v.y(),
                 z()*v.x() - x()*v.z(),
-                x()*v.y() - y()*v.z());
+                x()*v.y() - y()*v.x());
 
     return result;
 }
@@ -323,12 +317,6 @@ vec3& vec3::operator/=(float a) {
     Map<Vector3f> r(this->data);
     r /= a;
     return *this;
-}
-
-const vec4& vec3::homogeneous() {
-    data[3] = 1.0;
-
-    return *reinterpret_cast<const vec4*>(this);
 }
 
 vec4 vec3::homogeneous() const {
@@ -501,6 +489,16 @@ vec4 vec4::operator/(float a) const {
     Map<Vector4f> r(res.data);
     r /= a;
     return res;
+}
+
+ostream &operator<<(ostream &out, const vec3 &m) {
+    out << m.x() << " " << m.y() <<  " " << m.z();
+    return out;
+}
+
+ostream &operator<<(ostream &out, const vec4 &m) {
+    out << m.x() << " " << m.y() <<  " " << m.z() << " " << m.w();
+    return out;
 }
 
 }

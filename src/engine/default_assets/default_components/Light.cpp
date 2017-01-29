@@ -23,7 +23,7 @@ Light::~Light() {
     lights_.erase(this);
 }
 
-void Light::draw(float temporalAlpha) {
+void Light::draw(float) {
     // TODO implement light halo/lens flare
 }
 
@@ -34,10 +34,7 @@ const vector<float> Light::allLightPositions() {
     for(const auto light: lights_) {
         auto& lightTransformObj = light->gameObject->transform;
         auto light2world = lightTransformObj.getObject2WorldMatrix();
-        auto lightPosition = light2world *
-            vec4(lightTransformObj.position[0],
-                 lightTransformObj.position[0],
-                 lightTransformObj.position[0], 1.0f);
+        auto lightPosition = light2world * lightTransformObj.position.homogeneous();
         for(int i = 0; i < 3; ++i) {
             result.push_back(lightPosition[i]);
         }

@@ -1,5 +1,3 @@
-#include <Eigen/Eigen>
-
 #include "Game.hpp"
 #include "utils/IO.h"
 #include "LauCommon.h"

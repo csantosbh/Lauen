@@ -3,6 +3,7 @@
 #include <cmath>
 #include "math/Quaternion.hpp"
 #include "math/Math.hpp"
+#include <iostream>
 
 using namespace Eigen;
 using namespace std;
@@ -20,16 +21,18 @@ quaternion::quaternion(float w, float x, float y, float z) :
 }
 
 quaternion::quaternion(float angle, const vec3& axis) {
-    w() = cos(angle);
+    w() = cos(angle/2.0);
     vec3& v = map<vec3>(data);
-    v = axis * sin(angle);
+    v = axis * sin(angle/2.0);
 }
 
+quaternion::quaternion() {}
+
 quaternion& quaternion::operator=(const quaternion& q) {
-    x()=q.x();
-    y()=q.y();
-    z()=q.z();
-    w()=q.w();
+    x() = q.x();
+    y() = q.y();
+    z() = q.z();
+    w() = q.w();
     return *this;
 }
 
@@ -51,7 +54,7 @@ quaternion quaternion::operator*(const quaternion& q) const {
 }
 
 quaternion quaternion::identity() {
-    return quaternion(0, 0, 0, 1);
+    return quaternion(1, 0, 0, 0);
 }
 
 quaternion quaternion::conjugate() const {
@@ -68,8 +71,9 @@ quaternion& quaternion::conjugateInPlace() {
 
 mat3 quaternion::matrix() const {
     mat3 result;
-    Map<Matrix3f> r(result.data);
-    r = Quaternionf(w(), x(), y(), z()).toRotationMatrix();
+
+    Map<Matrix3f> m(result.data);
+    m = Quaternionf(w(), x(), y(), z()).toRotationMatrix();
 
     return result;
 }
@@ -120,6 +124,11 @@ quaternion quaternion::slerp(float alpha, const quaternion& target) const {
     }
 
     return result;
+}
+
+ostream& operator<<(ostream &out, const quaternion &m) {
+    out << m.x() << " " << m.y() <<  " " << m.z() << " " << m.w();
+    return out;
 }
 
 } // namespace math

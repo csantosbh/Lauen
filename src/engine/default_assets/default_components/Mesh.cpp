@@ -27,7 +27,7 @@ Mesh::Mesh(const rapidjson::Value& fields) : isLoaded_(true) {
     load(meshName);
 }
 
-void Mesh::update(float dt) {
+void Mesh::update(float) {
 }
 
 void Mesh::load(const string& path) {
@@ -55,7 +55,7 @@ const std::vector<int>& Mesh::getBoneParents() const {
     return boneParents_;
 }
 
-const std::vector<mat4, Eigen::aligned_allocator<mat4>>& Mesh::getBonePoses() const {
+const std::vector<mat4>& Mesh::getBonePoses() const {
     return bonePoses_;
 }
 

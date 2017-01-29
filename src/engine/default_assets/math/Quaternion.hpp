@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ostream>
+
 #include "Matrix.hpp"
 #include "Vector.hpp"
 
@@ -9,7 +11,7 @@ namespace math {
 
 class quaternion {
 public:
-    quaternion() {}
+    quaternion();
     quaternion(const quaternion& q);
     quaternion(float w, float x, float y, float z);
     // Angle in radians
@@ -66,6 +68,8 @@ public:
         return data[3];
     }
 };
+
+std::ostream& operator<<(std::ostream& out, const quaternion& m);
 
 } // namespace math
 

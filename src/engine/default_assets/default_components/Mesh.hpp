@@ -20,7 +20,6 @@ namespace lau {
 class Animation {
 public:
     struct Keyframe {
-        EIGEN_MAKE_ALIGNED_OPERATOR_NEW
         math::vec3 position;
         math::quaternion rotation;
         math::vec3 scale;
@@ -46,7 +45,7 @@ public:
 
     const std::map<std::string, Animation>& getAnimations() const;
     const std::vector<int>& getBoneParents() const;
-    const std::vector<math::mat4, Eigen::aligned_allocator<math::mat4>>& getBonePoses() const;
+    const std::vector<math::mat4> &getBonePoses() const;
 
     std::vector<float> vertices;
     std::vector<float> normals;
@@ -60,7 +59,7 @@ private:
     // Animation related data
     std::vector<int> boneParents_;
     bool isLoaded_;
-    std::vector<math::mat4, Eigen::aligned_allocator<math::mat4>> bonePoses_;
+    std::vector<math::mat4> bonePoses_;
     std::map<std::string, Animation> animations_;
 
     void onLoadJsonMesh(std::deque<std::pair<bool, std::vector<uint8_t>>>& meshFile, std::string fname);

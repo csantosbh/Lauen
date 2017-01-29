@@ -24,7 +24,7 @@ public:
 	static std::map<int, std::shared_ptr<Component>(*)(std::shared_ptr<GameObject>&, const rapidjson::Value&)> componentInstanceFactories;
 
 	template<class CompType, int CompId>
-	static std::shared_ptr<Component> componentInternalFactory(std::shared_ptr<GameObject>& gameObj, const rapidjson::Value& serializedComponent) {
+    static std::shared_ptr<Component> componentInternalFactory(std::shared_ptr<GameObject>&, const rapidjson::Value& serializedComponent) {
 		CompType* ptr = new CompType(serializedComponent);
 
 		std::shared_ptr<Component> result(dynamic_cast<Component*>(ptr));

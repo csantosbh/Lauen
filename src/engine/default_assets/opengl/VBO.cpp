@@ -24,7 +24,6 @@ void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<int>& indic
     bufferFormat_ = VBOFormat::Vf;
     stride_= sizeof(float) * dimensions_;
 
-    int vertexCount = vertices.size()/dimensions;
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
 
@@ -79,8 +78,6 @@ void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& nor
     bufferFormat_ = VBOFormat::VNf;
 
     assert(vertices.size() == normals.size());
-    int vertexCount = vertices.size()/dimensions;
-
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
 
@@ -95,7 +92,8 @@ void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& nor
 
     vector<float> verticesAndNormals;
     verticesAndNormals.reserve(vertices.size()+normals.size());
-    for(int i = 0; i < vertices.size(); i += dimensions_) {
+    int sentinel = static_cast<int>(vertices.size());
+    for(int i = 0; i < sentinel; i += dimensions_) {
         // Vertex
         for(int d = 0; d < dimensions_; ++d) {
             verticesAndNormals.push_back(vertices[i + d]);
@@ -150,8 +148,6 @@ void VBO::create(uint8_t dimensions, vector<float>& vertices, vector<float>& nor
     bufferFormat_ = VBOFormat::VNfSkinIW;
 
     assert(vertices.size() == normals.size());
-    int vertexCount = vertices.size()/dimensions;
-
     // Create two VBOs: one for indices and another for vertices
     glGenBuffers(2, bufferIds_);
 

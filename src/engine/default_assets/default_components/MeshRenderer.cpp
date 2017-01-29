@@ -24,10 +24,10 @@ MeshRenderer::MeshRenderer() {
             "default_assets/shaders/phong_interpolated_light.fs");
 }
 
-MeshRenderer::MeshRenderer(const rapidjson::Value& fields) : MeshRenderer() {
+MeshRenderer::MeshRenderer(const rapidjson::Value&) : MeshRenderer() {
 }
 
-void MeshRenderer::update(float dt) {
+void MeshRenderer::update(float) {
 }
 
 void MeshRenderer::start() {
@@ -47,7 +47,7 @@ void MeshRenderer::start() {
     }
 }
 
-void MeshRenderer::draw(float alpha) {
+void MeshRenderer::draw(float) {
 	auto mesh = gameObject->getComponent<Mesh>();
     if(mesh == nullptr || !mesh->isLoaded())
         return;

@@ -1,3 +1,5 @@
+#include <cmath>
+
 #include "LauCommon.h"
 #include "Game.hpp"
 #include "Factories.hpp"
@@ -23,7 +25,7 @@ namespace lau {
 
 SkinnedMeshRenderer::SkinnedMeshRenderer() {
     shader.loadShaders("default_assets/shaders/phong_interp_animated.vs",
-            "default_assets/shaders/phong_interpolated_light.fs");
+                       "default_assets/shaders/phong_interpolated_light.fs");
 }
 
 SkinnedMeshRenderer::SkinnedMeshRenderer(const rapidjson::Value& fields) : SkinnedMeshRenderer() {
@@ -50,16 +52,14 @@ void SkinnedMeshRenderer::start() {
 
 void SkinnedMeshRenderer::update(float dt) {
 	auto mesh = gameObject->getComponent<Mesh>();
+
     if(mesh != nullptr && mesh->isLoaded()) {
         const auto& anims = mesh->getAnimations();
         const auto& bonePoses = mesh->getBonePoses();
 
         if(anims.size() == 0) return;
 
-        struct MatrixBlock {
-            float fields[16];
-        };
-        vector<MatrixBlock> accumBones(bonePoses.size());
+        vector<Matrix4fBuffer> accumBones(bonePoses.size());
         bones.resize(bonePoses.size());
 
         const auto& currAnim = anims.at(currentAnimation);
@@ -68,11 +68,11 @@ void SkinnedMeshRenderer::update(float dt) {
         int sentinel = static_cast<int>(bonePoses.size());
         for(int b = 0; b < sentinel; ++b) {
             const vector<Animation::Keyframe>& kfs = currAnim.boneKeyframes[b];
-            mat4 boneAccum = math::map<mat4>(accumBones[b].fields);
+            mat4& boneAccum = math::map<mat4>(accumBones[b].fields);
             int kfIdx = 0;
 
             while(kfs[kfIdx+1].time<animationTime) {
-                assert((kfIdx+1) < kfs.size());
+                assert((kfIdx+1) < static_cast<int>(kfs.size()));
                 assert(kfs[kfIdx+1].time>kfs[kfIdx].time);
                 kfIdx++;
             }
@@ -93,14 +93,13 @@ void SkinnedMeshRenderer::update(float dt) {
             else
                 boneAccum = M;
 
-
-            mat4 boneTransform = math::map<mat4>(bones[b].fields);
+            mat4& boneTransform = math::map<mat4>(bones[b].fields);
             boneTransform = boneAccum*bonePoses[b];
         }
     }
 }
 
-void SkinnedMeshRenderer::draw(float alpha) {
+void SkinnedMeshRenderer::draw(float) {
 	auto mesh = gameObject->getComponent<Mesh>();
     if(mesh == nullptr || !mesh->isLoaded())
         return;

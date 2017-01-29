@@ -90,8 +90,9 @@ void Transform::createMat4FromTransforms(const vec3& position, const quaternion&
 }
 
 void Transform::createInvMat4FromTransforms(const vec3& position, const quaternion& rotation, const vec3& scale, mat4& output) {
-    output.copyBlock(rotation.matrix().transpose(), 0, 0);
-    output.copyBlock(output * -position.homogeneous(), 3);
+    const mat3 rotMat = rotation.matrix().transpose();
+    output.copyBlock(rotMat, 0, 0);
+    output.copyBlock(rotMat * -position, 0, 3);
 
     float* ptr = output.data;
 
@@ -102,6 +103,7 @@ void Transform::createInvMat4FromTransforms(const vec3& position, const quaterni
     ptr[2] *= inv_scale[2]; ptr[6] *= inv_scale[2]; ptr[10] *= inv_scale[2]; ptr[14] *= inv_scale[2];
     ptr[3] = ptr[7] = ptr[11] = 0.0;
     ptr[15] = 1.0f;
+
 }
 
 void Transform::createTranspOfInvMat4FromTransforms(const vec3& position, const quaternion& rotation, const vec3 scale, mat4& output) {

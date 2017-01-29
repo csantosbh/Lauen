@@ -3,7 +3,6 @@
 #include <set>
 
 #include <rapidjson/document.h>
-#include <Eigen/Eigen>
 
 #include "Component.hpp"
 #include "../utils/Callback.hpp"
@@ -14,7 +13,6 @@ namespace lau {
 
 class Camera : public Component {
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     Camera(const rapidjson::Value& fields);
     ~Camera();
 

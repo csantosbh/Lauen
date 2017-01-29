@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <ostream>
 
 namespace lau {
 
@@ -41,8 +42,6 @@ public:
     vec2& operator/=(float a);
     vec2 operator/(float a) const;
 
-    // TODO rename to homogeneousInPlace
-    const vec3& homogeneous();
     vec3 homogeneous() const;
 
     vec2 normalized() const;
@@ -56,7 +55,7 @@ public:
       return data[i];
     }
 
-    float data[3]; // Third element is the homogeneous coordinate
+    float data[2];
 
     float& x() {
         return data[0];
@@ -105,7 +104,6 @@ public:
     vec3& operator/=(float a);
     vec3 operator/(float a) const;
 
-    const vec4& homogeneous();
     vec4 homogeneous() const;
 
     vec3 normalized() const;
@@ -121,7 +119,7 @@ public:
       return data[i];
     }
 
-    float data[4]; // Fourth coordinate is the homogeneous coordinate
+    float data[3];
     float& x() {
       return data[0];
     }
@@ -220,6 +218,10 @@ public:
 vec2 operator*(float a, const vec2& v);
 vec3 operator*(float a, const vec3& v);
 vec4 operator*(float a, const vec4& v);
+
+std::ostream& operator<<(std::ostream& out, const vec3& m);
+
+std::ostream& operator<<(std::ostream& out, const vec4& m);
 
 } // namespace math
 

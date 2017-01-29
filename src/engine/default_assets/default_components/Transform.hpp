@@ -1,6 +1,5 @@
 #pragma once
 
-#include <Eigen/Eigen>
 #include <rapidjson/document.h>
 #include "math/Vector.hpp"
 #include "math/Matrix.hpp"
@@ -12,8 +11,6 @@ using namespace std;
 class Transform {
     friend class GameObject;
 public:
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-
     math::vec3 position;
     math::quaternion rotation;
     math::vec3 scale;

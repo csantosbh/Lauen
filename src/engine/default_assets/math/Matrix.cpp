@@ -1,7 +1,8 @@
 #include <algorithm>
+#include <iostream>
+#include <iomanip>
 #include <Eigen/Eigen>
 #include "math/Matrix.hpp"
-#include<iostream>
 
 using namespace Eigen;
 using namespace std;
@@ -167,7 +168,6 @@ mat2 mat2::transpose() const {
 
 mat2& mat2::transposeInPlace() {
     swap(data[0*3 + 1], data[1*3 + 0]);
-    swap(data[1*3 + 0], data[0*3 + 1]);
 
     return *this;
 }
@@ -316,8 +316,10 @@ vec3 mat3::operator*(const vec3& v) const {
 
 mat3& mat3::copyBlock(const mat2& m, int row, int col) {
     assert(row <= 1 && col <= 1);
-    memcpy(&data[(row + 0)*3 + col], &m.data[0], 2*sizeof(float));
-    memcpy(&data[(row + 1)*3 + col], &m.data[2], 2*sizeof(float));
+
+    // Data is stored in row-major order
+    memcpy(&data[(col + 0)*3 + row], &m.data[0], 2*sizeof(float));
+    memcpy(&data[(col + 1)*3 + row], &m.data[2], 2*sizeof(float));
 
     return *this;
 }
@@ -325,8 +327,9 @@ mat3& mat3::copyBlock(const mat2& m, int row, int col) {
 mat3& mat3::copyBlock(const vec2& v, int row, int col) {
     assert(row <= 1 && col <= 2);
 
-    data[(row + 0)*3 + col] = v.data[0];
-    data[(row + 1)*3 + col] = v.data[1];
+    // Data is stored in row-major order
+    data[col*3 + row + 0] = v.data[0];
+    data[col*3 + row + 1] = v.data[1];
 
     return *this;
 }
@@ -334,9 +337,10 @@ mat3& mat3::copyBlock(const vec2& v, int row, int col) {
 mat3& mat3::copyBlock(const vec3& v, int col) {
     assert(col <= 2);
 
-    data[0*3 + col] = v.data[0];
-    data[1*3 + col] = v.data[1];
-    data[2*3 + col] = v.data[2];
+    // Data is stored in row-major order
+    data[col*3 + 0] = v.data[0];
+    data[col*3 + 1] = v.data[1];
+    data[col*3 + 2] = v.data[2];
 
     return *this;
 }
@@ -366,9 +370,9 @@ mat3 mat3::transpose() const {
 }
 
 mat3& mat3::transposeInPlace() {
-    swap(data[0*3 + 1], data[1*3 + 0]); swap(data[0*3 + 2], data[2*3 + 0]);
-    swap(data[1*3 + 0], data[0*3 + 1]); swap(data[1*3 + 2], data[2*3 + 1]);
-    swap(data[2*3 + 0], data[0*3 + 2]); swap(data[2*3 + 1], data[1*3 + 2]);
+    swap(data[0*3 + 1], data[1*3 + 0]);
+    swap(data[0*3 + 2], data[2*3 + 0]);
+    swap(data[1*3 + 2], data[2*3 + 1]);
 
     return *this;
 }
@@ -517,9 +521,11 @@ vec4 mat4::operator*(const vec4& v) const {
 
 mat4& mat4::copyBlock(const mat3& m, int row, int col) {
     assert(row <= 1 && col <= 1);
-    memcpy(&data[(row + 0)*4 + col], &m.data[0], 3*sizeof(float));
-    memcpy(&data[(row + 1)*4 + col], &m.data[3], 3*sizeof(float));
-    memcpy(&data[(row + 2)*4 + col], &m.data[6], 3*sizeof(float));
+
+    // Data is stored in row-major order
+    memcpy(&data[(col + 0)*4 + row], &m.data[0], 3*sizeof(float));
+    memcpy(&data[(col + 1)*4 + row], &m.data[3], 3*sizeof(float));
+    memcpy(&data[(col + 2)*4 + row], &m.data[6], 3*sizeof(float));
 
     return *this;
 }
@@ -527,9 +533,10 @@ mat4& mat4::copyBlock(const mat3& m, int row, int col) {
 mat4& mat4::copyBlock(const vec3& v, int row, int col) {
     assert(row <= 1 && col <= 3);
 
-    data[(row + 0)*4 + col] = v.data[0];
-    data[(row + 1)*4 + col] = v.data[1];
-    data[(row + 2)*4 + col] = v.data[2];
+    // Data is stored in row-major order
+    data[col*4 + (row + 0)] = v.data[0];
+    data[col*4 + (row + 1)] = v.data[1];
+    data[col*4 + (row + 2)] = v.data[2];
 
     return *this;
 }
@@ -537,12 +544,23 @@ mat4& mat4::copyBlock(const vec3& v, int row, int col) {
 mat4& mat4::copyBlock(const vec4& v, int col) {
     assert(col <= 3);
 
-    data[0*4 + col] = v.data[0];
-    data[1*4 + col] = v.data[1];
-    data[2*4 + col] = v.data[2];
-    data[2*4 + col] = v.data[3];
+    // Data is stored in row-major order
+    data[col*4 + 0] = v.data[0];
+    data[col*4 + 1] = v.data[1];
+    data[col*4 + 2] = v.data[2];
+    data[col*4 + 2] = v.data[3];
 
     return *this;
+}
+
+mat3 mat4::getBlock(int row, int col) {
+    mat3 result;
+
+    memcpy(&result.data[0], &data[(col + 0)*4 + row], 3*sizeof(float));
+    memcpy(&result.data[3], &data[(col + 1)*4 + row], 3*sizeof(float));
+    memcpy(&result.data[6], &data[(col + 2)*4 + row], 3*sizeof(float));
+
+    return result;
 }
 
 mat4 mat4::multiply(const mat4& m) const {
@@ -570,10 +588,12 @@ mat4 mat4::transpose() const {
 }
 
 mat4& mat4::transposeInPlace() {
-    swap(data[0*4 + 1], data[1*4 + 0]); swap(data[0*4 + 2], data[2*4 + 0]); swap(data[0*4 + 3], data[3*4 + 0]);
-    swap(data[1*4 + 0], data[0*4 + 1]); swap(data[1*4 + 2], data[2*4 + 1]); swap(data[1*4 + 3], data[3*4 + 1]);
-    swap(data[2*4 + 0], data[0*4 + 2]); swap(data[2*4 + 1], data[1*4 + 2]); swap(data[2*4 + 3], data[3*4 + 2]);
-    swap(data[3*4 + 0], data[0*4 + 3]); swap(data[3*4 + 1], data[1*4 + 3]); swap(data[3*4 + 2], data[2*4 + 3]);
+    swap(data[0*4 + 1], data[1*4 + 0]);
+    swap(data[0*4 + 2], data[2*4 + 0]);
+    swap(data[0*4 + 3], data[3*4 + 0]);
+    swap(data[1*4 + 2], data[2*4 + 1]);
+    swap(data[1*4 + 3], data[3*4 + 1]);
+    swap(data[2*4 + 3], data[3*4 + 2]);
 
     return *this;
 }
@@ -592,7 +612,7 @@ mat4 mat4::inv() const {
 ostream &operator<<(ostream &out, const mat3 &m) {
     for(int j = 0; j < 3; ++j) {
         for(int i = 0; i < 3; ++i) {
-            out << m.data[j*3 + i] << " ";
+            out << fixed << setprecision(2) << m.data[i*3 + j] << " ";
         }
         out << endl;
     }
@@ -602,7 +622,7 @@ ostream &operator<<(ostream &out, const mat3 &m) {
 ostream &operator<<(ostream &out, const mat4 &m) {
     for(int j = 0; j < 4; ++j) {
         for(int i = 0; i < 4; ++i) {
-            out << m.data[j*4 + i] << " ";
+            out << fixed << setprecision(2) << m.data[i*4 + j] << " ";
         }
         out << endl;
     }
